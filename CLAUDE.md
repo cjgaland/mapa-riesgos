@@ -1,8 +1,8 @@
 # CLAUDE.md — Mapa de Riesgos
 
-> Documento común a todas las apps (lista, carpetas, identidad visual e intercambio de datos): `/Users/Trabajo/Desktop/Ecosistema Calidad/ECOSISTEMA.md`.
+> Documento común a todas las apps (lista, carpetas, identidad visual e intercambio de datos): `/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/ECOSISTEMA.md`.
 
-Guía de referencia para el desarrollo asistido por IA. Léela antes de proponer cambios. Responder siempre en español y en lenguaje claro (el autor no es programador). El diseño completo, las decisiones del autor y el plan por entregas están en `/Users/Trabajo/Desktop/Mapa de Riesgos/Diseño/DISEÑO_MAPA_RIESGOS.md` (léelo también al empezar una sesión).
+Guía de referencia para el desarrollo asistido por IA. Léela antes de proponer cambios. Responder siempre en español y en lenguaje claro (el autor no es programador). El diseño completo, las decisiones del autor y el plan por entregas están en `/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Mapa de Riesgos/Diseño/DISEÑO_MAPA_RIESGOS.md` (léelo también al empezar una sesión).
 
 ## 1. Descripción
 PWA estática (sin build, sin dependencias, sin CDN) que guía **paso a paso y de forma didáctica** la elaboración del **Mapa de Riesgos de cualquier proceso sanitario**:
@@ -60,7 +60,7 @@ Archivos:
 
 ## 4. Entorno y pruebas
 - Node v26. `node tests/logic.test.mjs`.
-- **Servir en local con las apps hermanas al lado**, como en GitHub Pages: la carpeta `../.claude/servidor/` tiene enlaces `amfe → AMFE/Aplicación`, `flujograma → Flujograma/Aplicación` y `mapa-riesgos → Aplicación`. Arrancar desde Bash en segundo plano: `cd "/Users/Trabajo/Desktop/Mapa de Riesgos/.claude/servidor" && python3 -m http.server 8771`, abrir la vista previa `app-mapa-riesgos` de `../.claude/launch.json` (solo URL `http://localhost:8771`) y navegar a `http://localhost:8771/mapa-riesgos/`. El navegador integrado no admite service workers.
+- **Servir en local con las apps hermanas al lado**, como en GitHub Pages: la carpeta `../.claude/servidor/` tiene enlaces `amfe → AMFE/Aplicación`, `flujograma → Flujograma/Aplicación` y `mapa-riesgos → Aplicación`. Arrancar desde Bash en segundo plano: `cd "/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Mapa de Riesgos/.claude/servidor" && python3 -m http.server 8771`, abrir la vista previa `app-mapa-riesgos` de `../.claude/launch.json` (solo URL `http://localhost:8771`) y navegar a `http://localhost:8771/mapa-riesgos/`. El navegador integrado no admite service workers.
 - Revisar en escritorio y en móvil (360 px: `document.documentElement.scrollWidth === 360`) y en modo oscuro.
 - Icono: `icon-512.svg` → `qlmanage -t -s 512` y tamaños con `sips -z`.
 
@@ -69,14 +69,14 @@ Archivos:
 
 ## 6. Copias de seguridad locales
 ```
-Desktop/Mapa de Riesgos/
+Desktop/Calidad&Seguridad/Ecosistema Calidad/Mapa de Riesgos/
 ├── Aplicación/            ← la app (este repositorio git, lo que se publica)
 ├── Backup/                ← 5 copias más recientes, fuera del repositorio
 ├── Curso Mapa de Riesgo/  ← material del curso
 ├── Diseño/                ← DISEÑO_MAPA_RIESGOS.md
 └── Documentos de ejemplo/ ← documentos generados con la app
 ```
-`bash ~/.claude/skills/app-copia_seguridad/scripts/copia_seguridad.sh --root "/Users/Trabajo/Desktop/Mapa de Riesgos" --name MapaRiesgos --exclude "Curso*" --exclude "Documentos*" --exclude "*.docx" --exclude .claude` (copia `Aplicación/` y `Diseño/`). Hacer una antes de cada publicación.
+`bash ~/.claude/skills/app-copia_seguridad/scripts/copia_seguridad.sh --root "/Users/Trabajo/Desktop/Calidad&Seguridad/Ecosistema Calidad/Mapa de Riesgos" --name MapaRiesgos --exclude "Curso*" --exclude "Documentos*" --exclude "*.docx" --exclude .claude` (copia `Aplicación/` y `Diseño/`). Hacer una antes de cada publicación.
 
 ## 7. Publicación
 Publicada (2026-10-23, v2026.05) en el repositorio `cjgaland/mapa-riesgos` (GitHub Pages desde `main`, raíz → https://cjgaland.github.io/mapa-riesgos/, hermana de `/amfe/` y `/flujograma/`, de donde carga los motores). Publicar **solo cuando el autor lo pida**, después de comprobar que los motores publicados de AMFE y Flujograma pasan `comprobarMotor` (descargar `https://cjgaland.github.io/amfe/logic.js` y `/flujograma/logic.js` y probarlos en Node; así se hizo al publicar la v2026.05). Pasos por versión: copia de seguridad; `NOVEDADES` + `APP_VERSION`; mismos `?v=` en index.html; subir `CACHE_NAME` en sw.js; tests; commit en español terminado en `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; push.
