@@ -141,7 +141,7 @@ t("las propuestas aceptadas no vuelven tras copiar", !L.propuestas(cp).some(p =>
 t("ids nuevos y referencias rehechas", cp.id !== U.id && !JSON.stringify(cp).includes("ej-mapa") && cp.puntos.every(x => LF.pasoDe(cp, x.pasoId) && cp.subprocesos.some(sb => sb.id === x.subprocesoId)) && LF.errores(cp).length === 0);
 
 // ---------- Contenido ----------
-t("Aprende: 6 temas y 2 próximamente", C.TEMAS.length === 6 && C.TEMAS_PROX.length === 2);
+t("Aprende: los 8 temas", C.TEMAS.length === 8 && C.TEMAS_PROX.length === 0 && C.TEMAS.map(x => x.n).join() === "1,2,3,4,5,6,7,8");
 t("temas completos", C.TEMAS.every(x => x.minuto.length && x.secciones.length && x.minicaso && x.practica.href));
 t("glosario sin repetidos", new Set(C.GLOSARIO.map(g => g[0])).size === C.GLOSARIO.length && C.GLOSARIO.length >= 25);
 
@@ -199,6 +199,40 @@ t("frecuencia: gravedad 9-10 al menos semestral", L.frecuenciaSugerida(100, 9) =
 // Copiar el ejemplo con su AMFE
 const cpa = L.renovarIds(clon(U), genId);
 t("copiar: fallos enlazados a sus puntos y asistentes al equipo", cpa.fallos.every(f => cpa.puntos.some(x => x.id === f.puntoId)) && cpa.sesiones.every(s => s.asistentes.every(id => cpa.equipo.some(x => x.id === id))) && LA.prioritarios(cpa).length === 15);
+
+// ---------- Entrega 3 · acciones de mejora y el mapa ----------
+t("ejemplo: 15 acciones, una por fallo prioritario, con indicador y estándar", LA.prioritarios(U).every(f => f.acciones.length === 1 && f.acciones[0].indicador.nombre && f.acciones[0].indicador.estandar) && U.fallos.reduce((s, f) => s + f.acciones.length, 0) === 15);
+t("ejemplo: paso 8 hecho y criterios de selección marcados", L.progreso(U)[8] && Object.values(U.criteriosAcciones).every(Boolean));
+t("ejemplo: las acciones no tienen avisos salvo vencimientos", L.avisosAcciones(U, "2025-11-01").length === 0);
+t("ejemplo: paso 9 hecho (todos los prioritarios en el mapa)", L.progreso(U)[9] && L.sinUbicar(U).length === 0);
+const DM = L.dibujoMapa(U), avisoDe = n => DM.iconos.filter(i => i.nums.includes(n));
+t("mapa: los avisos de la página 15", ["3, 5, 7", "8, 9, 10, 11", "15, 16", "23, 45", "43, 45"].every(x => DM.iconos.some(i => i.texto === x)));
+t("mapa: el 29 y el 30 en los dos traslados", avisoDe(29).length === 2 && avisoDe(30).length === 2 && avisoDe(29).every(i => i.texto === "29, 30"));
+t("mapa: color por nivel de IPR (triaje rojo, recepción naranja)", avisoDe(10)[0].nivel === "muyalto" && avisoDe(3)[0].nivel === "alto");
+t("mapa: con el marco de procesos y su título", DM.marco && L.tituloMapa(U) === "Mapa de riesgo del Servicio de Urgencias");
+t("mapa: el SVG lleva el título y los avisos coloreados", (s => s.includes("Mapa de riesgo del Servicio de Urgencias") && s.includes("fl-icono--muyalto") && s.includes("fl-icono--alto"))(D.svg(DM, { cabecera: L.tituloMapa(U) })));
+t("mapa: draw.io se genera con los avisos", (x => /<mxfile/.test(x) && (x.match(/8, 9, 10, 11/g) || []).length >= 1)(D.drawio(DM, { titulo: L.tituloMapa(U), id: U.id })));
+t("mapa: «todos» enseña los 49", (() => { const T = Object.assign(clon(U), { vistaMapa: Object.assign({}, U.vistaMapa, { mostrar: "todos" }) }); return L.enMapa(T).length === 49 && L.dibujoMapa(T).iconos.reduce((s, i) => s + i.nums.length, 0) >= 49; })());
+t("mapa: calor por subproceso colorea las bandas", (() => { const T = Object.assign(clon(U), { vistaMapa: Object.assign({}, U.vistaMapa, { calor: true }) }); const d = L.dibujoMapa(T); return d.bandas.some(b => b.color === L.COLOR_NIVEL.muyalto) && d.bandas.some(b => /IPR máx\. 343/.test(b.nombre)); })());
+t("mapa: leyenda con los 15, por número o por IPR", L.leyendaMapa(U).length === 15 && L.leyendaMapa(U)[0].num === 3 && L.leyendaMapa(Object.assign(clon(U), { vistaMapa: Object.assign({}, U.vistaMapa, { leyenda: "ipr" }) }))[0].num === 10);
+t("mapa: un fallo crítico lleva borde", (() => { const T = clon(U); T.fallos.find(f => f.num === 3).critico = true; T.fallos.find(f => f.num === 3).motivoCritico = "x"; return L.dibujoMapa(T).iconos.find(i => i.nums.includes(3)).critico === true; })());
+// Ubicación: por defecto el paso del punto crítico; si el equipo elige, esos pasos
+const fU = U.fallos.find(f => f.num === 10);
+t("ubicación por defecto: el paso del punto crítico", L.ubicacion(U, fU).join() === L.puntoDe(U, fU).pasoId);
+t("ubicación elegida por el equipo", L.ubicacion(U, U.fallos.find(f => f.num === 29)).length === 2);
+const sinPunto = clon(U); sinPunto.fallos.find(f => f.num === 8).puntoId = "";
+t("un prioritario sin punto ni ubicación queda sin colocar y se avisa", L.sinUbicar(sinPunto).map(f => f.num).join() === "8" && L.avisosMapa(sinPunto).some(a => /nº 8/.test(a.texto)) && !L.progreso(sinPunto)[9]);
+t("saneado: pasos de ubicación rotos fuera", L.sanearMapa(Object.assign(clon(U), { fallos: U.fallos.map(f => Object.assign(clon(f), { pasos: f.num === 29 ? ["no-existe", U.pasos[16].id] : f.pasos })) }), genId, "").fallos.find(f => f.num === 29).pasos.join() === U.pasos[16].id);
+t("saneado: vista y textos del mapa", (x => x.vistaMapa.mostrar === "prioritarios" && x.vistaMapa.calor === false && x.textosMapa.objetivos === "")(L.sanearMapa(Object.assign(clon(U), { vistaMapa: { mostrar: "raro", calor: "si" }, textosMapa: 7 }), genId, "")));
+// Sin flujograma: mapa por subprocesos
+const SF = clon(U); SF.pasos = []; SF.puntos.forEach(x => { x.pasoId = ""; });
+const DS = L.dibujoMapa(SF);
+t("sin flujograma: una caja por subproceso con sus fallos", DS.nodos.filter(n => n.tipo === "actividad").length === 7 && DS.iconos.length === 7 && L.sinUbicar(SF).length === 0 && L.avisosMapa(SF).some(a => /por subprocesos/.test(a.texto)));
+// Textos propuestos
+t("textos del mapa propuestos", ["objetivos", "estructura", "interpretacion"].every(k => L.sugerirTextoMapa(U, k).length > 80) && /15 fallos prioritarios/.test(L.sugerirTextoMapa(U, "estructura")) && /Triaje de enfermería/.test(L.sugerirTextoMapa(U, "interpretacion")));
+// Paquete: los hallazgos llevan la acción y el indicador
+t("paquete: hallazgos con acción e indicador", (h => h.accion.length > 10 && /≥ 95 %/.test(h.indicador))(L.paqueteIntercambio([Object.assign(clon(U), { id: "u-1" })], "x", "x").mapas[0].hallazgos[0]));
+t("copiar el ejemplo conserva la ubicación de los fallos", (c => L.ubicacion(c, c.fallos.find(f => f.num === 29)).length === 2 && L.sinUbicar(c).length === 0)(L.renovarIds(clon(U), genId)));
 
 console.log(`${ok} bien, ${mal} mal`);
 if (mal) process.exit(1);

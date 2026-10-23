@@ -108,13 +108,43 @@
         { t: "La matriz de riesgos", h: `<p>Coloca cada fallo según su <b>gravedad</b> (filas) y su <b>ocurrencia</b> (columnas). No tiene en cuenta la detección, así que <b>no sustituye al IPR</b>, pero ayuda a explicarlo. Puede verse en 10 × 10 (cada valor) o agrupada en 5 × 5, como la del documento final del curso.</p><p>Un fallo en la <b>zona roja</b> que no sale prioritario suele ser porque «se detecta fácil»: comprobad que esa detección existe de verdad.</p>` }
       ],
       minicaso: "<p>En Urgencias, los 15 fallos de mayor IPR van de 343 a 180. Otros cuatro también tienen 180 y quedan fuera por el corte (a igual IPR, la app pone antes el de más gravedad): el equipo decide si alguno merece entrar a mano. En la matriz, los 15 caen en las zonas naranja y amarilla.</p>",
-      practica: { texto: "Ver la priorización de Urgencias", href: "#/mapa/ej-mapa-urgencias/7" } }
+      practica: { texto: "Ver la priorización de Urgencias", href: "#/mapa/ej-mapa-urgencias/7" } },
+    { n: 7, c: "H", titulo: "Acciones de mejora", sub: "5W1H, fuerza de la medida e indicadores",
+      minuto: [
+        "Cada fallo prioritario necesita al menos una acción que <b>ataque su causa</b>.",
+        "Se describe con el modelo <b>5W1H</b>: qué, por qué, dónde, cuándo, quién y cómo.",
+        "Cada acción lleva un <b>indicador con su estándar</b> para comprobar que funciona.",
+        "Las medidas que <b>cambian el sistema</b> (obligar, automatizar, eliminar el paso que falla) son más fuertes que formar o recordar."
+      ],
+      secciones: [
+        { t: "El modelo 5W1H", h: `<div class="table-wrap"><table class="mini"><tr><th>Pregunta</th><th>Ejemplo (fallo nº 10 de Urgencias)</th></tr>
+          <tr><td><b>Qué</b></td><td>Checklist digital obligatorio antes de cerrar el triaje con TA, FC, SatO₂ y temperatura</td></tr>
+          <tr><td><b>Por qué</b></td><td>Para garantizar una valoración inicial completa y homogénea</td></tr>
+          <tr><td><b>Dónde</b></td><td>Puesto de triaje</td></tr><tr><td><b>Cuándo</b></td><td>1 mes</td></tr>
+          <tr><td><b>Quién</b></td><td>Supervisora de Enfermería de Urgencias</td></tr>
+          <tr><td><b>Cómo</b></td><td>Configuración en el módulo de triaje, sesiones formativas y supervisión semanal</td></tr></table></div>` },
+        { t: "Tipos de acción y fuerza de la medida", h: `<p><b>Corrección</b>: arregla el fallo cuando ocurre. <b>Acción correctora</b>: elimina su causa. <b>Acción preventiva</b>: elimina un riesgo antes de que ocurra.</p><p>Las acciones pueden cambiar un <b>procedimiento</b>, la <b>formación</b>, la <b>tecnología</b> o la <b>organización</b>.</p><div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p>Formar, recordar o poner carteles son <b>medidas débiles</b>: dependen de la memoria y la buena voluntad. Combínalas con alguna que cambie el sistema.</p></div>` },
+        { t: "Indicadores y criterios", h: `<p>Una buena acción es <b>específica</b> (ataca la causa), <b>factible</b>, <b>medible</b>, <b>sostenible</b> y <b>aceptable</b> para el equipo. El documento final recoge además con qué criterios se eligieron: viabilidad, impacto esperado, cultura de seguridad del centro y posibilidad de medirlas.</p><p>El <b>indicador</b> y su <b>estándar</b> («% de triajes con las cuatro constantes registradas ≥ 95 %») son la base de la auditoría de seguimiento.</p>` }
+      ],
+      minicaso: "<p>Para el fallo «Espera prolongada sin reevaluación clínica», el equipo propone primero «recordar al personal que reevalúe». Es una medida débil. La mejora: reevaluación programada cada 90 minutos con un responsable por turno y registro obligatorio en la historia; indicador: % de pacientes con espera de más de 90 minutos con la reevaluación registrada, estándar ≥ 90 %.</p>",
+      practica: { texto: "Ver las acciones de Urgencias", href: "#/mapa/ej-mapa-urgencias/8" } },
+    { n: 8, c: "P", titulo: "El mapa de riesgos", sub: "Qué es, cómo se lee y para qué se usa",
+      minuto: [
+        "El <b>mapa de riesgos</b> es el flujograma del proceso con los fallos prioritarios marcados encima, en el paso donde ocurren.",
+        "Cada aviso lleva los <b>números de los fallos</b> del AMFE y su color dice el nivel de riesgo: <b>rojo</b> muy alto, <b>naranja</b> alto, <b>amarillo</b> medio y <b>verde</b> bajo.",
+        "Va dentro del <b>marco de procesos</b>: estratégicos arriba, el proceso clave en el centro y los de soporte abajo.",
+        "Se usa para <b>comunicar</b>: acogida de nuevos profesionales, sesiones de seguridad, comisiones de calidad y planificación de auditorías."
+      ],
+      secciones: [
+        { t: "Los pasos para elaborarlo", h: `<ol><li>Identificar el proceso y sus actividades (flujograma).</li><li>Identificar los riesgos (puntos críticos y AMFE).</li><li>Evaluarlos y clasificarlos (gravedad, ocurrencia, detección e IPR).</li><li>Planificar la respuesta (acciones de mejora con responsable y plazo).</li><li>Documentarlo y comunicarlo (el documento final y la lámina del mapa).</li><li>Revisarlo periódicamente (auditorías y nuevas ediciones).</li></ol>` },
+        { t: "Cómo se lee", h: `<p>Recorre el flujograma de arriba abajo: los avisos muestran <b>dónde se concentran los riesgos</b>. Un aviso puede agrupar varios fallos del mismo paso; un fallo puede aparecer en más de un paso (por ejemplo, en el traslado de ida y en el de vuelta). La <b>leyenda</b> dice qué es cada número y su IPR.</p><div class="box box--practica"><span class="box-tag">En la práctica</span><p>Si un paso acumula muchos fallos, quizá es demasiado grande: dividirlo en el flujograma ayuda a localizar mejor el riesgo.</p></div>` },
+        { t: "Revisión y mejora continua", h: `<p>El mapa no es un documento estático: se revisa cuando cambia el proceso, tras un incidente o tras las auditorías, como parte del ciclo PDCA. Los fallos prioritarios son los <b>hallazgos clave</b> que alimentan el Plan Anual de Auditorías.</p>` }
+      ],
+      minicaso: "<p>En el mapa de Urgencias, el triaje lleva un aviso rojo con los fallos 8, 9, 10 y 11, y la recepción uno naranja con el 3, el 5 y el 7. Un profesional que se incorpora ve en un minuto que los primeros pasos (identificación y priorización) son los más delicados del circuito.</p>",
+      practica: { texto: "Ver el mapa de Urgencias", href: "#/mapa/ej-mapa-urgencias/9" } }
   ];
   // Temas que llegarán con las próximas versiones (se muestran como «próximamente»)
-  const TEMAS_PROX = [
-    { n: 7, titulo: "Acciones de mejora", sub: "5W1H, fuerza de la medida e indicadores" },
-    { n: 8, titulo: "El mapa de riesgos", sub: "Qué es, cómo se lee y para qué se usa" }
-  ];
+  const TEMAS_PROX = [];
 
   // ---------- Glosario ----------
   const GLOSARIO = [
@@ -373,6 +403,32 @@
     3: "Se pregunta por alergias en admisión, pero no de forma sistemática.",
     11: "Protocolo de identificación e impresora de pulseras en el triaje."
   };
+  // Acciones de mejora 5W1H de la tabla 6.2 del Documento Final (las 15, una por fallo prioritario). El curso no trae
+  // indicador, estándar, estado, fecha de fin ni puntuación tras las acciones: se han añadido para el ejemplo (las 9
+  // primeras, igual que en el ejemplo de la app AMFE).
+  // [nº, qué, por qué, dónde, plazo, fin, quién, cómo, tipo, clase, actúa sobre, indicador, estándar, fuente, estado]
+  const ACCIONES_URG = [
+    [10, "Establecer un checklist digital obligatorio antes de cerrar el triaje con los parámetros mínimos: TA, FC, SatO₂ y temperatura", "Para garantizar una valoración inicial completa y homogénea de todos los pacientes", "Puesto de triaje", "1 mes", "2025-12-15", "Supervisora de Enfermería de Urgencias", "Configuración del checklist en el módulo de triaje de la historia digital, sesiones formativas y supervisión semanal", "correctora", "tecnologia", ["o", "d"], "% de triajes con TA, FC, SatO₂ y temperatura registradas", "≥ 95 %", "Módulo de triaje de la historia digital", "verificada"],
+    [8, "Implantar una auditoría clínica mensual de triajes con doble revisión y retroalimentación individual", "Para mejorar la calidad y la homogeneidad en la asignación de los niveles de prioridad", "Puesto de triaje", "2 meses", "2026-01-15", "Coordinador médico y Supervisora de Enfermería", "Selección aleatoria de 20 historias al mes, revisión ciega por un profesional experto e informe con los errores detectados y formación orientada", "correctora", "procedimiento", ["o", "d"], "% de triajes con nivel de prioridad concordante en la doble revisión", "≥ 90 %", "Auditoría mensual de triaje", "hecha"],
+    [5, "Configurar una alerta visible automática en el campo de admisión para pacientes con antecedentes relevantes registrados en la historia clínica", "Para evitar omisiones críticas en pacientes con patologías relevantes en su atención urgente", "Puesto de admisión", "1 mes", "2025-12-15", "Responsable TIC y Dirección Médica", "Modificación del sistema informático, prueba piloto y formación del personal administrativo", "preventiva", "tecnologia", ["d"], "% de pacientes con antecedentes relevantes en los que salta la alerta en admisión", "≥ 95 %", "Sistema informático de admisión", "hecha"],
+    [15, "Implementar reevaluaciones clínicas programadas cada 90 minutos para los pacientes en espera", "Para disminuir los riesgos clínicos en pacientes cuya situación puede agravarse sin control", "Sala de espera del Servicio de Urgencias", "2 meses", "2025-12-01", "Supervisor/a de enfermería de Urgencias", "Modificando el protocolo de espera, asignando un responsable por turno y registrando la reevaluación en la historia clínica", "correctora", "procedimiento", ["o", "d"], "% de pacientes con espera > 90 min con reevaluación registrada", "≥ 90 %", "Historia clínica (registro de reevaluaciones)", "verificada"],
+    [29, "Establecer la verificación activa y el doble chequeo de la pulsera antes de salir a pruebas", "Para garantizar la identificación segura en los traslados y evitar errores de identidad", "Box de exploración y área de pruebas", "2 semanas", "2025-11-30", "Personal de enfermería de boxes", "Listado de control obligatorio antes del traslado, formación al personal y auditoría semanal de cumplimiento", "correctora", "procedimiento", ["o", "d"], "% de traslados a pruebas con la pulsera verificada en el listado de control", "100 %", "Listado de control de traslados", "verificada"],
+    [9, "Incluir una alerta de fragilidad en el triaje mediante un cuestionario breve y estructurado", "Para prevenir riesgos en pacientes vulnerables que no se detectan al principio", "Puesto de triaje", "1 mes", "2025-12-15", "Profesional de triaje", "Añadiendo ítems al sistema informático de triaje (edad, dependencia, deterioro cognitivo), con formación previa", "preventiva", "tecnologia", ["o", "d"], "% de pacientes de 75 años o más con el cuestionario de fragilidad completado en el triaje", "≥ 90 %", "Módulo de triaje", "hecha"],
+    [23, "Implementar un checklist obligatorio de conciliación de la medicación en las primeras indicaciones", "Para evitar interacciones y errores por desconocer la medicación crónica del paciente", "Historia clínica electrónica", "1 mes", "2026-01-31", "Jefe de Urgencias y Responsable de Calidad", "Campo obligatorio en el parte médico inicial, formación breve del personal y auditoría mensual de cumplimiento", "correctora", "tecnologia", ["o", "d"], "% de pacientes con la medicación habitual conciliada en las primeras indicaciones", "≥ 85 %", "Historia clínica electrónica", "curso"],
+    [36, "Activar un sistema de alertas del laboratorio ante resultados críticos", "Para reducir las omisiones de resultados importantes y evitar retrasos en la actuación médica", "Sistema informático de resultados del laboratorio", "1 mes", "2025-12-31", "Responsable de Sistemas y Jefe de Urgencias", "Configurando alertas automáticas por valores críticos y verificando que el clínico los ha visto antes del alta", "preventiva", "tecnologia", ["o", "d"], "% de resultados críticos con visualización verificada antes del alta", "100 %", "Sistema de laboratorio", "hecha"],
+    [45, "Crear un canal directo de comunicación y un parte de ingreso normalizado entre Urgencias y la planta", "Para minimizar retrasos en la ubicación del paciente y mejorar la continuidad asistencial", "Área de admisión e ingreso y planta hospitalaria", "2 semanas", "2025-12-15", "Supervisor de Urgencias y Supervisor de planta", "Grupo de mensajería institucional y plantilla electrónica compartida con la información clínica relevante para la planta receptora", "correctora", "organizativa", ["o", "d"], "% de ingresos con el parte de ingreso normalizado enviado a la planta", "≥ 95 %", "Registro de ingresos", "pendiente"],
+    [7, "Elaborar y difundir un protocolo específico de atención prioritaria a pacientes frágiles en el área de Urgencias", "Para garantizar una atención rápida, segura y adaptada a las necesidades especiales de estos pacientes", "Área de Admisión de Urgencias", "2 meses", "2026-01-31", "Supervisión de Urgencias y Coordinación de Calidad", "Formación al personal, validación del protocolo en la Comisión de Calidad y monitorización de su cumplimiento", "preventiva", "procedimiento", ["o"], "% de pacientes frágiles con el circuito preferente activado", "≥ 85 %", "Registro de admisión", "curso"],
+    [16, "Establecer turnos de revisión periódica de los pacientes en sala de espera con registro en la historia clínica", "Para evitar el deterioro clínico en pacientes con esperas prolongadas y mejorar la seguridad", "Sala de espera de Urgencias", "Inmediato (1 mes)", "2025-12-15", "Enfermería de triaje y Coordinación de turnos", "Asignación de responsabilidades en el cuadrante, checklist de revisión y registro obligatorio en la historia electrónica", "correctora", "organizativa", ["o", "d"], "% de turnos con la revisión de la sala de espera registrada", "≥ 95 %", "Historia clínica electrónica", "hecha"],
+    [30, "Implementar un sistema de etiquetado único por paciente y verificación cruzada en los traslados internos", "Para evitar errores de identificación y garantizar el retorno seguro del paciente a su ubicación", "Circuito interno de traslado de pacientes", "1 mes", "2025-12-31", "Celadores, Enfermería y Coordinación del área", "Etiquetado adhesivo con código, checklist de entrega y recepción, y formación básica a los celadores", "preventiva", "procedimiento", ["o", "d"], "% de traslados con la verificación cruzada registrada", "≥ 95 %", "Checklist de traslados", "curso"],
+    [43, "Implementar un sistema electrónico de previsión de altas en las plantas", "Para anticipar necesidades y reducir los tiempos de espera de cama en Urgencias", "Coordinación entre las plantas de hospitalización y Urgencias", "En el momento de la previsión del alta en planta", "2026-02-28", "Supervisión de planta y Unidad de Gestión de Camas", "Mediante checklists digitales de altas previstas, actualizados en tiempo real", "preventiva", "tecnologia", ["o"], "Mediana de horas de espera de cama desde la decisión de ingreso", "≤ 4 h", "Sistema de gestión de camas", "pendiente"],
+    [3, "Incluir un campo obligatorio de alergias y medicación habitual en el sistema de admisión", "Para que la información crítica esté disponible desde el inicio del proceso asistencial", "Aplicación de admisión (sistema informático)", "Al realizar el registro administrativo", "2026-01-15", "Personal administrativo de admisión", "Configurando alertas de validación que impidan continuar si no se rellena el campo", "preventiva", "tecnologia", ["o", "d"], "% de registros de admisión con el campo de alergias cumplimentado", "≥ 98 %", "Aplicación de admisión", "curso"],
+    [11, "Establecer un control sistemático con checklist visible de la pulsera tras el triaje", "Para mejorar la seguridad del paciente y evitar errores de identificación", "Box de triaje", "Justo después del triaje inicial", "2025-12-15", "Profesional de enfermería responsable del triaje", "Incorporando la verificación de la pulsera al checklist obligatorio antes de asignar box", "correctora", "procedimiento", ["o", "d"], "% de pacientes con la pulsera verificada antes de asignar box", "100 %", "Checklist de triaje", "hecha"]
+  ];
+  // G·O·D esperados tras las acciones (añadidos para el ejemplo; la gravedad no cambia)
+  const RESIDUAL_URG = { 10: [7, 4, 3], 8: [8, 5, 4], 5: [7, 6, 3], 15: [7, 5, 4], 29: [7, 3, 4], 9: [7, 4, 4], 23: [7, 4, 4], 36: [7, 5, 3], 45: [7, 4, 5] };
+  // Dónde va cada fallo en el mapa, como la página 15 del Documento Final cuando no basta con el paso de su punto crítico:
+  // el 29 y el 30 en los dos traslados (ida y vuelta de pruebas), el 45 en la consulta y en la decisión de ingreso, el 43 en la decisión de ingreso
+  const UBICACION_URG = { 29: [17, 19], 30: [17, 19], 45: [12, 24], 43: [24], 36: [21] };
   function amfeUrgencias(base) {
     const id = base.id, equipo = EQUIPO_URG.map(([perfil, cargo, rol, justificacion], i) => ({ id: `${id}-m${i + 1}`, perfil, cargo, rol, justificacion, nombre: "" }));
     const todos = equipo.map(x => x.id);
@@ -386,18 +442,23 @@
       metodologia: { tecnicas: ["caso", "lluvia", "tgn"], texto: "" },
       fallos: FALLOS_URG.map(([num, efecto, causa, g, o, d]) => {
         const x = base.puntos[num - 1];
-        return { id: `${id}-f${num}`, num, subprocesoId: x.subprocesoId, puntoId: x.id, fallo: x.titulo.replace(" (ej. 3 en lugar de 2)", ""), efecto, causa, controles: CONTROLES_URG[num] || "",
-          g: String(g), o: String(o), d: String(d), critico: false, motivoCritico: "", manual: "", motivo: "", acciones: [], residual: { g: "", o: "", d: "", fecha: "", nota: "" }, votos: [], ishikawa: [] };
+        const acciones = ACCIONES_URG.filter(a => a[0] === num).map(([, que, porque, donde, plazo, fin, quien, como, tipo, clase, actuaSobre, nombre, estandar, fuente, estado], i) => ({ id: `${id}-a${num}-${i + 1}`, que, porque, donde, plazo, fin, quien, como, tipo, clase, actuaSobre, indicador: { nombre, formula: "", estandar, fuente }, comprobacion: { especifica: true, factible: true, medible: true, sostenible: estado === "verificada", aceptable: true }, estado, nota: "" }));
+        const r = RESIDUAL_URG[num];
+        return { id: `${id}-f${num}`, num, subprocesoId: x.subprocesoId, puntoId: x.id, pasos: (UBICACION_URG[num] || []).map(n => `${id}-p${n}`), fallo: x.titulo.replace(" (ej. 3 en lugar de 2)", ""), efecto, causa, controles: CONTROLES_URG[num] || "",
+          g: String(g), o: String(o), d: String(d), critico: false, motivoCritico: "", manual: "", motivo: "", acciones,
+          residual: r ? { g: String(r[0]), o: String(r[1]), d: String(r[2]), fecha: "", nota: "Esperado cuando la acción esté implantada" } : { g: "", o: "", d: "", fecha: "", nota: "" }, votos: [], ishikawa: [] };
       }),
-      prioridad: { modo: "top", n: "15", umbral: "200" }
+      prioridad: { modo: "top", n: "15", umbral: "200" },
+      criteriosAcciones: { viabilidad: true, impacto: true, cultura: true, medible: true },
+      vistaMapa: { mostrar: "prioritarios", calor: false, titulo: "Mapa de riesgo del Servicio de Urgencias", leyenda: "num" }
     };
   }
   Object.assign(URGENCIAS, amfeUrgencias(URGENCIAS));
-  URGENCIAS.notas += " El AMFE (pasos 5 a 7) es el del curso: equipo del ejercicio 9, tres sesiones y los 49 fallos con la puntuación del ejercicio 11; los controles actuales de los 15 primeros se han añadido para el ejemplo.";
+  URGENCIAS.notas += " El AMFE (pasos 5 a 7) es el del curso: equipo del ejercicio 9, tres sesiones y los 49 fallos con la puntuación del ejercicio 11; los controles actuales de los 15 primeros se han añadido para el ejemplo. Las acciones son las 15 de la tabla 6.2 del documento (el texto dice «los cinco fallos con mayor IPR», pero la tabla trae los 15); su indicador, su estándar, su estado y la puntuación tras las acciones se han añadido para el ejemplo. En el mapa, los fallos van en el paso de su punto crítico y, como en la página 15, el 29 y el 30 en los dos traslados y el 45 en la consulta y en la decisión de ingreso.";
 
   const EJEMPLOS = {
     mapas: [URGENCIAS],
-    urgencias: { t: "Atención integral en el Servicio de Urgencias", s: "El ejemplo completo del curso: 7 subprocesos, el flujograma general con sus 33 pasos y el marco de procesos, los 49 puntos críticos y el AMFE con su equipo, sus sesiones y los 49 fallos puntuados y priorizados. Con cada versión de la app se irá completando hasta el documento final.", href: "#/mapa/ej-mapa-urgencias/1" }
+    urgencias: { t: "Atención integral en el Servicio de Urgencias", s: "El ejemplo completo del curso: 7 subprocesos, el flujograma general con sus 33 pasos y el marco de procesos, los 49 puntos críticos, el AMFE con su equipo, sus sesiones y los 49 fallos priorizados, las 15 acciones de mejora y el mapa de riesgos de la página 15. Con cada versión de la app se irá completando hasta el documento final.", href: "#/mapa/ej-mapa-urgencias/1" }
   };
 
   const API = { TEMAS, TEMAS_PROX, GLOSARIO, EJEMPLOS };

@@ -32,8 +32,16 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.02";
+  const APP_VERSION = "2026.03";
   const NOVEDADES = [
+    { version: "2026.03", fecha: "Octubre 2026", titulo: "Las acciones de mejora y el mapa", cambios: [
+      "Paso 8, Acciones de mejora: para cada fallo prioritario, qué, por qué, dónde, cuándo, quién y cómo (5W1H), con su tipo, la fuerza de la medida, el indicador y su estándar («Traer de Indicadores»), el estado y los criterios con los que se eligieron.",
+      "Paso 9, El mapa: el flujograma con los fallos prioritarios encima, en el paso de su punto crítico, y el aviso del color de su IPR (rojo, naranja, amarillo o verde) y con borde negro si es crítico o muy grave. Dentro del marco de procesos estratégicos, clave y de soporte, con su título en la barra negra, como el documento del curso.",
+      "Se puede poner un fallo en más de un paso, ver todos los fallos o solo los prioritarios, y el «calor por subproceso». Sin flujograma, el mapa se dibuja por subprocesos.",
+      "Leyenda con el número, el fallo y su IPR; lámina apaisada de una página para colgar o proyectar; imagen PNG o SVG y archivo de draw.io.",
+      "Textos propuestos para los objetivos, la estructura y la interpretación del mapa.",
+      "El ejemplo de Urgencias trae las 15 acciones de la tabla del documento final y el mapa de su página 15.",
+      "Aprende: temas 7 (acciones de mejora) y 8 (el mapa de riesgos)."] },
     { version: "2026.02", fecha: "Octubre 2026", titulo: "El análisis AMFE, dentro del mapa", cambios: [
       "Paso 5, Equipo y sesiones: los perfiles del equipo con su papel, las sesiones de trabajo con sus asistentes y la metodología empleada.",
       "Paso 6, Fallos: con un botón, cada punto crítico pasa a ser un modo de fallo de su subproceso. Después se escriben su efecto, su causa y los controles actuales. También se puede pegar una tabla de Excel.",
@@ -51,7 +59,7 @@
       "«Traer de Flujograma»: si ya dibujaste el proceso en la app Flujograma, se trae con un botón.",
       "Ejemplo completo de Urgencias (7 subprocesos, 33 pasos y 49 puntos críticos), Aprende (4 temas), glosario, vista para imprimir y copia de seguridad."] }
   ];
-  const ENTREGA = 2;   // entrega construida: pasos con entrega ≤ ENTREGA (ver L.PASOS)
+  const ENTREGA = 3;   // entrega construida: pasos con entrega ≤ ENTREGA (ver L.PASOS)
 
   // ---------- Utilidades ----------
   const hoy = () => new Date().toISOString();
@@ -107,7 +115,7 @@
   const practica = html => box("practica", "En la práctica", `<p>${html}</p>`);
   const KEY_FACIL = "mapariesgos-facil-abierto";
   const facil = (html, titulo = "Explicado fácil") => `<details class="facil" data-recordar="1"${leer(KEY_FACIL) === "1" ? " open" : ""}><summary>${titulo}</summary><div class="facil-body">${html}</div></details>`;
-  const conLienzo = () => (pasoActual === 3 && vista3 === "dibujo") || pasoActual === 4;
+  const conLienzo = () => (pasoActual === 3 && vista3 === "dibujo") || pasoActual === 4 || pasoActual === 9;
   const avisoHtml = a => {
     const ver = a.paso && conLienzo() ? ` <button type="button" class="link-btn" data-act="ver-paso" data-id="${a.paso}">Ver</button>` : "";
     return a.nivel === "nota" ? `<div class="note">ℹ ${esc(a.texto)}${ver}</div>` : a.nivel === "error" ? `<div class="aviso-error">✕ ${esc(a.texto)}${ver}</div>` : `<div class="warn">⚠ ${esc(a.texto)}${ver}</div>`;
@@ -244,13 +252,13 @@
   let pegarAbierto = false, selPaso = "";
   const KEY_VISTA3 = "mapariesgos-vista3";
   let vista3 = leer(KEY_VISTA3) === "dibujo" ? "dibujo" : "pasos";
-  const avisosGenerales = (m, n) => L.avisosDe(m, n).filter(x => !x.paso && !x.punto && !x.sub).map(avisoHtml).join("");
+  const avisosGenerales = (m, n) => L.avisosDe(m, n).filter(x => !x.paso && !x.punto && !x.sub && !x.fallo && !x.accion).map(avisoHtml).join("");
   const avisosPaso = (m, id) => LF.avisosPasos(m).filter(x => x.paso === id).map(a => avisoHtml(Object.assign({}, a, { paso: "" }))).join("");
   const avisosSub = (m, id) => L.avisosSubprocesos(m).filter(x => x.sub === id).map(avisoHtml).join("");
 
   function renderMapa(m, n) {
     actual = m; pasoActual = n; nAyuda = 0;
-    if (document.body.classList.contains("ver-informe")) { renderInforme(m); return; }
+    if (document.body.classList.contains("ver-informe")) { if (docActual === "lamina") renderLamina(m); else renderInforme(m); return; }
     const p = L.PASOS[n - 1], disp = pasosDisp(), fa = faseDe(n);
     const prev = disp.filter(x => x.n < n).pop(), next = disp.find(x => x.n > n);
     const cuerpo = !disponible(p) ? pasoProximo(m, p) : RENDER[n](m);
@@ -259,7 +267,7 @@
       <div class="wiz-titulo"><span class="wiz-paso">Paso ${n} de 10 · ${esc(fa.nom)}${lleno(nombreMapa(m)) ? " · " + esc(L.corto(nombreMapa(m), 60)) : ""}</span><h1 class="page-title">${p.titulo}</h1></div>
       ${cuerpo}
       <div class="wiz-nav no-print">${prev ? `<a class="btn" href="#/mapa/${m.id}/${prev.n}">← ${prev.corto}</a>` : `<span></span>`}${next ? `<a class="btn btn--primary" href="#/mapa/${m.id}/${next.n}">${next.corto} →</a>` : `<a class="btn" data-act="informe">Ver para imprimir</a>`}</div>`;
-    if (conLienzo() && m.pasos.length) iniciarLienzo();
+    if (conLienzo() && hayLienzo(m)) iniciarLienzo();
   }
   function pasoProximo(m, p) {
     const amfe = p.n >= 5 && p.n <= 8;
@@ -503,12 +511,14 @@
       ${!m.marco.estrategicos.length && !m.marco.soporte.length ? `<div class="toolbar"><button class="btn btn--sm" data-act="marco-sug">Proponer los habituales</button></div>` : ""}</div>`;
   }
   function svgActual(m) {
+    if (pasoActual === 9) return svgMapa(m, { sel: selPaso, accesible: true });
     const marcar = new Set(pasoActual === 3 ? LF.errores(m).map(a => a.paso).filter(Boolean) : []);
     // En el paso 3 no se pintan los avisos de los puntos críticos (son del paso 4)
     const g = pasoActual === 3 ? Object.assign({}, m, { puntos: [] }) : m;
     return D.svg(LF.dibujar(g), { marcar, sel: selPaso, numeros: m.vista.numeros, titulo: "Flujograma: " + (nombreMapa(m) || "sin nombre"), accesible: true });
   }
   function panelHtml(m) {
+    if (pasoActual === 9) { const b = L.flujoBase(m), q = selPaso && b.pasos.find(x => x.id === selPaso); return q ? panelMapa(m, q) : `<p class="field-sub panel-pista no-print">Toca un paso del mapa para ver sus fallos o poner otro.</p>`; }
     const p = selPaso && LF.pasoDe(m, selPaso);
     if (pasoActual === 4) {
       if (!p) return `<p class="field-sub panel-pista no-print">Toca un paso del dibujo para ver sus puntos críticos o añadir uno.</p>`;
@@ -887,7 +897,192 @@
       <p class="field-sub">Se copia: si después cambias el AMFE en su app, vuelve a traerlo. Nada de lo que ya tienes se borra.</p></div>`;
   }
 
-  const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4, 5: paso5, 6: paso6, 7: paso7 };
+  // ======================= Fase C · Paso 8 · Acciones de mejora (motor de AMFE) =======================
+  let indImportados = null, indPara = null;   // indicadores traídos de la app Indicadores y la acción que los espera
+  const bac = (x, f) => `data-ac="${x.id}" data-f="${f}"`;
+  const buscaAccion = (m, id) => { for (const f of m.fallos) { const x = f.acciones.find(y => y.id === id); if (x) return { f, x }; } return null; };
+  const fzBadge = t => { const f = A.fuerzaMedida(t); return f ? `<span class="fz-b fz-b--${f}" title="${esc(A.FUERZAS[f].que)}">${A.FUERZAS[f].nom}</span>` : ""; };
+  const estadoBadge = x => `<span class="ea-b ea-b--${A.vencida(x, hoyIso()) ? "vencida" : x.estado}">${A.vencida(x, hoyIso()) ? "Vencida" : A.ESTADOS_ACCION[x.estado]}</span>`;
+  const segAc = (x, f, opciones) => `<div class="seg seg--wrap" role="group">${opciones.map(([v, t, tit]) => `<button type="button" class="${x[f] === v ? "active" : ""}" data-acpick="${x.id}" data-f="${f}" data-v="${v}"${tit ? ` title="${esc(tit)}"` : ""}>${t}</button>`).join("")}</div>`;
+  const avisosAccion = (m, id) => L.avisosDe(m, 8).filter(x => x.accion === id).map(avisoHtml).join("");
+  function zonaInd(x) {
+    if (indPara !== x.id || !indImportados) return "";
+    return `<div class="field no-print"><div class="field-head"><label class="field-label">Elige un indicador de la app Indicadores</label></div><div class="input-wrap"><select class="txt-in" data-indsel="${x.id}"><option value="">— ${plural(indImportados.length, "indicador", "indicadores")} —</option>${indImportados.map((y, i) => `<option value="${i}">${esc(L.corto(y.nombre, 90))}</option>`).join("")}</select></div></div>`;
+  }
+  function accCard(m, f, x, i) {
+    return `<div class="acc-card" data-acid="${x.id}">
+      <div class="sub-cab"><span class="eq-n">${i + 1}</span><b>Acción ${i + 1}</b><span data-zfz="${x.id}">${fzBadge(x.que)}</span>${estadoBadge(x)}
+        <span class="sub-acc no-print"><button type="button" class="link-btn link-btn--peligro" data-act="acc-del" data-id="${x.id}">Quitar</button></span></div>
+      ${campo(x, "que", "Qué: la acción", { bind: bac(x, "que"), area: true, ph: "p. ej. Checklist digital obligatorio antes de cerrar el triaje", help: "Concreta y verificable. Las acciones que cambian el sistema (obligar, automatizar, eliminar el paso que falla) son más fuertes que formar o recordar." })}
+      ${campo(x, "porque", "Por qué: lo que se quiere conseguir", { bind: bac(x, "porque"), area: true, ph: "p. ej. Para garantizar una valoración inicial completa", extra: `<div class="quick no-print"><button type="button" class="chip chip--accent" data-act="acc-porque" data-id="${x.id}">✎ Proponer a partir del efecto</button></div>` })}
+      <div class="dos-col">
+        ${campo(x, "donde", "Dónde", { bind: bac(x, "donde"), ph: "p. ej. Puesto de triaje" })}
+        ${campo(x, "quien", "Quién: responsable", { bind: bac(x, "quien"), ph: "p. ej. Supervisión de Enfermería", help: "Un cargo o una persona concreta, no «todos» ni «el servicio»." })}
+      </div>
+      <div class="dos-col">
+        ${campo(x, "plazo", "Cuándo: plazo", { bind: bac(x, "plazo"), ph: "p. ej. 1 mes" })}
+        ${campo(x, "fin", "Fecha de fin", { bind: bac(x, "fin"), tipo: "date", opt: true })}
+      </div>
+      ${campo(x, "como", "Cómo: pasos para hacerla", { bind: bac(x, "como"), area: true, ph: "p. ej. Configuración en el módulo de triaje, sesiones formativas y supervisión semanal" })}
+      <div class="field"><div class="field-head"><label class="field-label">Tipo de acción</label></div>${segAc(x, "tipo", Object.keys(A.TIPOS_ACCION).map(k => [k, A.TIPOS_ACCION[k].nom, A.TIPOS_ACCION[k].que]))}</div>
+      <div class="field"><div class="field-head"><label class="field-label">Qué cambia</label></div>${segAc(x, "clase", Object.keys(A.CLASES_ACCION).map(k => [k, A.CLASES_ACCION[k].nom]))}</div>
+      <div class="field"><div class="field-head"><label class="field-label">Sobre qué actúa</label></div><div class="quick">${Object.keys(A.ACTUA).map(k => `<button type="button" class="chip${x.actuaSobre.includes(k) ? " active" : ""}" data-acmulti="${x.id}" data-v="${k}">${A.ACTUA[k]}</button>`).join("")}</div></div>
+      <div class="acc-ind">
+        <div class="sub-cab"><b>Indicador de seguimiento</b><span class="sub-acc no-print"><button type="button" class="link-btn" data-act="ind-traer" data-id="${x.id}">Traer de Indicadores</button></span></div>
+        <div data-zind="${x.id}">${zonaInd(x)}</div>
+        ${campo(x, "indicador.nombre", "Indicador", { bind: bac(x, "indicador.nombre"), ph: "p. ej. % de triajes con las cuatro constantes registradas" })}
+        ${campo(x, "indicador.formula", "Fórmula", { bind: bac(x, "indicador.formula"), opt: true, ph: "p. ej. Triajes con TA, FC, SatO₂ y Tª / triajes realizados × 100" })}
+        <div class="dos-col">
+          ${campo(x, "indicador.estandar", "Estándar", { bind: bac(x, "indicador.estandar"), ph: "p. ej. ≥ 95 %" })}
+          ${campo(x, "indicador.fuente", "Fuente de datos", { bind: bac(x, "indicador.fuente"), opt: true, ph: "p. ej. Módulo de triaje" })}
+        </div>
+      </div>
+      <div class="field"><div class="field-head"><label class="field-label">¿Cumple los criterios de una buena acción?</label></div><div class="quick">${Object.keys(A.COMPROBACION).map(k => `<button type="button" class="chip${x.comprobacion[k] ? " active" : ""}" data-acchk="${x.id}" data-v="${k}" title="${esc(A.COMPROBACION[k].que)}">${x.comprobacion[k] ? "✓ " : ""}${A.COMPROBACION[k].nom}</button>`).join("")}</div></div>
+      <div class="field"><div class="field-head"><label class="field-label">Estado</label></div>${segAc(x, "estado", Object.keys(A.ESTADOS_ACCION).map(k => [k, A.ESTADOS_ACCION[k]]))}</div>
+      ${campo(x, "nota", "Nota de seguimiento", { bind: bac(x, "nota"), area: true, opt: true, ph: "p. ej. Piloto terminado en noviembre" })}
+      <div data-zac="${x.id}">${avisosAccion(m, x.id)}</div>
+    </div>`;
+  }
+  function resumen8(m) {
+    const r = A.resumenMejora(m, hoyIso());
+    if (!r.prioritarios) return "";
+    return `<span class="badge">${r.conAccion} de ${r.prioritarios} prioritarios con acción</span><span class="badge">${plural(r.acciones, "acción", "acciones")}</span>${Object.keys(A.ESTADOS_ACCION).filter(k => r.porEstado[k]).map(k => `<span class="ea-b ea-b--${k}">${A.cuentaEstado(k, r.porEstado[k])}</span>`).join("")}${r.vencidas ? `<span class="ea-b ea-b--vencida">${r.vencidas} ${r.vencidas === 1 ? "vencida" : "vencidas"}</span>` : ""}`;
+  }
+  function paso8(m) {
+    if (!A) return sinMotorAmfe();
+    const PR = A.prioritarios(m), P = A.puestos(m.fallos), C = m.criteriosAcciones;
+    return `
+      ${idea("Cada fallo prioritario necesita al menos una acción que <b>ataque su causa</b>, con un responsable, un plazo y un indicador para comprobar que funciona. Es el apartado 6 del documento final.")}
+      ${facil(`<p>Cada acción se describe con el modelo <b>5W1H</b>: <b>qué</b> se hace, <b>por qué</b>, <b>dónde</b>, <b>cuándo</b>, <b>quién</b> es responsable y <b>cómo</b> se hará.</p>
+        <ul><li><b>Corrección</b>: arregla el fallo cuando ocurre. <b>Acción correctora</b>: elimina la causa. <b>Acción preventiva</b>: elimina un riesgo antes de que ocurra.</li>
+        <li>Una buena acción es <b>específica</b> (ataca la causa), <b>factible</b>, <b>medible</b>, <b>sostenible</b> y <b>aceptable</b> para el equipo.</li>
+        <li>El <b>indicador</b> y su <b>estándar</b> servirán para la auditoría de seguimiento. Si ya lo diseñaste en la app <a href="${L.URL_IND}" target="_blank" rel="noopener">Indicadores</a>, tráelo con un botón.</li></ul>
+        ${trampa("Formar, recordar o poner carteles son <b>medidas débiles</b>: dependen de la memoria y la buena voluntad. Combínalas con alguna que cambie el sistema (campo obligatorio, alerta automática, eliminar el paso que falla).")}`)}
+      <div class="card"><h2 class="sub-h">Criterios para seleccionar las acciones</h2><p class="field-sub">Con qué criterios las ha elegido el equipo (apartado 6.1 del documento final).</p>
+        <div class="quick">${Object.keys(L.CRITERIOS_ACCIONES).map(k => `<button type="button" class="chip${C[k] ? " active" : ""}" data-act="crit" data-v="${k}">${C[k] ? "✓ " : ""}${esc(L.CRITERIOS_ACCIONES[k])}</button>`).join("")}</div></div>
+      <div class="res-linea" data-zona="resumen8">${resumen8(m)}</div>
+      <div data-zona="avisos">${avisosGenerales(m, 8)}</div>
+      ${PR.length ? PR.map(f => { const s = subDeF(m, f); return `<section class="acc-f sub-c${s ? s.color : "x"}" data-af="${f.id}">
+        <div class="acc-f-cab"><span class="rg-puesto">${P[f.id] ? "#" + P[f.id] : "–"}</span><span class="pf-txt"><b>Nº ${f.num} · ${esc(f.fallo)}</b><span>${subPunto(s)}${esc(s ? s.nombre : "Sin subproceso")}</span></span>${iprBadge(A.iprDe(f))}</div>
+        <dl class="acc-f-dl">${lleno(f.efecto) ? `<div><dt>Efecto</dt><dd>${esc(f.efecto)}</dd></div>` : ""}${lleno(f.causa) ? `<div><dt>Causa</dt><dd>${esc(f.causa)}</dd></div>` : ""}${lleno(f.controles) ? `<div><dt>Controles actuales</dt><dd>${esc(f.controles)}</dd></div>` : ""}</dl>
+        <div data-zav="${f.id}">${avisosFallo(m, 8, f.id)}</div>
+        ${f.acciones.map((x, i) => accCard(m, f, x, i)).join("")}
+        <button class="btn btn--sm no-print" data-act="acc-add" data-id="${f.id}">+ ${f.acciones.length ? "Otra acción" : "Añadir una acción"}</button>
+      </section>`; }).join("") : `<div class="placeholder-box"><p>No hay fallos prioritarios. <a href="#/mapa/${m.id}/7">Elígelos en el paso 7</a>.</p></div>`}`;
+  }
+
+  // ======================= Fase D · Paso 9 · El mapa =======================
+  const hayMapa = m => !!A && A.prioritarios(m).length > 0 && (m.pasos.length > 0 || m.subprocesos.some(s => lleno(s.nombre)));
+  const hayLienzo = m => pasoActual === 9 ? hayMapa(m) : m.pasos.length > 0;
+  const svgMapa = (m, opc = {}, vista) => D.svg(L.dibujoMapa(m, vista ? { vista } : {}), Object.assign({ numeros: false, cabecera: L.tituloMapa(m), titulo: L.tituloMapa(m) }, opc));
+  const NIVEL_NOM = { muyalto: "Muy alto (IPR ≥ 300)", alto: "Alto (200–299)", medio: "Medio (100–199)", bajo: "Bajo (< 100)" };
+  const nivelChip = k => `<span class="niv-c" style="background:${L.COLOR_NIVEL[k]}"></span>`;
+  function leyendaHtml(m, compacta) {
+    const l = L.leyendaMapa(m);
+    if (!l.length) return "";
+    return `<div class="table-wrap"><table class="mini tabla-riesgos leyenda-mapa${compacta ? " leyenda-mapa--compacta" : ""}"><thead><tr><th>Nº</th><th>Fallo</th>${compacta ? "" : "<th>Subproceso</th>"}<th>IPR</th>${compacta ? "" : `<th>${m.pasos.length ? "Paso" : "Dónde"}</th>`}</tr></thead><tbody>
+      ${l.map(x => `<tr><td><span class="ley-num ley-num--${x.nivel}${x.critico ? " ley-num--crit" : ""}">${x.num}</span></td><td>${esc(x.fallo)}${x.critico ? ' <span class="badge badge--grave">Crítico / grave</span>' : ""}</td>${compacta ? "" : `<td>${esc(x.subproceso)}</td>`}<td>${compacta ? `<b>${x.ipr}</b>` : iprBadge(x.ipr)}</td>${compacta ? "" : `<td>${x.pasos.length ? esc(x.pasos.join(", ")) : '<span class="falta">Sin colocar</span>'}</td>`}</tr>`).join("")}
+    </tbody></table></div>`;
+  }
+  function panelMapa(m, p) {
+    const b = L.flujoBase(m), F = L.enMapa(m), aqui = F.filter(f => (b.sinFlujo ? [] : L.ubicacion(m, f)).includes(p.id)), otros = F.filter(f => !aqui.includes(f));
+    if (b.sinFlujo) return `<div class="panel-paso no-print"><div class="panel-cab"><b>${esc(p.texto)}</b><button type="button" class="link-btn" data-act="panel-cerrar">Cerrar ✕</button></div><p class="field-sub">Sin flujograma, cada fallo va en la caja de su subproceso. Dibuja el flujograma (paso 3) para colocarlos en el paso exacto.</p></div>`;
+    return `<div class="panel-paso no-print"><div class="panel-cab"><b>Paso nº ${p.num} · ${esc(L.corto(p.texto || "sin texto", 50))}</b><button type="button" class="link-btn" data-act="panel-cerrar">Cerrar ✕</button></div>
+      ${aqui.length ? `<ul class="ub-lista">${aqui.map(f => { const n = L.ubicacion(m, f).length; return `<li>${nivelChip(L.leyendaMapa(m).find(x => x.id === f.id).nivel)}<b>${f.num}</b> ${esc(L.corto(f.fallo, 70))} ${n > 1 ? `<button type="button" class="link-btn link-btn--peligro" data-act="ub-quitar" data-id="${f.id}" data-paso="${p.id}">Quitar de aquí</button>` : `<span class="field-sub">(solo está aquí: para moverlo, añádelo en otro paso y quítalo de este)</span>`}</li>`; }).join("")}</ul>` : `<p class="field-sub">Ningún fallo del mapa está en este paso.</p>`}
+      ${otros.length ? selector("Poner aquí también el fallo…", `data-ubadd="${p.id}"`, "", [["", "— Elige un fallo —"], ...otros.map(f => [f.id, `${f.num}. ${L.corto(f.fallo, 60)}`])], { help: "Un fallo puede estar en más de un paso, como en el mapa del curso (el traslado de ida y el de vuelta)." }) : ""}</div>`;
+  }
+  function sinUbicarHtml(m) {
+    const S = L.sinUbicar(m); if (!S.length) return "";
+    return `<div class="card destacado"><h2 class="sub-h">Fallos sin colocar</h2><p class="field-sub">No salen del paso de ningún punto crítico. Elige dónde ocurre cada uno.</p>
+      ${S.map(f => selector(`${f.num}. ${esc(L.corto(f.fallo, 70))}`, `data-ubsel="${f.id}"`, "", [["", "— Elige el paso —"], ...m.pasos.filter(p => !f.subprocesoId || p.subprocesoId === f.subprocesoId || !p.subprocesoId).map(p => [p.id, `${p.num}. ${L.corto(p.texto || "sin texto", 50)}`])])).join("")}</div>`;
+  }
+  function textoMapaHtml(m, k, t) {
+    return campo(m, "textosMapa." + k, t, { area: true, rows: 3, opt: true, extra: `<div class="quick no-print"><button type="button" class="chip chip--accent" data-act="tm-sug" data-v="${k}">✎ Proponer</button></div>` });
+  }
+  function paso9(m) {
+    if (!A) return sinMotorAmfe();
+    if (!hayMapa(m)) return `<div class="placeholder-box"><p><b>Aún no hay nada que poner en el mapa.</b></p><p>Hacen falta los subprocesos (paso 2) —mejor con el flujograma (paso 3)— y los fallos prioritarios (paso 7).</p><div class="toolbar" style="justify-content:center"><a class="btn btn--primary" href="#/mapa/${m.id}/7">Ir a priorizar →</a></div></div>`;
+    const V = m.vistaMapa, d = L.dibujoMapa(m), niveles = [...new Set(d.iconos.map(i => i.nivel).filter(Boolean))];
+    return `
+      ${idea("El <b>mapa de riesgos</b> es el flujograma del proceso con los fallos prioritarios encima, en el paso donde ocurren, <b>coloreados por su IPR</b>. Es el apartado 7 del documento final y la lámina que se cuelga o se proyecta.")}
+      ${facil(`<p>Cada fallo va, por defecto, en el paso del <b>punto crítico</b> del que salió. Toca un paso del dibujo para ver sus fallos, añadir otro o quitarlo. Un mismo fallo puede ir en varios pasos (por ejemplo, en el traslado de ida y en el de vuelta).</p>
+        <p>El color de cada aviso es el del fallo con más IPR que agrupa: ${Object.keys(NIVEL_NOM).map(k => `${nivelChip(k)} ${NIVEL_NOM[k].toLowerCase()}`).join(" · ")}. Los fallos <b>críticos</b> o de <b>gravedad 9–10</b> llevan un borde negro.</p>
+        ${practica("Usad el mapa en la acogida de los nuevos profesionales, en las sesiones de seguridad y ante la comisión de calidad. La lámina cabe en una página apaisada.")}`)}
+      <div class="card"><div class="dos-col">${campo(m, "vistaMapa.titulo", "Título del mapa", { ph: L.tituloMapa(Object.assign({}, m, { vistaMapa: Object.assign({}, V, { titulo: "" }) })), help: "Sale en la barra negra de arriba, como en el documento del curso." })}<div></div></div></div>
+      <div class="lienzo-barra no-print">
+        <div class="seg seg--sm" role="group">${[["prioritarios", "Prioritarios"], ["todos", "Todos los fallos"]].map(([v, tx]) => `<button type="button" class="${V.mostrar === v ? "active" : ""}" data-act="vm-mostrar" data-v="${v}">${tx}</button>`).join("")}</div>
+        <div class="lienzo-ops">
+          ${m.subprocesos.length ? `<button type="button" class="chip${V.calor ? " active" : ""}" data-act="vm-calor" title="Las bandas de cada subproceso, del color de su IPR más alto">Calor por subproceso</button>` : ""}
+          <button type="button" class="chip${m.vista.marco ? " active" : ""}" data-act="v-marco">Marco de procesos</button>
+          <button type="button" class="chip${m.vista.letra === "grande" ? " active" : ""}" data-act="v-letra">Letra grande</button>
+        </div>
+        <div class="zoom-btns"><button type="button" class="icon-mini" data-act="z-menos" aria-label="Reducir">−</button><button type="button" class="btn btn--sm" data-act="z-ajustar">Ajustar</button><button type="button" class="icon-mini" data-act="z-mas" aria-label="Ampliar">+</button></div>
+      </div>
+      <div class="lienzo" id="lienzo" tabindex="0" aria-label="Mapa de riesgos. Usa los botones para ampliar o reducir."><div class="lienzo-in" data-zona="lienzo">${svgActual(m)}</div></div>
+      <p class="field-sub leyenda-niv">${niveles.map(k => `${nivelChip(k)}${NIVEL_NOM[k]}`).join(" ")}</p>
+      <div data-zona="panel">${panelHtml(m)}</div>
+      ${sinUbicarHtml(m)}
+      <div data-zona="avisos">${avisosGenerales(m, 9)}</div>
+      <h2 class="sec-t">Leyenda</h2>
+      <div class="seg seg--sm no-print" role="group" style="max-width:320px">${[["num", "Por número"], ["ipr", "Por IPR"]].map(([v, tx]) => `<button type="button" class="${V.leyenda === v ? "active" : ""}" data-act="vm-leyenda" data-v="${v}">${tx}</button>`).join("")}</div>
+      <div data-zona="leyenda">${leyendaHtml(m)}</div>
+      <h2 class="sec-t">Descargar el mapa</h2>
+      <div class="export-grid">
+        <div class="card export-card"><h3 class="sub-h">🗺 Lámina</h3><p class="field-sub">Una página apaisada con el mapa y la leyenda, para colgar en la unidad o proyectar. Primero se ve y después se guarda en PDF o se imprime.</p><div class="toolbar"><button class="btn btn--primary" data-act="lamina">Ver la lámina</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">🖼 Imagen</h3><p class="field-sub">El mapa con su título, para pegarlo en un documento o una presentación.</p><div class="toolbar"><button class="btn btn--primary" data-act="mx-png">⬇ PNG</button><button class="btn" data-act="mx-svg">⬇ SVG</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">✎ draw.io</h3><p class="field-sub">El mapa editable en <b>app.diagrams.net</b>, con los avisos coloreados, para retoques finos.</p><div class="toolbar"><button class="btn btn--primary" data-act="mx-drawio">⬇ Archivo .drawio</button></div></div>
+      </div>
+      <h2 class="sec-t">Textos del apartado «Mapa de Riesgos»</h2>
+      <div class="card">${textoMapaHtml(m, "objetivos", "Objetivos del mapa")}${textoMapaHtml(m, "estructura", "Estructura del mapa")}${textoMapaHtml(m, "interpretacion", "Interpretación y utilidad")}</div>`;
+  }
+
+  // ---------- Exportar el mapa: imagen, draw.io y lámina ----------
+  // SVG → PNG a doble resolución, sin pasar del tamaño máximo de un lienzo en el móvil (como Flujograma)
+  function pngDe(s, maxPx = 16e6) {
+    return new Promise((ok, mal) => {
+      const im = new Image(), w = Number(/width="(\d+)/.exec(s)[1]), h = Number(/height="(\d+)/.exec(s)[1]), k = Math.min(2, Math.sqrt(maxPx / (w * h)));
+      im.onload = () => {
+        const cv = document.createElement("canvas"); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+        const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(im, 0, 0, cv.width, cv.height);
+        cv.toBlob(bl => bl ? ok({ blob: bl, w, h }) : mal(new Error("png")), "image/png");
+      };
+      im.onerror = () => mal(new Error("svg"));
+      im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s);
+    });
+  }
+  function compartirOBajar(blob, nombre, msg) {
+    const file = new File([blob], nombre, { type: blob.type });
+    if (esIOS() && navigator.canShare && navigator.canShare({ files: [file] })) navigator.share({ files: [file], title: nombre }).catch(() => {});
+    else { descargar(blob, nombre); toast(msg, 3500); }
+  }
+  function exportarMapa(m, tipo) {
+    if (tipo === "drawio") {
+      try { compartirOBajar(new Blob([D.drawio(L.dibujoMapa(m), { titulo: L.tituloMapa(m), numeros: false, id: m.id })], { type: "application/xml" }), nombreArchivo("drawio", m), "Archivo de draw.io descargado. Ábrelo en app.diagrams.net."); }
+      catch (e) { toast("No se ha podido crear el archivo de draw.io.", 4000); }
+      return;
+    }
+    const s = svgMapa(m);
+    if (tipo === "svg") { compartirOBajar(new Blob([s], { type: "image/svg+xml" }), nombreArchivo("svg", m), "Imagen SVG descargada."); return; }
+    pngDe(s).then(r => compartirOBajar(r.blob, nombreArchivo("png", m), "Imagen PNG descargada.")).catch(() => toast("No se ha podido crear la imagen.", 4000));
+  }
+  // La leyenda de la lámina, en columnas (tablas pequeñas una al lado de otra)
+  const trozos = (l, n) => { const k = Math.ceil(l.length / n) || 1; return Array.from({ length: n }, (_, i) => l.slice(i * k, (i + 1) * k)).filter(x => x.length); };
+  const leyendaFilas = l => `<table class="mini tabla-riesgos leyenda-mapa leyenda-mapa--compacta"><thead><tr><th>Nº</th><th>Fallo</th><th>IPR</th></tr></thead><tbody>${l.map(x => `<tr><td><span class="ley-num ley-num--${x.nivel}${x.critico ? " ley-num--crit" : ""}">${x.num}</span></td><td>${esc(x.fallo)}</td><td><b>${x.ipr}</b></td></tr>`).join("")}</tbody></table>`;
+  // Lámina: una página A4 apaisada con el título, el mapa y la leyenda
+  function renderLamina(m) {
+    let est = $("#estilo-pagina"); if (!est) { est = document.createElement("style"); est.id = "estilo-pagina"; document.head.appendChild(est); }
+    est.textContent = "@page { size: A4 landscape; margin: 8mm; }";
+    view.innerHTML = `
+      <div class="informe-bar informe-only"><button class="btn" data-act="volver">← Volver</button><span class="informe-acc"><button class="btn btn--primary" data-act="imprimir">Guardar / imprimir</button></span></div>
+      ${hayMapa(m) ? `<div class="lamina">
+        <div class="lamina-mapa">${svgMapa(m, {}, { orientacion: "horizontal" })}</div>
+        <div class="lamina-ley"><h2 class="sub-h">Leyenda de riesgos</h2><div class="ley-cols">${trozos(L.leyendaMapa(m), 3).map(l => leyendaFilas(l)).join("")}</div>
+          <p class="field-sub">${Object.keys(NIVEL_NOM).map(k => `${nivelChip(k)}${NIVEL_NOM[k]}`).join("<br>")}</p>
+          <p class="field-sub">${esc([m.proceso, m.unidad, m.fecha, "Edición " + (m.edicion || "00")].filter(lleno).join(" · "))}</p></div>
+      </div>` : `<div class="placeholder-box"><p>Aún no hay mapa: faltan los fallos prioritarios o los subprocesos.</p></div>`}`;
+  }
+
+  const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4, 5: paso5, 6: paso6, 7: paso7, 8: paso8, 9: paso9 };
 
   // Refresca lo que depende de lo escrito sin repintar los campos (no se pierde el foco)
   let tLienzo = null;
@@ -897,7 +1092,7 @@
     const Z = { pasos: () => pasosInner(m, n), avisos: () => avisosGenerales(m, n), avisos3: () => validadorHtml(m), nact: () => String(m.actores.length), validado: () => validadoHtml(m),
       nprop: () => String(L.propuestas(m).length), npc: () => String(m.puntos.length),
       neq: () => String(m.equipo.length), nses: () => String(m.sesiones.length), metodo: () => esc(L.textoMetodologia(m)),
-      resumen7: () => resumen7(m), criterio: () => criterioRes(m), matriz: () => matrizHtml(m), porsub: () => porSubHtml(m), lista7: () => listaPrio(m) };
+      resumen7: () => resumen7(m), resumen8: () => A ? resumen8(m) : "", criterio: () => criterioRes(m), matriz: () => matrizHtml(m), porsub: () => porSubHtml(m), lista7: () => listaPrio(m) };
     // La lista de prioridad solo se repinta si cambia el criterio (si se escribe un motivo dentro, se perdería el foco)
     if (!todo) delete Z.lista7;
     $$("[data-zona]").forEach(el => { const fn = Z[el.dataset.zona]; if (fn) el.innerHTML = fn(); });
@@ -912,8 +1107,11 @@
     }
     $$("[data-zpc]").forEach(el => { el.innerHTML = avisosPunto(m, el.dataset.zpc); });
     $$("[data-zsub]").forEach(el => { el.innerHTML = avisosSub(m, el.dataset.zsub); });
+    $$("[data-zac]").forEach(el => { el.innerHTML = avisosAccion(m, el.dataset.zac); });
+    $$("[data-zfz]").forEach(el => { const r = buscaAccion(m, el.dataset.zfz); if (r) el.innerHTML = fzBadge(r.x.que); });
     $$(".paso-card").forEach(el => { const p = LF.pasoDe(m, el.dataset.pid), t = $(".rg-toggle", el); if (p && t) t.innerHTML = pasoCabInner(m, p); });
-    if (conLienzo() && m.pasos.length) { clearTimeout(tLienzo); tLienzo = setTimeout(() => { const z = $("[data-zona='lienzo']"); if (z) { z.innerHTML = svgActual(m); aplicarZoom(); } }, 150); }
+    if (pasoActual === 9) { const zl = $("[data-zona='leyenda']"); if (zl) zl.innerHTML = leyendaHtml(m); }
+    if (conLienzo() && hayLienzo(m)) { clearTimeout(tLienzo); tLienzo = setTimeout(() => { const z = $("[data-zona='lienzo']"); if (z) { z.innerHTML = svgActual(m); aplicarZoom(); } }, 150); }
   }
   function repintar() {
     const y = window.scrollY, l = $("#lienzo"), sx = l ? l.scrollLeft : 0, sy = l ? l.scrollTop : 0;
@@ -951,7 +1149,7 @@
       <p class="page-lead">Para ver cómo queda antes de hacerlo tú. Está aparte: puedes tocarlo, pero <b>no se guarda ni se mezcla con tus datos</b>. Si te sirve de punto de partida, pulsa «Copiar a mis datos».</p>
       <h2 class="sec-t">Ejemplo completo: atención en Urgencias</h2>
       <div class="ej-grid"><a class="ej-card ej-card--grande" href="${u.href}"><b>${esc(u.t)}</b><span>${esc(u.s)}</span></a></div>
-      <div class="toolbar"><a class="btn" href="#/mapa/ej-mapa-urgencias/2">Subprocesos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/3">Flujograma</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4">Puntos críticos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/6">Fallos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/7">Priorización</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4?informe=1">Ver para imprimir</a></div>
+      <div class="toolbar"><a class="btn" href="#/mapa/ej-mapa-urgencias/2">Subprocesos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/3">Flujograma</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4">Puntos críticos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/6">Fallos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/7">Priorización</a><a class="btn" href="#/mapa/ej-mapa-urgencias/8">Acciones</a><a class="btn btn--primary" href="#/mapa/ej-mapa-urgencias/9">El mapa</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4?informe=1">Ver para imprimir</a></div>
       ${practica("El ejemplo reproduce el caso de Urgencias del curso, sin nombres de centro ni de personas. Lo que se ha adaptado se explica en las notas del paso 1. Los minicasos para practicar llegarán en una próxima versión.")}`;
   }
 
@@ -1011,7 +1209,7 @@
       <div class="informe-bar informe-only"><button class="btn" data-act="volver">← Volver</button><span class="informe-acc"><button class="btn btn--primary" data-act="imprimir">Guardar / imprimir</button></span></div>
       ${informeCab("Mapa de Riesgos · " + titulo, m.unidad)}
       <div class="ficha">
-        <div class="ficha-cab"><span class="wiz-paso">Mapa de Riesgos · borrador (pasos 1 a 7)</span><h2 class="ficha-nombre">${esc(titulo)}</h2></div>
+        <div class="ficha-cab"><span class="wiz-paso">Mapa de Riesgos · borrador (pasos 1 a 9)</span><h2 class="ficha-nombre">${esc(titulo)}</h2></div>
         <table class="ficha-t">${fila("Unidad o servicio", m.unidad)}${fila("Ámbito", m.ambito)}${fila("Empieza", m.inicio)}${fila("Termina", m.fin)}${fila("Qué queda dentro", m.incluye)}${fila("Qué queda fuera", m.excluye)}${fila("Responsable", m.responsable)}${fila("Fecha", m.fecha)}
           <tr><th>Resumen</th><td>${plural(r.subprocesos, "subproceso", "subprocesos")} · ${plural(r.pasos, "paso", "pasos")} en el flujograma · ${plural(r.puntos, "punto crítico", "puntos críticos")}</td></tr></table>
       </div>
@@ -1036,6 +1234,8 @@
       ${F.length ? `<h3 class="sub-h">Resultados del análisis</h3><p>Se identificaron ${plural(F.length, "fallo potencial", "fallos potenciales")} en ${plural(m.subprocesos.length, "subproceso", "subprocesos")}, priorizados según su IPR (gravedad × ocurrencia × detección).</p>` : ""}
       ${Pr.length ? `<h3 class="sub-h">Fallos con mayor criticidad</h3><div class="table-wrap"><table class="mini tabla-riesgos">${cabF}<tbody>${Pr.map(filaF).join("")}</tbody></table></div>
         <h3 class="sub-h">Matriz de riesgos</h3><div class="card chart-card">${matrizHtml(m, tamMatriz, true, false)}</div>` : ""}
+      ${Pr.some(f => f.acciones.length) ? `<div class="doc-salto"></div><h2 class="sec-t">Acciones de mejora</h2><div class="table-wrap"><table class="mini tabla-riesgos"><thead><tr><th>Id</th><th>Subproceso</th><th>Fallo</th><th>Qué</th><th>Por qué</th><th>Dónde</th><th>Cuándo</th><th>Quién</th><th>Cómo</th><th>Indicador · estándar</th></tr></thead><tbody>${Pr.flatMap(f => f.acciones.filter(x => lleno(x.que)).map(x => `<tr><td>${f.num}</td><td>${esc(sub(f))}</td><td>${esc(f.fallo)}</td><td><b>${esc(x.que)}</b></td><td>${esc(x.porque)}</td><td>${esc(x.donde)}</td><td>${esc(x.plazo || fmtFecha(x.fin))}</td><td>${esc(x.quien)}</td><td>${esc(x.como)}</td><td>${esc([x.indicador.nombre, x.indicador.estandar].filter(lleno).join(" · "))}</td></tr>`)).join("")}</tbody></table></div>` : ""}
+      ${hayMapa(m) ? `<div class="doc-salto"></div><h2 class="sec-t">Mapa de riesgos</h2>${["objetivos", "estructura", "interpretacion"].filter(k => lleno(m.textosMapa[k])).map(k => `<p>${esc(m.textosMapa[k])}</p>`).join("")}<div class="informe-graf informe-dib">${svgMapa(m)}</div>${leyendaHtml(m)}` : ""}
       ${F.length ? `<div class="doc-salto"></div><h2 class="sec-t">Anexo II: tabla de fallos</h2><div class="table-wrap"><table class="mini tabla-riesgos">${cabF}<tbody>${A.ordenarFallos(F, "sub", m.subprocesos).map(filaF).join("")}</tbody></table></div>` : ""}`;
   }
   // ---------- PDF en iOS (sin librerías; mismo método que las apps hermanas) ----------
@@ -1177,7 +1377,7 @@
     }
     descargar(blob, file.name); toast("PDF descargado.", 3000);
   }
-  function irInforme() { location.hash = rutaActual() + "?informe=1"; }
+  function irInforme(doc) { location.hash = rutaActual() + "?informe=1" + (doc ? "&doc=" + doc : ""); }
   function imprimir() {
     if (esIOS()) { guardarPDF(); return; }
     if (!document.body.classList.contains("ver-informe")) { irInforme(); setTimeout(() => window.print(), 400); return; }
@@ -1245,10 +1445,11 @@
   const NAV = [["", "Inicio"], ["mapa", "Mis mapas"], ["ejemplos", "Ejemplo"], ["aprende", "Aprende"], ["glosario", "Glosario"]];
   function buildNav() { $("#calc-nav").innerHTML = NAV.map(([r, t]) => `<a href="#/${r}" data-r="${r}">${t}</a>`).join(""); }
   function noEncontrado(que, href, txt) { view.innerHTML = `<div class="error-box">No se encuentra ${que} en este dispositivo.</div><p><a href="${href}">${txt}</a></p>`; }
-  let previo = null;
+  let previo = null, docActual = "";
   function route() {
     const [ruta, qs] = (location.hash.replace(/^#\/?/, "") || "").split("?");
     const partes = ruta.split("/"), q = new URLSearchParams(qs || ""), informe = q.get("informe") === "1";
+    docActual = informe ? (q.get("doc") || "") : "";
     document.body.classList.toggle("ver-informe", informe);
     actual = null;
     const idR = partes[1] || "", ej = ejemplos();
@@ -1256,7 +1457,7 @@
     datos = modoEjemplo ? ej : datosUsuario;
     $("#banner-ejemplo").hidden = !modoEjemplo || informe || partes[0] === "ejemplos";
     let navR = partes[0];
-    const reiniciar = id => { abiertos.clear(); abiertosF.clear(); pegarAbierto = false; pegarFallos = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; amfesLeidos = null; };
+    const reiniciar = id => { indImportados = null; indPara = null; abiertos.clear(); abiertosF.clear(); pegarAbierto = false; pegarFallos = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; amfesLeidos = null; };
     if (partes[0] === "mapa" && partes[1] === "nuevo") {
       const m = L.nuevoMapa(genId(), hoy()); borradores.set(m.id, m); reiniciar(m.id);
       history.replaceState(null, "", `#/mapa/${m.id}/1`); renderMapa(m, 1);
@@ -1317,7 +1518,7 @@
     }
     if (!m) return;
     const k = t.dataset.f, esSel = t.tagName === "SELECT";
-    if (t.dataset.ac) { const a = buscaEn(m.actores, t.dataset.ac); if (!a) return; a[k] = t.value; tocado(m); refrescar(); return; }
+    if (t.dataset.ac && pasoActual !== 8) { const a = buscaEn(m.actores, t.dataset.ac); if (!a) return; a[k] = t.value; tocado(m); refrescar(); return; }
     if (t.dataset.s) { const s = buscaEn(m.subprocesos, t.dataset.s); if (!s) return; s[k] = t.value; tocado(m); refrescar(); return; }
     if (t.dataset.pa) {
       const p = LF.pasoDe(m, t.dataset.pa); if (!p) return;
@@ -1334,6 +1535,15 @@
       if (esSel) repintar(); else refrescar();
       return;
     }
+    if (t.dataset.ac && t.dataset.f && pasoActual === 8) { const r = buscaAccion(m, t.dataset.ac); if (!r) return; setPath(r.x, k, t.value); tocado(m); refrescar(); return; }
+    if (t.dataset.indsel) {
+      const r = buscaAccion(m, t.dataset.indsel), y = indImportados && indImportados[Number(t.value)]; if (!r || !y) return;
+      const hacer = () => { Object.assign(r.x.indicador, y); indPara = null; tocado(m); repintar(); toast("Indicador copiado. Revisa el estándar.", 3000); };
+      if (lleno(r.x.indicador.nombre)) confirmar("<p>Se sustituirá el indicador de esta acción por el elegido.</p>", "Sustituir", hacer, { peligro: false }); else hacer();
+      return;
+    }
+    if (t.dataset.ubadd) { const f = buscaEn(m.fallos, t.value); if (!f) return; f.pasos = [...new Set([...L.ubicacion(m, f), t.dataset.ubadd])]; tocado(m); seleccionar(t.dataset.ubadd); refrescar(); return; }
+    if (t.dataset.ubsel) { const f = buscaEn(m.fallos, t.dataset.ubsel); if (!f || !t.value) return; f.pasos = [t.value]; tocado(m); repintar(); return; }
     if (t.dataset.m) { const x = buscaEn(m.equipo, t.dataset.m); if (!x) return; x[k] = t.value; tocado(m); if (esSel) repintar(); else refrescar(); return; }
     if (t.dataset.x) { const x = buscaEn(m.sesiones, t.dataset.x); if (!x) return; x[k] = t.value; tocado(m); refrescar(); return; }
     if (t.dataset.fa) {
@@ -1390,6 +1600,20 @@
     if ((b = t.closest(".info-btn"))) { const h = $("#help-" + b.dataset.info); if (!h) return; const open = h.hidden; h.hidden = !open; b.setAttribute("aria-expanded", String(open)); return; }
     const m = actual;
     if ((b = t.closest(".fl-nodo")) && m) { seleccionar(b.dataset.paso === selPaso ? "" : b.dataset.paso); return; }
+    if ((b = t.closest("[data-acpick]")) && m) {
+      const r = buscaAccion(m, b.dataset.acpick); if (!r) return;
+      r.x[b.dataset.f] = b.dataset.f === "clase" && r.x.clase === b.dataset.v ? "" : b.dataset.v; tocado(m); repintar(); return;
+    }
+    if ((b = t.closest("[data-acmulti]")) && m) {
+      const r = buscaAccion(m, b.dataset.acmulti); if (!r) return;
+      const l = r.x.actuaSobre, i = l.indexOf(b.dataset.v); if (i < 0) l.push(b.dataset.v); else l.splice(i, 1);
+      b.classList.toggle("active", i < 0); tocado(m); refrescar(); return;
+    }
+    if ((b = t.closest("[data-acchk]")) && m) {
+      const r = buscaAccion(m, b.dataset.acchk); if (!r) return;
+      const k = b.dataset.v; r.x.comprobacion[k] = !r.x.comprobacion[k];
+      b.classList.toggle("active", r.x.comprobacion[k]); b.textContent = (r.x.comprobacion[k] ? "✓ " : "") + A.COMPROBACION[k].nom; tocado(m); return;
+    }
     if ((b = t.closest("[data-asis]")) && m) {
       const x = buscaEn(m.sesiones, b.dataset.asis); if (!x) return;
       const i = x.asistentes.indexOf(b.dataset.v); if (i < 0) x.asistentes.push(b.dataset.v); else x.asistentes.splice(i, 1);
@@ -1649,6 +1873,47 @@
       const s = A.sugerirMotivo(m, f), hacer = () => { f[k] = s; tocado(m); repintar(); };
       if (lleno(f[k])) confirmar("<p>Se sustituirá el motivo que has escrito por el propuesto.</p>", "Sustituir", hacer, { peligro: false }); else hacer();
     }
+    // --- Paso 8 ---
+    else if (act === "crit" && m) { const k = b.dataset.v; m.criteriosAcciones[k] = !m.criteriosAcciones[k]; b.classList.toggle("active", m.criteriosAcciones[k]); b.textContent = (m.criteriosAcciones[k] ? "✓ " : "") + L.CRITERIOS_ACCIONES[k]; tocado(m); }
+    else if (act === "acc-add" && m) {
+      const f = buscaEn(m.fallos, id); if (!f) return;
+      const x = A.nuevaAccion(genId()); f.acciones.push(x); tocado(m); repintar();
+      const el = $(`[data-ac="${x.id}"][data-f="que"]`); if (el) { el.focus(); el.scrollIntoView({ block: "center" }); }
+    }
+    else if (act === "acc-del" && m) {
+      const r = buscaAccion(m, id); if (!r) return;
+      const hacer = () => { r.f.acciones = r.f.acciones.filter(y => y.id !== id); tocado(m); repintar(); };
+      if (lleno(r.x.que) || lleno(r.x.como)) confirmar(`<p>Se quitará la acción «${esc(L.corto(r.x.que || "sin describir", 70))}».</p>`, "Quitar", hacer); else hacer();
+    }
+    else if (act === "acc-porque" && m) {
+      const r = buscaAccion(m, id); if (!r) return;
+      const s = A.sugerirPorque(r.f); if (!s) { toast("El fallo no tiene efecto escrito (paso 6).", 3000); return; }
+      const hacer = () => { r.x.porque = s; tocado(m); repintar(); };
+      if (lleno(r.x.porque)) confirmar("<p>Se sustituirá lo que has escrito por el texto propuesto.</p>", "Sustituir", hacer, { peligro: false }); else hacer();
+    }
+    else if (act === "ind-traer" && m) {
+      let l = null; try { l = A.indicadoresDe(JSON.parse(leer("indicadores-datos") || "null")); } catch (er) { /* */ }
+      indPara = id;
+      if (l && l.length) { indImportados = l; const z = $(`[data-zind="${id}"]`); if (z) z.innerHTML = zonaInd(buscaAccion(m, id).x); }
+      else confirmar("<p>No hay indicadores de la app <b>Indicadores</b> en este navegador.</p><p>Si los tienes en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-ind").click(), { titulo: "Traer de Indicadores", peligro: false });
+    }
+    // --- Paso 9 ---
+    else if (act === "vm-mostrar" && m) { m.vistaMapa.mostrar = b.dataset.v; tocado(m); repintar(); }
+    else if (act === "vm-calor" && m) { m.vistaMapa.calor = !m.vistaMapa.calor; tocado(m); repintar(); }
+    else if (act === "vm-leyenda" && m) { m.vistaMapa.leyenda = b.dataset.v; tocado(m); repintar(); }
+    else if (act === "ub-quitar" && m) {
+      const f = buscaEn(m.fallos, id); if (!f) return;
+      const l = L.ubicacion(m, f).filter(x => x !== b.dataset.paso); if (!l.length) return;
+      f.pasos = l; tocado(m); seleccionar(b.dataset.paso); refrescar();
+    }
+    else if (act === "tm-sug" && m) {
+      const k = b.dataset.v, s = L.sugerirTextoMapa(m, k), hacer = () => { m.textosMapa[k] = s; tocado(m); repintar(); };
+      if (lleno(m.textosMapa[k])) confirmar("<p>Se sustituirá lo que has escrito por el texto propuesto.</p>", "Sustituir", hacer, { peligro: false }); else hacer();
+    }
+    else if (act === "lamina") irInforme("lamina");
+    else if (act === "mx-png" && m) exportarMapa(m, "png");
+    else if (act === "mx-svg" && m) exportarMapa(m, "svg");
+    else if (act === "mx-drawio" && m) exportarMapa(m, "drawio");
     // --- Vista para imprimir ---
     else if (act === "informe") irInforme();
     else if (act === "volver") location.hash = rutaActual();
@@ -1677,6 +1942,17 @@
       let l = null; try { l = L.leerAmfe(JSON.parse(fr.result)); } catch (er) { /* */ }
       if (!l || !l.length) { toast("Ese archivo no es una copia de la app AMFE (o es de una versión que no se reconoce).", 4500); return; }
       amfesLeidos = l; amfeElegido = l[0].id; if (actual) repintar();
+    };
+    fr.readAsText(fl);
+  });
+  // Copia de seguridad de la app Indicadores (para «Traer de Indicadores» desde otro dispositivo)
+  $("#input-ind").addEventListener("change", e => {
+    const fl = e.target.files && e.target.files[0]; e.target.value = ""; if (!fl) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      let l = null; try { l = A.indicadoresDe(JSON.parse(fr.result)); } catch (er) { /* */ }
+      if (!l || !l.length) { toast("Ese archivo no es una copia de la app Indicadores (o no tiene indicadores con nombre).", 4500); return; }
+      indImportados = l; if (actual) repintar(); toast(`Cargados ${plural(l.length, "indicador", "indicadores")}. Elige el que quieras usar.`, 3500);
     };
     fr.readAsText(fl);
   });
