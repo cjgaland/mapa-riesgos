@@ -32,8 +32,10 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.05";
+  const APP_VERSION = "2026.06";
   const NOVEDADES = [
+    { version: "2026.06", fecha: "Octubre 2026", titulo: "Ampliar el mapa al presentarlo", cambios: [
+      "Modo presentación: botones + y − para ampliar el mapa y recorrerlo con el dedo. En el móvil, así se pueden tocar los pasos para ver sus riesgos."] },
     { version: "2026.05", fecha: "Octubre 2026", titulo: "Ponte a prueba, minicasos y modo presentación", cambios: [
       "«Ponte a prueba»: las 30 preguntas del test del curso, en sus seis temas, con la explicación de cada respuesta.",
       "Test inicial y final: las mismas 30 preguntas al empezar y al acabar, con la mejora por tema. Se guarda solo en este dispositivo y sin nombre.",
@@ -1433,7 +1435,7 @@
   }
 
   // ---------- Modo presentación (mejora I): el mapa a pantalla completa; al tocar un paso, sus fallos ----------
-  let presDespues = false, presPaso = "";
+  let presDespues = false, presPaso = "", presZoom = 1;   // presZoom: 1 = el mapa cabe en la pantalla
   const mapaPres = m => presDespues ? Object.assign({}, m, { vistaMapa: Object.assign({}, m.vistaMapa, { despues: true }) }) : m;
   const hayResidual = m => A && A.prioritarios(m).some(f => A.iprResidual(f));
   function renderPresentar(m) {
@@ -1441,11 +1443,18 @@
     const mp = mapaPres(m), vertical = window.innerHeight > window.innerWidth * 1.1;
     view.innerHTML = `<div class="pres">
       <div class="pres-barra"><button class="btn btn--sm" data-act="pres-salir">✕ Salir</button><b class="pres-t">${esc(L.tituloMapa(mp))}</b>
-        <span class="pres-ops">${hayResidual(m) ? `<button class="chip${presDespues ? " active" : ""}" data-act="pres-despues">Después de las acciones</button>` : ""}${document.fullscreenEnabled ? `<button class="chip" data-act="pres-full">⛶ Pantalla completa</button>` : ""}</span></div>
+        <span class="pres-ops"><span class="zoom-btns"><button type="button" class="icon-mini" data-act="pres-zoom" data-v="-1" aria-label="Reducir">−</button><button type="button" class="icon-mini" data-act="pres-zoom" data-v="1" aria-label="Ampliar">+</button></span>${hayResidual(m) ? `<button class="chip${presDespues ? " active" : ""}" data-act="pres-despues">Después de las acciones</button>` : ""}${document.fullscreenEnabled ? `<button class="chip" data-act="pres-full">⛶ Pantalla completa</button>` : ""}</span></div>
       ${hayMapa(m) ? `<div class="pres-mapa" data-zona="pres-mapa">${svgMapa(mp, { sel: presPaso, accesible: true }, { orientacion: vertical ? "vertical" : "horizontal" })}</div>
         <p class="pres-pista">${Object.keys(NIVEL_NOM).map(k => `${nivelChip(k)}${NIVEL_NOM[k]}`).join(" ")} · Toca un paso para ver sus riesgos.</p>
         <div data-zona="pres-panel">${presPanel(m)}</div>` : `<div class="placeholder-box"><p>Aún no hay mapa: faltan los fallos prioritarios o los subprocesos.</p></div>`}
     </div>`;
+    presAplicarZoom();
+  }
+  // Ampliado, el mapa pasa de la pantalla y se recorre con el dedo (en el móvil los pasos son muy pequeños para tocarlos)
+  function presAplicarZoom() {
+    const s = $(".pres-mapa svg"); if (!s) return;
+    s.style.width = presZoom * 100 + "%"; s.style.maxHeight = presZoom > 1 ? "none" : "";
+    $(".pres-mapa").classList.toggle("pres-mapa--zoom", presZoom > 1);
   }
   function presPanel(m) {
     if (!presPaso) return "";
@@ -1459,7 +1468,7 @@
   }
   function presSeleccionar(id) {
     presPaso = id; const m = actual; if (!m) return;
-    const z = $("[data-zona='pres-mapa']"), vertical = window.innerHeight > window.innerWidth * 1.1; if (z) z.innerHTML = svgMapa(mapaPres(m), { sel: presPaso, accesible: true }, { orientacion: vertical ? "vertical" : "horizontal" });
+    const z = $("[data-zona='pres-mapa']"), vertical = window.innerHeight > window.innerWidth * 1.1; if (z) { z.innerHTML = svgMapa(mapaPres(m), { sel: presPaso, accesible: true }, { orientacion: vertical ? "vertical" : "horizontal" }); presAplicarZoom(); }
     const pz = $("[data-zona='pres-panel']"); if (pz) pz.innerHTML = presPanel(m);
   }
 
@@ -1787,7 +1796,7 @@
     datos = modoEjemplo ? ej : datosUsuario;
     $("#banner-ejemplo").hidden = !modoEjemplo || informe || partes[0] === "ejemplos";
     let navR = partes[0];
-    const reiniciar = id => { indImportados = null; indPara = null; abiertos.clear(); abiertosF.clear(); pegarAbierto = false; pegarFallos = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; amfesLeidos = null; dafosLeidos = null; presPaso = ""; presDespues = false; };
+    const reiniciar = id => { indImportados = null; indPara = null; abiertos.clear(); abiertosF.clear(); pegarAbierto = false; pegarFallos = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; amfesLeidos = null; dafosLeidos = null; presPaso = ""; presDespues = false; presZoom = 1; };
     if (partes[0] === "mapa" && partes[1] === "nuevo") {
       const m = L.nuevoMapa(genId(), hoy()); borradores.set(m.id, m); reiniciar(m.id);
       history.replaceState(null, "", `#/mapa/${m.id}/1`); renderMapa(m, 1);
@@ -2318,6 +2327,7 @@
     else if (act === "pres-salir") { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); location.hash = m ? `#/mapa/${m.id}/9` : "#/mapa"; }
     else if (act === "pres-despues" && m) { presDespues = !presDespues; renderPresentar(m); }
     else if (act === "pres-cerrar") presSeleccionar("");
+    else if (act === "pres-zoom") { presZoom = Math.max(1, Math.min(4, presZoom + (b.dataset.v === "1" ? 0.75 : -0.75))); presAplicarZoom(); }
     else if (act === "pres-full") { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (r && r.catch) r.catch(() => {}); }
     else if (act === "imprimir") imprimir();
     // --- Generales ---
