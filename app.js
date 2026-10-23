@@ -32,8 +32,16 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.01";
+  const APP_VERSION = "2026.02";
   const NOVEDADES = [
+    { version: "2026.02", fecha: "Octubre 2026", titulo: "El análisis AMFE, dentro del mapa", cambios: [
+      "Paso 5, Equipo y sesiones: los perfiles del equipo con su papel, las sesiones de trabajo con sus asistentes y la metodología empleada.",
+      "Paso 6, Fallos: con un botón, cada punto crítico pasa a ser un modo de fallo de su subproceso. Después se escriben su efecto, su causa y los controles actuales. También se puede pegar una tabla de Excel.",
+      "Paso 7, Puntuar y priorizar: gravedad, ocurrencia y detección con la escala a la vista, IPR, los fallos prioritarios (los N de mayor IPR o un umbral, la gravedad 9–10, el fallo crítico y los cambios a mano con su motivo), la matriz de riesgos 10 × 10 o 5 × 5 y los riesgos por subproceso. Usa el motor de la app AMFE.",
+      "«Traer de AMFE» en el paso 1: si ya hiciste el AMFE en su app, se trae con sus fallos, su puntuación, su prioridad y sus acciones.",
+      "El ejemplo de Urgencias trae ya el equipo, las tres sesiones y los 49 fallos puntuados: salen los mismos 15 prioritarios que en el curso.",
+      "Aprende: temas 5 (el AMFE) y 6 (priorizar). Glosario ampliado.",
+      "Por dentro: la app deja preparados sus datos para que Auditorías pueda traer los riesgos clave del mapa."] },
     { version: "2026.01", fecha: "Octubre 2026", titulo: "Primera versión: conocer el proceso", cambios: [
       "Asistente en 10 pasos agrupados en cuatro fases, con «Tu siguiente paso» en la portada. En esta versión están disponibles los pasos 1 a 4 (conocer el proceso).",
       "El proceso: qué se analiza, para qué, dónde empieza y dónde acaba, con objetivo propuesto.",
@@ -43,7 +51,7 @@
       "«Traer de Flujograma»: si ya dibujaste el proceso en la app Flujograma, se trae con un botón.",
       "Ejemplo completo de Urgencias (7 subprocesos, 33 pasos y 49 puntos críticos), Aprende (4 temas), glosario, vista para imprimir y copia de seguridad."] }
   ];
-  const ENTREGA = 1;   // entrega construida: pasos con entrega ≤ ENTREGA (ver L.PASOS)
+  const ENTREGA = 2;   // entrega construida: pasos con entrega ≤ ENTREGA (ver L.PASOS)
 
   // ---------- Utilidades ----------
   const hoy = () => new Date().toISOString();
@@ -57,7 +65,7 @@
   const escribir = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
 
   // ---------- Datos (solo en este dispositivo) ----------
-  const KEY_DATOS = "mapariesgos-datos";
+  const KEY_DATOS = "mapariesgos-datos", KEY_INTERCAMBIO = "mapariesgos-intercambio";
   let datos = { mapas: [], ultimaCopia: null };
   (function cargar() {
     const crudo = leer(KEY_DATOS); if (!crudo) return;
@@ -80,6 +88,8 @@
     clearTimeout(tGuardar);
     const fn = () => {
       const ok = escribir(KEY_DATOS, JSON.stringify({ app: "mapariesgos", v: L.VERSION_DATOS, ultimaCopia: datosUsuario.ultimaCopia, mapas: datosUsuario.mapas }));
+      // Paquete con forma fija para que otras apps del mismo dominio lo lean (p. ej. Auditorías); nunca leen mapariesgos-datos
+      try { escribir(KEY_INTERCAMBIO, JSON.stringify(L.paqueteIntercambio(datosUsuario.mapas, APP_VERSION, hoy()))); } catch (e) { /* */ }
       if (!ok && !avisoSinEspacio) { avisoSinEspacio = true; toast("No se ha podido guardar en este navegador (¿modo privado o sin espacio?). Haz una copia de seguridad.", 6000); }
     };
     if (inmediato) fn(); else tGuardar = setTimeout(fn, 250);
@@ -88,7 +98,7 @@
   const buscaMapa = id => datos.mapas.find(x => x.id === id);
   // Un mapa recién creado no se guarda hasta que se escribe algo
   const borradores = new Map();
-  const esVacio = m => !m.pasos.length && !m.actores.length && !m.subprocesos.length && !m.puntos.length && !["titulo", "proceso", "unidad", "objetivo", "descripcion", "inicio", "fin", "responsable"].some(k => lleno(m[k]));
+  const esVacio = m => !m.pasos.length && !m.actores.length && !m.subprocesos.length && !m.puntos.length && !m.fallos.length && !m.equipo.length && !["titulo", "proceso", "unidad", "objetivo", "descripcion", "inicio", "fin", "responsable"].some(k => lleno(m[k]));
 
   // ---------- Textos de ayuda reutilizables ----------
   const box = (tipo, tag, html) => `<div class="box box--${tipo}"><span class="box-tag">${tag}</span>${html}</div>`;
@@ -181,6 +191,7 @@
           <a href="#/mapa"><b>${n}</b><span>${n === 1 ? "mapa" : "mapas"}</span></a>
           <a href="#/mapa"><b>${d.mapas.reduce((s, m) => s + m.subprocesos.length, 0)}</b><span>subprocesos</span></a>
           <a href="#/mapa"><b>${np}</b><span>${np === 1 ? "punto crítico" : "puntos críticos"}</span></a>
+          <a href="#/mapa"><b>${d.mapas.reduce((s, m) => s + m.fallos.length, 0)}</b><span>fallos</span></a>
         </div>
         ${avisoCopia}
         <p class="field-sub">Se guardan <b>solo en este dispositivo</b>. Para trabajar en equipo, pasa tu copia a los demás: al importarla se junta con lo suyo sin duplicar.${d.ultimaCopia ? ` Última copia: ${fechaCorta(d.ultimaCopia)}.` : ""}</p>
@@ -221,7 +232,7 @@
       <a class="item-main" href="#/mapa/${m.id}">
         <b class="item-t">${lleno(nombreMapa(m)) ? esc(nombreMapa(m)) : '<span class="vacio">Mapa sin nombre</span>'}</b>
         <span class="item-s">${esc([m.unidad, m.titulo && m.proceso !== m.titulo ? m.proceso : ""].filter(lleno).join(" · ")) || "&nbsp;"}</span>
-        <span class="badges">${r.subprocesos ? `<span class="badge">${plural(r.subprocesos, "subproceso", "subprocesos")}</span>` : ""}${r.pasos ? `<span class="badge">${plural(r.pasos, "paso", "pasos")}</span>` : ""}${r.puntos ? `<span class="badge">${plural(r.puntos, "punto crítico", "puntos críticos")}</span>` : ""}${r.errores ? `<span class="badge badge--grave">${plural(r.errores, "error", "errores")} en el flujograma</span>` : ""}${lleno(m.validado) ? `<span class="badge badge--ok">Flujograma validado</span>` : ""}<span class="badge badge--prog">Pasos ${hechos}/${disp.length}</span></span>
+        <span class="badges">${r.subprocesos ? `<span class="badge">${plural(r.subprocesos, "subproceso", "subprocesos")}</span>` : ""}${r.pasos ? `<span class="badge">${plural(r.pasos, "paso", "pasos")}</span>` : ""}${r.puntos ? `<span class="badge">${plural(r.puntos, "punto crítico", "puntos críticos")}</span>` : ""}${r.fallos ? `<span class="badge">${plural(r.fallos, "fallo", "fallos")}</span>` : ""}${r.prioritarios ? `<span class="badge">${plural(r.prioritarios, "prioritario", "prioritarios")}</span>` : ""}${r.maxIPR ? iprBadge(r.maxIPR) : ""}${r.errores ? `<span class="badge badge--grave">${plural(r.errores, "error", "errores")} en el flujograma</span>` : ""}${lleno(m.validado) ? `<span class="badge badge--ok">Flujograma validado</span>` : ""}<span class="badge badge--prog">Pasos ${hechos}/${disp.length}</span></span>
       </a>
       <div class="item-pie"><span>Modificado: ${fechaCorta(m.modificado)}</span><span><button class="link-btn" data-act="m-dup" data-id="${m.id}">Duplicar</button> · <button class="link-btn link-btn--peligro" data-act="m-del" data-id="${m.id}">Borrar</button></span></div>
     </div>`;
@@ -296,6 +307,8 @@
   let flujosLeidos = null, flujoElegido = "";
   function desdeHtml(m) {
     if (modoEjemplo) return "";
+    if (amfesLeidos) return amfeHtml(m);
+    const oa = m.origen.amfe, yaA = oa.id ? `<p class="field-sub">Traído de AMFE el ${esc(fmtFecha(oa.traido))}: «${esc(oa.titulo || "sin nombre")}».</p>` : "";
     const og = m.origen.flujo, ya = og.id ? `<p class="field-sub">Traído de Flujograma el ${esc(fmtFecha(og.traido))}: «${esc(og.titulo || "sin nombre")}». Si el flujograma cambia, vuelve a traerlo en un mapa nuevo.</p>` : "";
     if (flujosLeidos) {
       const F = flujosLeidos, f = F.find(x => x.id === flujoElegido) || F[0];
@@ -306,10 +319,10 @@
         <p class="field-sub">Se copia: si después cambias el flujograma en su app, vuelve a traerlo. Nada de lo que ya tienes se borra.</p></div>`;
     }
     return `<div class="card desde-card no-print"><h2 class="sub-h">¿Ya tienes hecho algo de este proceso?</h2>
-      <p class="field-sub">Puedes hacerlo todo aquí. Pero si ya lo empezaste en otra app del conjunto, tráelo y sigue desde ahí.</p>${ya}
+      <p class="field-sub">Puedes hacerlo todo aquí. Pero si ya lo empezaste en otra app del conjunto, tráelo y sigue desde ahí.</p>${ya}${yaA}
       <div class="origenes">
         <button type="button" class="origen-btn" data-act="flujo-buscar"><b>⇩ Traer de Flujograma</b><span>El proceso dibujado: subprocesos, pasos y puntos críticos.</span></button>
-        <div class="origen-btn origen-btn--prox"><b>⇩ Traer de AMFE</b><span>Los fallos con su puntuación y sus acciones. Próximamente.</span></div>
+        <button type="button" class="origen-btn" data-act="amfe-buscar"><b>⇩ Traer de AMFE</b><span>Los fallos con su efecto, su causa, su puntuación, su prioridad y sus acciones.</span></button>
         <div class="origen-btn origen-btn--prox"><b>⇩ Traer de DAFO</b><span>Un proceso marcado para analizar en tu DAFO. Próximamente.</span></div>
       </div></div>`;
   }
@@ -606,20 +619,297 @@
       <h2 class="sec-t">Puntos críticos por subproceso <span class="contador" data-zona="npc">${m.puntos.length}</span></h2>
       <div data-zona="tablapc">${tablaPuntosHtml(m)}</div>
       <div data-zona="avisos">${avisosGenerales(m, 4)}</div>
-      ${m.puntos.length ? practica("Siguiente fase: el <b>AMFE</b> (pasos 5 a 7) convertirá cada punto crítico en un modo de fallo con su efecto, su causa y su puntuación. Llegará en la próxima versión; mientras, puedes hacerlo en la app AMFE.") : ""}`;
+      ${m.puntos.length ? practica(`Siguiente fase: el <b>AMFE</b> (pasos 5 a 7). Cada punto crítico pasará a ser un modo de fallo con su efecto, su causa y su puntuación (en el paso 6, con un botón).`) : ""}`;
   }
 
-  const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4 };
+  // ======================= Fase B · el AMFE (motor de AMFE en vivo) =======================
+  const A = window.LogicaAmfe;
+  const sinMotorAmfe = () => `<div class="error-box">${esc((window.MOTORES_PROBLEMAS || {}).amfe || "No se ha podido cargar el motor de AMFE.")}</div><p class="page-lead">Este paso usa el motor de la app AMFE. Recarga la página con conexión a internet; tus datos no se han tocado.</p>`;
+  const nivelTxt = v => { const n = A.nivelIPR(v); return n ? n.k : "sin"; };
+  const iprBadge = v => v ? `<span class="ipr-badge niv--${nivelTxt(v)}">IPR ${v}</span>` : `<span class="ipr-badge niv--sin">Sin IPR</span>`;
+  const subDeF = (m, f) => L.subDe(m, f.subprocesoId);
+  const avisosFallo = (m, n, id) => L.avisosDe(m, n).filter(a => a.fallo === id).map(avisoHtml).join("");
+
+  // ---------- Paso 5 · Equipo y sesiones ----------
+  const bm = (x, f) => `data-m="${x.id}" data-f="${f}"`;
+  const bx = (x, f) => `data-x="${x.id}" data-f="${f}"`;
+  const etiquetaMiembro = x => lleno(x.nombre) ? x.nombre : lleno(x.perfil) ? x.perfil : "Sin perfil";
+  function miembroCard(x, i) {
+    return `<div class="sub-card sub-card--eq">
+      <div class="sub-cab"><span class="eq-n">${i + 1}</span><b>${lleno(x.perfil) ? esc(x.perfil) : '<span class="vacio">Perfil sin escribir</span>'}</b><span class="badge">${esc(A.ROLES[x.rol].nom)}</span>
+        <span class="sub-acc no-print"><button type="button" class="link-btn link-btn--peligro" data-act="eq-del" data-id="${x.id}">Quitar</button></span></div>
+      <div class="dos-col">
+        ${campo(x, "perfil", "Perfil profesional", { bind: bm(x, "perfil"), ph: "p. ej. Enfermero/a de Urgencias" })}
+        ${campo(x, "cargo", "Cargo o puesto", { bind: bm(x, "cargo"), opt: true, ph: "p. ej. Supervisor/a de turno" })}
+      </div>
+      ${selector("Papel en el equipo", bm(x, "rol"), x.rol, Object.keys(A.ROLES).map(k => [k, A.ROLES[k].nom]), { help: Object.keys(A.ROLES).map(k => `<b>${A.ROLES[k].nom}</b>: ${A.ROLES[k].que}`).join("<br>") })}
+      ${campo(x, "justificacion", "Por qué está en el equipo", { bind: bm(x, "justificacion"), area: true, opt: true, ph: "p. ej. Conoce el flujo asistencial y los protocolos de cuidados" })}
+      ${campo(x, "nombre", "Nombre", { bind: bm(x, "nombre"), opt: true, ph: "Puedes dejarlo vacío", help: "Opcional. El documento final puede recoger solo el perfil y el cargo." })}
+    </div>`;
+  }
+  function sesionCard(m, x, i) {
+    return `<div class="sub-card sub-card--ses">
+      <div class="sub-cab"><span class="eq-n">${i + 1}</span><b>Sesión ${i + 1}</b>${lleno(x.fecha) ? `<span class="badge">${esc(fmtFecha(x.fecha))}</span>` : ""}
+        <span class="sub-acc no-print"><button type="button" class="link-btn link-btn--peligro" data-act="ses-del" data-id="${x.id}">Quitar</button></span></div>
+      <div class="dos-col">
+        ${campo(x, "fecha", "Fecha", { bind: bx(x, "fecha"), tipo: "date" })}
+        ${campo(x, "duracion", "Duración", { bind: bx(x, "duracion"), opt: true, ph: "p. ej. 2 h" })}
+      </div>
+      ${campo(x, "actividad", "Actividad principal", { bind: bx(x, "actividad"), ph: "p. ej. Lluvia de ideas y técnica de grupo nominal" })}
+      ${m.equipo.length ? `<div class="field"><div class="field-head"><label class="field-label">Asistentes</label></div><div class="quick">${m.equipo.map(y => `<button type="button" class="chip${x.asistentes.includes(y.id) ? " active" : ""}" data-asis="${x.id}" data-v="${y.id}">${esc(L.corto(etiquetaMiembro(y), 40))}</button>`).join("")}</div></div>` : ""}
+      ${campo(x, "resultados", "Resultados", { bind: bx(x, "resultados"), area: true, opt: true, ph: "p. ej. 49 fallos potenciales consensuados" })}
+    </div>`;
+  }
+  function paso5(m) {
+    if (!A) return sinMotorAmfe();
+    const ya = new Set([...m.equipo.map(x => L.normal(x.perfil)), ...m.equipo.map(x => A.estamentoDe(x.perfil + " " + x.cargo)).filter(Boolean)]);
+    const yaEsta = p => ya.has(L.normal(p.perfil)) || ya.has(A.estamentoDe(p.perfil));
+    const T = m.metodologia.tecnicas;
+    return `
+      ${idea("Nadie conoce solo todo el proceso. El análisis se hace en <b>equipo multidisciplinar</b>: al menos 6 perfiles, con quien hace el proceso a diario. Es el apartado «Composición del equipo de trabajo» del documento final.")}
+      ${facil(`<p>Mira los <b>roles de cada subproceso</b> (paso 2): todos deberían estar representados. Añade a alguien que domine la <b>metodología</b> y, si se puede, una mirada <b>externa</b> (otra unidad que colabora).</p>
+        <p>Cada miembro tiene un <b>papel</b>: la <b>coordinación</b> dirige y modera; la <b>secretaría</b> registra lo que se decide y prepara los documentos; los demás aportan su experiencia.</p>
+        <p>Lo habitual son <b>tres sesiones</b> de unas dos horas: analizar el proceso y sus puntos críticos; buscar los fallos; puntuarlos.</p>
+        ${practica(`¿Queréis hacer la lluvia de ideas, el grupo nominal, la votación por miembro o el Ishikawa? Están en la app <a href="${L.URL_AMFE}" target="_blank" rel="noopener">AMFE</a>; después traéis el resultado con «Traer de AMFE» (paso 1).`)}`)}
+      <h2 class="sec-t">Equipo <span class="contador" data-zona="neq">${m.equipo.length}</span></h2>
+      <div class="card no-print"><p class="field-sub">Añade con un toque los perfiles habituales y después ajústalos:</p>
+        <div class="quick">${A.PERFILES_SUG.map((p, i) => `<button type="button" class="chip${yaEsta(p) ? " active" : ""}" data-act="eq-sug" data-i="${i}">+ ${esc(p.perfil)}</button>`).join("")}</div></div>
+      <div class="sub-lista">${m.equipo.map(miembroCard).join("")}</div>
+      <div class="toolbar no-print"><button class="btn btn--primary" data-act="eq-add">+ Añadir otro perfil</button></div>
+      <h2 class="sec-t">Sesiones de trabajo <span class="contador" data-zona="nses">${m.sesiones.length}</span></h2>
+      <div class="sub-lista">${m.sesiones.map((x, i) => sesionCard(m, x, i)).join("") || `<p class="placeholder-box">Aún no hay sesiones. Puedes proponer las tres habituales y ajustarlas.</p>`}</div>
+      <div class="toolbar no-print"><button class="btn${m.sesiones.length ? "" : " btn--primary"}" data-act="ses-add">+ Añadir sesión</button>${m.sesiones.length ? "" : `<button class="btn" data-act="ses-tipo">Proponer las 3 sesiones habituales</button>`}</div>
+      <h2 class="sec-t">Metodología empleada</h2>
+      <div class="card"><p class="field-sub">¿Cómo habéis buscado los fallos? Sale en el documento final.</p>
+        <div class="quick">${Object.keys(L.TECNICAS).map(k => `<button type="button" class="chip${T.includes(k) ? " active" : ""}" data-act="tec" data-v="${k}">${esc(L.TECNICAS[k])}</button>`).join("")}</div>
+        <p class="field-sub" data-zona="metodo">${esc(L.textoMetodologia(m))}</p>
+        ${campo(m, "metodologia.texto", "Algo más sobre cómo habéis trabajado", { area: true, opt: true, ph: "p. ej. Se partió de una historia clínica simulada representativa de la casuística habitual" })}</div>
+      <div data-zona="avisos">${avisosGenerales(m, 5)}</div>`;
+  }
+
+  // ---------- Paso 6 · Fallos: modo, efecto, causa y controles ----------
+  const abiertosF = new Set();
+  let pegarFallos = false;
+  const bf = (f, k) => `data-fa="${f.id}" data-f="${k}"`;
+  function falloCabInner(m, f) {
+    const faltan = ["efecto", "causa"].filter(k => !lleno(f[k]));
+    return `<span class="rg-puesto">Nº ${f.num}</span><span class="rg-txt"><b>${lleno(f.fallo) ? esc(f.fallo) : '<span class="vacio">Fallo sin describir</span>'}</b><span>${lleno(f.efecto) ? "→ " + esc(L.corto(f.efecto, 90)) : ""}${faltan.length ? ` <span class="falta">Falta ${faltan.join(" y ")}</span>` : ""}</span></span><span class="rg-flecha" aria-hidden="true">▾</span>`;
+  }
+  function falloCard(m, f) {
+    const ab = abiertosF.has(f.id), s = subDeF(m, f), pt = L.puntoDe(m, f);
+    const ptsSub = m.puntos.filter(x => !s || L.subDePunto(m, x) === s);
+    return `<div class="rg fallo sub-c${s ? s.color : "x"}" data-fid="${f.id}">
+      <div class="rg-cab"><button type="button" class="rg-toggle" data-act="fa-toggle" data-id="${f.id}" aria-expanded="${ab}">${falloCabInner(m, f)}</button></div>
+      <div data-zav="${f.id}">${avisosFallo(m, 6, f.id)}</div>
+      <div class="rg-body"${ab ? "" : " hidden"}>
+        ${pt && lleno(pt.descripcion) ? `<p class="field-sub pt-desc">Punto crítico nº ${pt.num}: ${esc(pt.descripcion)}</p>` : ""}
+        <div class="dos-col">
+          ${selector("Subproceso", bf(f, "subprocesoId"), f.subprocesoId, [["", "— Elige el subproceso —"], ...m.subprocesos.map((x, i) => [x.id, `${i + 1}. ${x.nombre || "Sin nombre"}`])])}
+          ${m.puntos.length ? selector("Punto crítico del que sale", bf(f, "puntoId"), f.puntoId, [["", "— Ninguno —"], ...ptsSub.map(x => [x.id, `${x.num}. ${L.corto(x.titulo || "sin título", 50)}`])], { help: "Así el mapa (paso 9) sabrá en qué paso del flujograma poner este fallo." }) : ""}
+        </div>
+        ${campo(f, "fallo", "Modo de fallo: ¿qué puede salir mal?", { bind: bf(f, "fallo"), area: true, ph: "p. ej. No colocación de pulsera identificativa", help: "Un hecho concreto y observable, en una frase. No una causa («sobrecarga…») ni un efecto («daño al paciente»)." })}
+        ${campo(f, "efecto", "Efecto: ¿qué pasaría si ocurre?", { bind: bf(f, "efecto"), area: true, ph: "p. ej. Error de identidad, confusión en pruebas o medicación", help: "La consecuencia en el paciente, el proceso o el sistema. De aquí sale la gravedad." })}
+        ${campo(f, "causa", "Causa: ¿por qué podría ocurrir?", { bind: bf(f, "causa"), area: true, ph: "p. ej. Rutina interrumpida, recursos saturados", help: "Factores humanos, técnicos, organizativos o del entorno. Las acciones de mejora atacarán la causa." })}
+        ${campo(f, "controles", "Controles actuales: ¿qué existe hoy para evitarlo o detectarlo?", { bind: bf(f, "controles"), area: true, opt: true, ph: "p. ej. Protocolo de identificación; pulsera impresa en triaje", help: "Protocolos, dobles chequeos, alertas informáticas, listas de verificación… Son la base para puntuar la detección." })}
+        <div class="rg-pie no-print"><button type="button" class="link-btn link-btn--peligro" data-act="fa-del" data-id="${f.id}">Quitar este fallo</button><button type="button" class="link-btn" data-act="fa-toggle" data-id="${f.id}">Cerrar ▴</button></div>
+      </div>
+    </div>`;
+  }
+  function grupoFallos(m, s, i) {
+    const lista = A.ordenarFallos(m.fallos.filter(f => s ? f.subprocesoId === s.id : !subDeF(m, f)), "num");
+    if (!s && !lista.length) return "";
+    return `<section class="grupo-sub">
+      <h3 class="grupo-t">${subPunto(s)}${s ? `${i + 1}. ${lleno(s.nombre) ? esc(s.nombre) : '<span class="vacio">Subproceso sin nombre</span>'}` : "Sin subproceso"} <span class="contador">${lista.length}</span></h3>
+      <div class="rg-lista">${lista.map(f => falloCard(m, f)).join("") || `<p class="field-sub">Sin fallos todavía.</p>`}</div>
+      ${s ? `<button class="btn btn--sm no-print" data-act="fa-add" data-sub="${s.id}">+ Fallo en «${esc(L.corto(s.nombre || "este subproceso", 40))}»</button>` : ""}
+    </section>`;
+  }
+  function pegarFallosHtml() {
+    return `<div class="card pegar no-print">
+      <h3 class="sub-h">Pegar fallos desde Excel, Calc o Word</h3>
+      <p class="field-sub">Selecciona las filas de tu tabla (mejor con la fila de títulos), cópialas y pégalas aquí. Sin títulos, las columnas deben ir en este orden: <b>Subproceso · Fallo · Efecto · Causa · G · O · D</b>. Con títulos se reconoce también la columna de <b>controles</b>. Los subprocesos que no existan se crean.</p>
+      <textarea class="txt-in" id="pegar-fallos" rows="6" placeholder="Pega aquí la tabla…"></textarea>
+      <div data-zona="pegarf"></div>
+      <div class="toolbar"><button class="btn btn--primary" data-act="pegarf-ok" disabled>Añadir los fallos</button><button class="btn" data-act="pegarf-cerrar">Cancelar</button></div>
+    </div>`;
+  }
+  function paso6(m) {
+    if (!A) return sinMotorAmfe();
+    const sinPasar = m.puntos.filter(x => lleno(x.titulo) && !m.fallos.some(f => f.puntoId === x.id)).length;
+    return `
+      ${idea("Para cada punto crítico, preguntaos: <b>¿qué puede salir mal?</b> (modo de fallo), <b>¿qué pasaría?</b> (efecto) y <b>¿por qué?</b> (causa). Es la tabla del ejercicio 10.")}
+      ${facil(`<div class="table-wrap"><table class="mini"><tr><th>Columna</th><th>Pregunta</th><th>Ejemplo</th></tr>
+          <tr><td><b>Modo de fallo</b></td><td>¿Qué sale mal?</td><td>No colocación de pulsera identificativa</td></tr>
+          <tr><td><b>Efecto</b></td><td>¿Qué pasaría?</td><td>Error de identidad, confusión en pruebas o medicación</td></tr>
+          <tr><td><b>Causa</b></td><td>¿Por qué?</td><td>Rutina interrumpida, recursos saturados</td></tr>
+          <tr><td><b>Controles</b></td><td>¿Qué hay hoy?</td><td>Protocolo de identificación; impresora de pulseras en triaje</td></tr></table></div>
+        ${trampa("El error más frecuente es escribir una <b>causa</b> como fallo («sobrecarga asistencial», «falta de formación») o un <b>efecto</b> como fallo («daño al paciente»). La app te avisa cuando lo detecta.")}`)}
+      ${sinPasar ? `<div class="card destacado no-print"><p><b>${plural(sinPasar, "punto crítico aún no ha pasado", "puntos críticos aún no han pasado")} al AMFE.</b> Con un toque, cada uno se convierte en un modo de fallo de su subproceso (con su mismo número); después escribís el efecto, la causa y los controles.</p><div class="toolbar"><button class="btn btn--primary" data-act="pasar-amfe">⇩ Pasar los puntos críticos al AMFE</button></div></div>` : ""}
+      <div class="toolbar no-print"><button class="btn" data-act="pegarf-abrir">Pegar desde Excel</button>${m.fallos.length ? `<button class="btn" data-act="fa-abrir-todos">${abiertosF.size ? "Cerrar todos" : "Abrir todos"}</button>` : ""}</div>
+      ${pegarFallos ? pegarFallosHtml() : ""}
+      <div data-zona="avisos">${avisosGenerales(m, 6)}</div>
+      ${m.subprocesos.length ? m.subprocesos.map((s, i) => grupoFallos(m, s, i)).join("") + grupoFallos(m, null, 0)
+        : `<div class="placeholder-box"><p>Aún no hay subprocesos. <a href="#/mapa/${m.id}/2">Defínelos en el paso 2</a> o pega tu tabla: los subprocesos se crean solos.</p></div>${grupoFallos(m, null, 0)}`}`;
+  }
+
+  // ---------- Paso 7 · Puntuar y priorizar ----------
+  const KEY_VISTA7 = "mapariesgos-vista7", KEY_MATRIZ = "mapariesgos-matriz";
+  let vista7 = ["puntuar", "priorizar", "matriz"].includes(leer(KEY_VISTA7)) ? leer(KEY_VISTA7) : "puntuar";
+  let tamMatriz = leer(KEY_MATRIZ) === "5" ? 5 : 10, soloPrio = true;
+  const textoEscala = (m, k, v) => { const t = A.tramo(v); return t ? m.escalas[k][t - 1] : ""; };
+  function escalaHtml(m) {
+    return `<div class="table-wrap"><table class="mini facil-tabla tabla-escalas"><tr><th></th>${["g", "o", "d"].map(k => `<th>${A.ESCALA_NOM[k]}</th>`).join("")}</tr>
+      ${A.TRAMOS.map((t, i) => `<tr><td><b>${t}</b></td>${["g", "o", "d"].map(k => `<td>${esc(m.escalas[k][i])}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  }
+  const escFila = (m, f) => ["g", "o", "d"].filter(k => A.entero1a10(f[k])).map(k => `<b>${k.toUpperCase()} ${A.entero1a10(f[k])}</b> ${esc(textoEscala(m, k, f[k]).replace(/\.$/, ""))}`).join(" · ");
+  function iprFila(f) {
+    const v = A.iprDe(f);
+    if (v) return iprBadge(v);
+    if ([f.g, f.o, f.d].some(lleno)) return `<span class="ipr-falta">Enteros del 1 al 10</span>`;
+    return `<span class="ipr-badge niv--sin">IPR</span>`;
+  }
+  function filaPuntuar(m, f) {
+    return `<div class="punt" data-pid="${f.id}">
+      <div class="punt-txt"><span class="rg-puesto">Nº ${f.num}</span><span><b>${lleno(f.fallo) ? esc(f.fallo) : '<span class="vacio">Fallo sin describir</span>'}</b>${lleno(f.efecto) ? `<span class="punt-ef">→ ${esc(L.corto(f.efecto, 110))}</span>` : ""}</span></div>
+      <div class="punt-god">
+        ${["g", "o", "d"].map(k => `<label class="god-c"><span>${A.ESCALA_NOM[k]}</span><input class="txt-in" data-fa="${f.id}" data-f="${k}" value="${esc(f[k])}" inputmode="numeric" maxlength="2" placeholder="1–10" aria-label="${A.ESCALA_NOM[k]} del fallo ${f.num}" /></label>`).join("")}
+        <div class="punt-ipr" data-zipr="${f.id}">${iprFila(f)}</div>
+      </div>
+      <p class="punt-esc" data-zesc="${f.id}">${escFila(m, f)}</p>
+      <div data-zav="${f.id}">${avisosFallo(m, 7, f.id)}</div>
+    </div>`;
+  }
+  function resumen7(m) {
+    const r = A.resumen(m); if (!r.n) return "";
+    return `<span class="badge">${r.puntuados} de ${r.n} puntuados</span>${r.maxIPR ? iprBadge(r.maxIPR) : ""}${["muyalto", "alto", "medio", "bajo"].filter(k => r.porNivel[k]).map(k => `<span class="ipr-badge niv--${k}">${r.porNivel[k]} ${A.NIVELES_IPR.find(x => x.k === k).nom.toLowerCase()}</span>`).join("")}`;
+  }
+  const zonaBadge = z => z ? `<span class="zona-b zona--${z}" title="Zona ${z} de la matriz de riesgos: riesgo ${A.ZONAS[z].nom.toLowerCase()}, ${A.ZONAS[z].que}">Zona ${z}</span>` : "";
+  function matrizHtml(m, tam = tamMatriz, solo = soloPrio, conControles = true) {
+    const pr = A.prioridad(m), F = m.fallos.filter(f => lleno(f.fallo) && A.iprDe(f) && (!solo || pr[f.id].prio));
+    const M = A.matriz(F, tam), etq = i => tam === 10 ? String(i) : A.TRAMOS[i - 1];
+    const leyendaSub = m.subprocesos.filter(s => F.some(f => f.subprocesoId === s.id));
+    return `${conControles ? `<div class="mz-ctl no-print"><div class="seg" role="group" aria-label="Tamaño de la matriz">${[[10, "10 × 10"], [5, "5 × 5"]].map(([v, t]) => `<button type="button" class="${tam === v ? "active" : ""}" data-act="mz-tam" data-v="${v}">${t}</button>`).join("")}</div><div class="seg" role="group" aria-label="Qué fallos se ven">${[[true, "Prioritarios"], [false, "Todos"]].map(([v, t]) => `<button type="button" class="${solo === v ? "active" : ""}" data-act="mz-solo" data-v="${v ? 1 : 0}">${t}</button>`).join("")}</div></div>` : ""}
+      <div class="mz-wrap">
+        <div class="mz-eje-g" aria-hidden="true">Gravedad</div>
+        <div class="mz mz--${tam}" role="table" aria-label="Matriz de riesgos: gravedad (filas) por ocurrencia (columnas)">
+          ${M.map(fila => `<div class="mz-n" role="rowheader">${etq(fila[0].g)}</div>${fila.map(cl => `<div class="mz-c mz--${cl.zona}" role="cell" title="G ${etq(cl.g)} · O ${etq(cl.o)} · zona ${cl.zona}${cl.fallos.length ? " · " + plural(cl.fallos.length, "fallo", "fallos") : ""}">${cl.fallos.map(f => { const s = subDeF(m, f); return `<button type="button" class="mz-f sub-c${s ? s.color : "x"}${pr[f.id].prio ? "" : " mz-f--no"}" data-act="ir-fallo" data-id="${f.id}" title="Nº ${f.num} · ${esc(L.corto(f.fallo, 80))} · IPR ${A.iprDe(f)}">${f.num}</button>`; }).join("")}</div>`).join("")}`).join("")}
+          <div></div>${Array.from({ length: tam }, (_, i) => `<div class="mz-n mz-n--o">${etq(i + 1)}</div>`).join("")}
+        </div>
+        <div class="mz-eje-o" aria-hidden="true">Ocurrencia</div>
+      </div>
+      <div class="leyenda">${Object.keys(A.ZONAS).map(z => `<span><i class="mz--${z}"></i>${A.ZONAS[z].nom} (${A.ZONAS[z].que})</span>`).join("")}</div>
+      ${leyendaSub.length ? `<div class="leyenda">${leyendaSub.map(s => `<span>${subPunto(s)}${esc(L.corto(s.nombre, 34))}</span>`).join("")}</div>` : ""}
+      <p class="field-sub">${F.length ? `${plural(F.length, "fallo", "fallos")} en la matriz. Cada número es un fallo, del color de su subproceso${solo ? "" : "; los apagados no son prioritarios"}. Toca uno para ir a él.` : "No hay fallos que mostrar."}</p>`;
+  }
+  function criterioRes(m) {
+    const pr = A.prioridad(m), l = Object.values(pr).filter(x => x.prio);
+    const n = { criterio: l.filter(x => x.por === "criterio").length, critico: l.filter(x => x.por === "critico").length, manual: l.filter(x => x.por === "manual").length };
+    const graves = Object.values(pr).filter(x => x.grave).length;
+    return `<b>${plural(l.length, "fallo prioritario", "fallos prioritarios")}</b>: ${[n.criterio ? `${n.criterio} por IPR` : "", n.critico ? `${n.critico} ${n.critico === 1 ? "crítico" : "críticos"}` : "", n.manual ? `${n.manual} a mano` : ""].filter(Boolean).join(", ") || "ninguno"}.${graves ? ` ${plural(graves, "fallo tiene", "fallos tienen")} gravedad 9–10.` : ""}`;
+  }
+  function filaPrio(m, f, P, pr) {
+    const e = pr[f.id], s = subDeF(m, f);
+    const porTxt = e.prio ? (e.por === "criterio" ? (m.prioridad.modo === "umbral" ? "Supera el umbral de IPR" : `Entre los ${A.nPrioridad(m)} de mayor IPR`) : e.por === "critico" ? "Fallo crítico" : "Añadido a mano") : (f.manual === "no" ? "Quitado a mano" : "No prioritario");
+    const bb = k => `data-fa="${f.id}" data-f="${k}"`;
+    return `<div class="pf sub-c${s ? s.color : "x"}${e.prio ? " pf--on" : ""}" data-pf="${f.id}">
+      <div class="pf-cab"><span class="rg-puesto">${P[f.id] ? "#" + P[f.id] : "–"}</span>
+        <span class="pf-txt"><b>Nº ${f.num} · ${esc(f.fallo)}</b><span>${subPunto(s)}${esc(s ? s.nombre : "Sin subproceso")} · G ${esc(f.g)} · O ${esc(f.o)} · D ${esc(f.d)}</span></span>
+        <span class="pf-badges">${iprBadge(A.iprDe(f))}${e.grave ? `<span class="badge badge--grave" title="Gravedad 9–10">Muy grave</span>` : ""}${zonaBadge(e.zona)}</span></div>
+      <div class="pf-acc no-print">
+        <button type="button" class="pf-btn${e.prio ? " on" : ""}" data-act="pf-prio" data-id="${f.id}" aria-pressed="${e.prio}" ${f.critico ? 'disabled title="Un fallo crítico siempre es prioritario"' : ""}>${e.prio ? "★ Prioritario" : "☆ No prioritario"}</button>
+        <span class="pf-por">${porTxt}</span>
+        <label class="pf-crit"><input type="checkbox" data-act="pf-critico" data-id="${f.id}"${f.critico ? " checked" : ""} /> Fallo crítico</label>
+      </div>
+      ${f.critico ? campo(f, "motivoCritico", "¿Por qué es crítico?", { bind: bb("motivoCritico"), area: true, ph: "p. ej. Evento centinela en el último año", extra: `<div class="quick no-print"><button type="button" class="chip chip--accent" data-act="pf-motivo" data-id="${f.id}" data-k="motivoCritico">✎ Proponer motivo</button></div>` }) : ""}
+      ${f.manual ? campo(f, "motivo", f.manual === "si" ? "¿Por qué lo añadís a los prioritarios?" : "¿Por qué lo quitáis de los prioritarios?", { bind: bb("motivo"), area: true, ph: f.manual === "si" ? "p. ej. Gravedad 9 y ningún control actual" : "p. ej. Ya hay una acción en marcha", extra: f.manual === "si" ? `<div class="quick no-print"><button type="button" class="chip chip--accent" data-act="pf-motivo" data-id="${f.id}" data-k="motivo">✎ Proponer motivo</button></div>` : "" }) : ""}
+      <div data-zav="${f.id}">${avisosFallo(m, 7, f.id)}</div>
+    </div>`;
+  }
+  function listaPrio(m) {
+    const P = A.puestos(m.fallos), pr = A.prioridad(m), F = A.ordenarFallos(m.fallos.filter(f => lleno(f.fallo) && A.iprDe(f)));
+    return F.length ? F.map(f => filaPrio(m, f, P, pr)).join("") : `<p class="placeholder-box">Aún no hay fallos puntuados. Puntúalos en «Puntuar».</p>`;
+  }
+  function porSubHtml(m) {
+    const S = A.porSubproceso(m).filter(s => s.n), max = Math.max(1, ...S.map(s => s.max));
+    if (!S.length) return `<p class="field-sub">Aún no hay fallos en los subprocesos.</p>`;
+    return `<div class="table-wrap"><table class="mini tabla-porsub"><thead><tr><th>Subproceso</th><th>Fallos</th><th>Prioritarios</th><th>IPR máx.</th><th>IPR medio</th><th class="col-barra">IPR máximo</th></tr></thead><tbody>
+      ${S.map(s => `<tr><td>${subPunto(s)}${esc(s.nombre || "Sin nombre")}</td><td>${s.n}</td><td><b>${s.prio}</b></td><td>${s.max ? iprBadge(s.max) : "—"}</td><td>${s.media || "—"}</td><td class="col-barra"><span class="barra sub-c${s.color}"><i style="width:${Math.round(s.max / max * 100)}%"></i></span></td></tr>`).join("")}
+    </tbody></table></div>`;
+  }
+  function paso7(m) {
+    if (!A) return sinMotorAmfe();
+    const F = m.fallos.filter(f => lleno(f.fallo)), umbral = m.prioridad.modo === "umbral";
+    const seg = `<div class="seg vista3 no-print" role="group" aria-label="Vista">${[["puntuar", "1 · Puntuar G·O·D"], ["priorizar", "2 · Priorizar"], ["matriz", "3 · Matriz"]].map(([v, t]) => `<button type="button" class="${vista7 === v ? "active" : ""}" data-act="v7" data-v="${v}">${t}</button>`).join("")}</div>`;
+    let cuerpo = "";
+    if (!F.length) cuerpo = `<div class="placeholder-box"><p>Aún no hay fallos que puntuar. <a href="#/mapa/${m.id}/6">Escríbelos en el paso 6</a>.</p></div>`;
+    else if (vista7 === "puntuar") cuerpo = `
+      <div class="res-linea" data-zona="resumen7">${resumen7(m)}</div>
+      ${m.subprocesos.map((s, i) => { const l = A.ordenarFallos(F.filter(f => f.subprocesoId === s.id), "num"); return l.length ? `<section class="grupo-sub"><h3 class="grupo-t">${subPunto(s)}${i + 1}. ${esc(s.nombre || "Subproceso sin nombre")}</h3><div class="punt-lista">${l.map(f => filaPuntuar(m, f)).join("")}</div></section>` : ""; }).join("")}
+      ${F.some(f => !subDeF(m, f)) ? `<section class="grupo-sub"><h3 class="grupo-t">${subPunto(null)}Sin subproceso</h3><div class="punt-lista">${A.ordenarFallos(F.filter(f => !subDeF(m, f)), "num").map(f => filaPuntuar(m, f)).join("")}</div></section>` : ""}
+      <div class="toolbar no-print"><button class="btn btn--primary" data-act="v7" data-v="priorizar">Priorizar →</button></div>`;
+    else if (vista7 === "priorizar") cuerpo = `
+      <div class="card">
+        <h2 class="sub-h">Criterio de prioridad</h2>
+        <div class="seg" role="group">${[["top", "Los N de mayor IPR"], ["umbral", "Umbral de IPR"]].map(([v, t]) => `<button type="button" class="${m.prioridad.modo === v ? "active" : ""}" data-act="prio-modo" data-v="${v}">${t}</button>`).join("")}</div>
+        ${umbral ? campo(m, "prioridad.umbral", "Prioritarios los fallos con IPR igual o mayor que…", { ph: "p. ej. 200", help: "Un umbral acordado por el equipo. Como orientación: 300 o más es muy alto, de 200 a 299 alto y de 100 a 199 medio." })
+          : campo(m, "prioridad.n", "¿Cuántos fallos de mayor IPR?", { ph: "15", help: "En el curso se eligen los 15 de mayor IPR. A igual IPR, la app pone antes el de más gravedad." })}
+        <p class="criterio-res" data-zona="criterio">${criterioRes(m)}</p>
+      </div>
+      <h2 class="sec-t">Fallos por orden de IPR</h2>
+      <p class="page-lead">Los marcados con ★ son los prioritarios: pasarán a las acciones de mejora y al mapa.</p>
+      <div class="pf-lista" data-zona="lista7">${listaPrio(m)}</div>
+      <div class="toolbar no-print"><button class="btn btn--primary" data-act="v7" data-v="matriz">Ver la matriz →</button></div>`;
+    else cuerpo = `
+      <div class="card chart-card" data-zona="matriz">${matrizHtml(m)}</div>
+      <h2 class="sec-t">Priorización por subprocesos</h2>
+      <p class="page-lead">Dónde se concentran los riesgos del proceso.</p>
+      <div data-zona="porsub">${porSubHtml(m)}</div>`;
+    return `
+      ${idea("Cada fallo se puntúa de 1 a 10 en <b>gravedad</b>, <b>ocurrencia</b> y <b>detección</b>. <b>IPR = G × O × D</b>: cuanto mayor, antes hay que actuar. Después se eligen los <b>prioritarios</b>, que son los que irán al mapa.")}
+      ${facil(`<p>Usad la misma escala en todo el análisis y ponedla a la vista en la reunión:</p>
+        ${escalaHtml(m)}
+        <div class="formula">IPR = Gravedad × Ocurrencia × Detección (de 1 a 1.000)</div>
+        ${trampa("La <b>detección va al revés</b> que las otras dos: 1 = se descubre casi seguro antes de causar daño; 10 = casi imposible de detectar. Antes de puntuarla, mirad los controles actuales.")}
+        <p>Lo habitual es quedarse con <b>los de mayor IPR</b> (en el curso, los 15 primeros) o con los que <b>superan un umbral</b>. Un fallo con <b>gravedad 9–10</b> merece atención aunque su IPR sea bajo; la marca <b>«fallo crítico»</b> lo sube a prioritario (escribid siempre el motivo).</p>`, "Explicado fácil: escalas y prioridad")}
+      ${seg}
+      <div data-zona="avisos">${avisosGenerales(m, 7)}</div>
+      ${cuerpo}`;
+  }
+
+  // «Traer de AMFE» (paso 1)
+  let amfesLeidos = null, amfeElegido = "";
+  function amfeHtml(m) {
+    const a = amfesLeidos.find(x => x.id === amfeElegido) || amfesLeidos[0];
+    return `<div class="card desde-card no-print"><h2 class="sub-h">Traer de AMFE</h2>
+      ${selector("AMFE", 'data-amfesel="1"', a.id, amfesLeidos.map(x => [x.id, L.resumenAmfe(x)]))}
+      <ul class="field-sub"><li>El proceso y sus subprocesos (los que ya tengas no se repiten).</li><li>${m.fallos.length ? "<b>Los fallos no</b>: este mapa ya tiene fallos." : `Los ${plural((a.fallos || []).length, "fallo", "fallos")} con su efecto, su causa, sus controles, su puntuación, su prioridad y sus acciones de mejora. Si coinciden con un punto crítico de este mapa, quedan enlazados a él.`}</li><li>El equipo y las sesiones no viajan entre apps: escríbelos en el paso 5.</li></ul>
+      <div class="toolbar"><button class="btn btn--primary" data-act="amfe-traer">Traer</button><button class="btn" data-act="amfe-cancelar">Cancelar</button></div>
+      <p class="field-sub">Se copia: si después cambias el AMFE en su app, vuelve a traerlo. Nada de lo que ya tienes se borra.</p></div>`;
+  }
+
+  const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4, 5: paso5, 6: paso6, 7: paso7 };
 
   // Refresca lo que depende de lo escrito sin repintar los campos (no se pierde el foco)
   let tLienzo = null;
-  function refrescar() {
+  function refrescar(idFallo, todo) {
     const m = actual; if (!m) return;
     const n = pasoActual;
     const Z = { pasos: () => pasosInner(m, n), avisos: () => avisosGenerales(m, n), avisos3: () => validadorHtml(m), nact: () => String(m.actores.length), validado: () => validadoHtml(m),
-      nprop: () => String(L.propuestas(m).length), npc: () => String(m.puntos.length) };
+      nprop: () => String(L.propuestas(m).length), npc: () => String(m.puntos.length),
+      neq: () => String(m.equipo.length), nses: () => String(m.sesiones.length), metodo: () => esc(L.textoMetodologia(m)),
+      resumen7: () => resumen7(m), criterio: () => criterioRes(m), matriz: () => matrizHtml(m), porsub: () => porSubHtml(m), lista7: () => listaPrio(m) };
+    // La lista de prioridad solo se repinta si cambia el criterio (si se escribe un motivo dentro, se perdería el foco)
+    if (!todo) delete Z.lista7;
     $$("[data-zona]").forEach(el => { const fn = Z[el.dataset.zona]; if (fn) el.innerHTML = fn(); });
-    $$("[data-zav]").forEach(el => { el.innerHTML = avisosPaso(m, el.dataset.zav); });
+    $$("[data-zav]").forEach(el => { el.innerHTML = n >= 5 ? avisosFallo(m, n, el.dataset.zav) : avisosPaso(m, el.dataset.zav); });
+    if (idFallo && A) {
+      const f = m.fallos.find(x => x.id === idFallo);
+      if (f) {
+        const tg = $(`.fallo[data-fid="${f.id}"] .rg-toggle`); if (tg) tg.innerHTML = falloCabInner(m, f);
+        const zi = $(`[data-zipr="${f.id}"]`); if (zi) zi.innerHTML = iprFila(f);
+        const ze = $(`[data-zesc="${f.id}"]`); if (ze) ze.innerHTML = escFila(m, f);
+      }
+    }
     $$("[data-zpc]").forEach(el => { el.innerHTML = avisosPunto(m, el.dataset.zpc); });
     $$("[data-zsub]").forEach(el => { el.innerHTML = avisosSub(m, el.dataset.zsub); });
     $$(".paso-card").forEach(el => { const p = LF.pasoDe(m, el.dataset.pid), t = $(".rg-toggle", el); if (p && t) t.innerHTML = pasoCabInner(m, p); });
@@ -661,7 +951,7 @@
       <p class="page-lead">Para ver cómo queda antes de hacerlo tú. Está aparte: puedes tocarlo, pero <b>no se guarda ni se mezcla con tus datos</b>. Si te sirve de punto de partida, pulsa «Copiar a mis datos».</p>
       <h2 class="sec-t">Ejemplo completo: atención en Urgencias</h2>
       <div class="ej-grid"><a class="ej-card ej-card--grande" href="${u.href}"><b>${esc(u.t)}</b><span>${esc(u.s)}</span></a></div>
-      <div class="toolbar"><a class="btn" href="#/mapa/ej-mapa-urgencias/2">Subprocesos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/3">Flujograma</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4">Puntos críticos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4?informe=1">Ver para imprimir</a></div>
+      <div class="toolbar"><a class="btn" href="#/mapa/ej-mapa-urgencias/2">Subprocesos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/3">Flujograma</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4">Puntos críticos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/6">Fallos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/7">Priorización</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4?informe=1">Ver para imprimir</a></div>
       ${practica("El ejemplo reproduce el caso de Urgencias del curso, sin nombres de centro ni de personas. Lo que se ha adaptado se explica en las notas del paso 1. Los minicasos para practicar llegarán en una próxima versión.")}`;
   }
 
@@ -721,7 +1011,7 @@
       <div class="informe-bar informe-only"><button class="btn" data-act="volver">← Volver</button><span class="informe-acc"><button class="btn btn--primary" data-act="imprimir">Guardar / imprimir</button></span></div>
       ${informeCab("Mapa de Riesgos · " + titulo, m.unidad)}
       <div class="ficha">
-        <div class="ficha-cab"><span class="wiz-paso">Mapa de Riesgos · borrador (pasos 1 a 4)</span><h2 class="ficha-nombre">${esc(titulo)}</h2></div>
+        <div class="ficha-cab"><span class="wiz-paso">Mapa de Riesgos · borrador (pasos 1 a 7)</span><h2 class="ficha-nombre">${esc(titulo)}</h2></div>
         <table class="ficha-t">${fila("Unidad o servicio", m.unidad)}${fila("Ámbito", m.ambito)}${fila("Empieza", m.inicio)}${fila("Termina", m.fin)}${fila("Qué queda dentro", m.incluye)}${fila("Qué queda fuera", m.excluye)}${fila("Responsable", m.responsable)}${fila("Fecha", m.fecha)}
           <tr><th>Resumen</th><td>${plural(r.subprocesos, "subproceso", "subprocesos")} · ${plural(r.pasos, "paso", "pasos")} en el flujograma · ${plural(r.puntos, "punto crítico", "puntos críticos")}</td></tr></table>
       </div>
@@ -731,7 +1021,22 @@
       ${m.subprocesos.length ? `<h3 class="sub-h">Subprocesos incluidos</h3><div class="table-wrap"><table class="mini tabla-riesgos"><thead><tr><th>Id</th><th>Subproceso</th><th>Descripción</th><th>Inicio</th><th>Fin</th><th>Roles implicados</th></tr></thead><tbody>${m.subprocesos.map((s, i) => `<tr><td>${i + 1}</td><td>${subPunto(s)} <b>${esc(s.nombre)}</b></td><td>${esc(s.descripcion)}</td><td>${esc(s.inicio)}</td><td>${esc(s.fin)}</td><td>${esc(s.roles)}</td></tr>`).join("")}</tbody></table></div>` : ""}
       ${m.pasos.length ? `<div class="doc-salto"></div><h2 class="sec-t">Flujograma del proceso</h2><div class="informe-graf informe-dib">${D.svg(LF.dibujar(Object.assign({}, m, { puntos: [] })), { numeros: m.vista.numeros, cabecera: "Proceso " + titulo, titulo: "Proceso " + titulo })}</div><div class="leyenda-wrap">${D.leyenda(LF.ORDEN_TIPOS.map(t => [t, LF.TIPOS[t].corto]))}</div>` : ""}
       ${G.length ? `<div class="doc-salto"></div><h2 class="sec-t">Identificación de puntos críticos</h2>${G.map(g => `<h3 class="sub-h">${g.sub ? esc(g.sub.nombre) : "Sin subproceso"}</h3><div class="table-wrap"><table class="mini tabla-riesgos"><thead><tr><th>Id</th><th>Error o punto crítico</th><th>Descripción del error o riesgo identificado</th>${m.pasos.length ? "<th>Paso</th>" : ""}</tr></thead><tbody>${g.puntos.map(x => { const p = LF.pasoDe(m, x.pasoId); return `<tr><td>${esc(L.idPunto(m, x))}</td><td><b>${esc(x.titulo)}</b></td><td>${esc(x.descripcion)}</td>${m.pasos.length ? `<td>${p ? p.num + ". " + esc(L.corto(p.texto, 30)) : ""}</td>` : ""}</tr>`; }).join("")}</tbody></table></div>`).join("")}` : ""}
+      ${A && (m.equipo.length || m.fallos.length) ? informeAmfe(m) : ""}
       ${informePie()}`;
+  }
+  // Análisis AMFE en la vista para imprimir (apartado 5 del documento final y anexo II)
+  function informeAmfe(m) {
+    const F = m.fallos.filter(f => lleno(f.fallo)), Pr = A.prioritarios(m), sub = f => { const s = subDeF(m, f); return s ? s.nombre : ""; };
+    const filaF = f => `<tr><td>${esc(sub(f))}</td><td>${f.num}</td><td><b>${esc(f.fallo)}</b></td><td>${esc(f.efecto)}</td><td>${esc(f.causa)}</td><td>${esc(f.g)}</td><td>${esc(f.o)}</td><td>${esc(f.d)}</td><td>${A.iprDe(f) ? iprBadge(A.iprDe(f)) : ""}</td></tr>`;
+    const cabF = `<thead><tr><th>Subproceso</th><th>Id</th><th>Fallo</th><th>Efecto</th><th>Causa</th><th>G</th><th>O</th><th>D</th><th>IPR</th></tr></thead>`;
+    return `<div class="doc-salto"></div><h2 class="sec-t">Análisis AMFE</h2>
+      ${m.equipo.length ? `<h3 class="sub-h">Composición del equipo de trabajo</h3><div class="table-wrap"><table class="mini tabla-riesgos"><thead><tr><th>Id</th><th>Perfil profesional</th><th>Cargo</th><th>Rol</th><th>Justificación</th></tr></thead><tbody>${m.equipo.map((x, i) => `<tr><td>${i + 1}</td><td><b>${esc(x.perfil)}</b></td><td>${esc(x.cargo)}</td><td>${esc(A.ROLES[x.rol].nom)}</td><td>${esc(x.justificacion)}</td></tr>`).join("")}</tbody></table></div>` : ""}
+      ${L.textoMetodologia(m) || lleno(m.metodologia.texto) ? `<h3 class="sub-h">Metodología empleada</h3><p>${esc([L.textoMetodologia(m), m.metodologia.texto].filter(lleno).join(" "))}</p>` : ""}
+      ${m.sesiones.length ? `<div class="table-wrap"><table class="mini tabla-riesgos"><thead><tr><th>Sesión</th><th>Fecha</th><th>Actividad principal</th><th>Duración</th><th>Resultados alcanzados</th></tr></thead><tbody>${m.sesiones.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(fmtFecha(x.fecha))}</td><td>${esc(x.actividad)}</td><td>${esc(x.duracion)}</td><td>${esc(x.resultados)}</td></tr>`).join("")}</tbody></table></div>` : ""}
+      ${F.length ? `<h3 class="sub-h">Resultados del análisis</h3><p>Se identificaron ${plural(F.length, "fallo potencial", "fallos potenciales")} en ${plural(m.subprocesos.length, "subproceso", "subprocesos")}, priorizados según su IPR (gravedad × ocurrencia × detección).</p>` : ""}
+      ${Pr.length ? `<h3 class="sub-h">Fallos con mayor criticidad</h3><div class="table-wrap"><table class="mini tabla-riesgos">${cabF}<tbody>${Pr.map(filaF).join("")}</tbody></table></div>
+        <h3 class="sub-h">Matriz de riesgos</h3><div class="card chart-card">${matrizHtml(m, tamMatriz, true, false)}</div>` : ""}
+      ${F.length ? `<div class="doc-salto"></div><h2 class="sec-t">Anexo II: tabla de fallos</h2><div class="table-wrap"><table class="mini tabla-riesgos">${cabF}<tbody>${A.ordenarFallos(F, "sub", m.subprocesos).map(filaF).join("")}</tbody></table></div>` : ""}`;
   }
   // ---------- PDF en iOS (sin librerías; mismo método que las apps hermanas) ----------
   // En iOS, window.print() no hace nada cuando la app está instalada en la pantalla de inicio.
@@ -881,7 +1186,7 @@
 
   // ---------- Copia de seguridad e importar ----------
   async function copiaSeguridad() {
-    const contenido = JSON.stringify({ app: "mapariesgos", v: L.VERSION_DATOS, exportado: hoy(), mapas: datosUsuario.mapas }, null, 1);
+    const contenido = JSON.stringify({ app: "mapariesgos", v: L.VERSION_DATOS, exportado: hoy(), mapas: datosUsuario.mapas, intercambio: L.paqueteIntercambio(datosUsuario.mapas, APP_VERSION, hoy()) }, null, 1);
     const nombre = `Mapa de Riesgos copia ${new Date().toISOString().slice(0, 10)}.json`;
     const blob = new Blob([contenido], { type: "application/json" });
     const file = new File([blob], nombre, { type: "application/json" });
@@ -898,8 +1203,8 @@
       let o = null, s = null; try { o = JSON.parse(fr.result); s = L.sanearDatos(o, genId, hoy()); } catch (e) { /* */ }
       if (!s) {
         // ¿Es la copia de Flujograma? Entonces lo que se quiere es «Traer de Flujograma»
-        const fl = L.leerFlujograma(o);
-        toast(fl ? "Esa es una copia de la app Flujograma: tráela desde el paso 1 de un mapa, con «Traer de Flujograma»." : "Ese archivo no es una copia de Mapa de Riesgos.", 5000); return;
+        const fl = L.leerFlujograma(o), am = L.leerAmfe(o);
+        toast(fl ? "Esa es una copia de la app Flujograma: tráela desde el paso 1 de un mapa, con «Traer de Flujograma»." : am ? "Esa es una copia de la app AMFE: tráela desde el paso 1 de un mapa, con «Traer de AMFE»." : "Ese archivo no es una copia de Mapa de Riesgos.", 5000); return;
       }
       s.mapas.forEach(x => { if (esIdEjemplo(x.id)) x.id = genId(); });
       const aplicar = modo => {
@@ -951,7 +1256,7 @@
     datos = modoEjemplo ? ej : datosUsuario;
     $("#banner-ejemplo").hidden = !modoEjemplo || informe || partes[0] === "ejemplos";
     let navR = partes[0];
-    const reiniciar = id => { abiertos.clear(); pegarAbierto = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; };
+    const reiniciar = id => { abiertos.clear(); abiertosF.clear(); pegarAbierto = false; pegarFallos = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; amfesLeidos = null; };
     if (partes[0] === "mapa" && partes[1] === "nuevo") {
       const m = L.nuevoMapa(genId(), hoy()); borradores.set(m.id, m); reiniciar(m.id);
       history.replaceState(null, "", `#/mapa/${m.id}/1`); renderMapa(m, 1);
@@ -1003,6 +1308,13 @@
     if (t.matches("textarea.txt-in")) autoAlto(t);
     if (t.id === "pegar-txt") { vistaPegado(t.value); return; }
     if (t.dataset.flujosel) { flujoElegido = t.value; return; }
+    if (t.dataset.amfesel) { amfeElegido = t.value; repintar(); return; }
+    if (t.id === "pegar-fallos") {
+      const p = A.parsearTabla(t.value), z = $("[data-zona='pegarf']"), b = $("[data-act='pegarf-ok']");
+      z.innerHTML = t.value.trim() ? (p.filas.length ? `<div class="note">ℹ Se ${p.filas.length === 1 ? "ha reconocido 1 fallo" : "han reconocido " + p.filas.length + " fallos"}${p.cabecera ? " (con fila de títulos)" : ""}. Primero: «${esc(L.corto(p.filas[0].fallo, 70))}».</div>` : "") + p.errores.map(x => `<div class="warn">⚠ ${esc(x)}</div>`).join("") : "";
+      b.disabled = !p.filas.length; b.textContent = p.filas.length ? `Añadir ${plural(p.filas.length, "fallo", "fallos")}` : "Añadir los fallos";
+      return;
+    }
     if (!m) return;
     const k = t.dataset.f, esSel = t.tagName === "SELECT";
     if (t.dataset.ac) { const a = buscaEn(m.actores, t.dataset.ac); if (!a) return; a[k] = t.value; tocado(m); refrescar(); return; }
@@ -1022,6 +1334,14 @@
       if (esSel) repintar(); else refrescar();
       return;
     }
+    if (t.dataset.m) { const x = buscaEn(m.equipo, t.dataset.m); if (!x) return; x[k] = t.value; tocado(m); if (esSel) repintar(); else refrescar(); return; }
+    if (t.dataset.x) { const x = buscaEn(m.sesiones, t.dataset.x); if (!x) return; x[k] = t.value; tocado(m); refrescar(); return; }
+    if (t.dataset.fa) {
+      const f = buscaEn(m.fallos, t.dataset.fa); if (!f) return;
+      f[k] = ["g", "o", "d"].includes(k) ? t.value.trim() : t.value; tocado(m);
+      if (esSel) { if (k === "puntoId" && t.value) { const pt = L.puntoDe(m, f); const s = pt && L.subDePunto(m, pt); if (s) f.subprocesoId = s.id; } abiertosF.add(f.id); repintar(); } else refrescar(f.id);
+      return;
+    }
     if (t.dataset.marco) { m.marco[t.dataset.marco] = t.value.split("\n").map(x => x.trim()).filter(Boolean).slice(0, t.dataset.marco === "soporte" ? 16 : 12); tocado(m); refrescar(); return; }
     if (t.dataset.aj) { const p = LF.pasoDe(m, t.dataset.aj); if (!p) return; p.ajuste.lado = t.value; if (t.value) p.ajuste.fila = ""; tocado(m); seleccionar(p.id); refrescar(); return; }
     if (t.dataset.sal) {
@@ -1030,7 +1350,7 @@
       if (conLienzo()) seleccionar(p.id); else repintar();
       refrescar(); return;
     }
-    if (t.dataset.k) { setPath(m, t.dataset.k, t.value); tocado(m); refrescar(); }
+    if (t.dataset.k) { setPath(m, t.dataset.k, t.value); tocado(m); refrescar(null, /^prioridad\./.test(t.dataset.k)); }
   });
   view.addEventListener("toggle", e => {
     const d = e.target;
@@ -1070,6 +1390,11 @@
     if ((b = t.closest(".info-btn"))) { const h = $("#help-" + b.dataset.info); if (!h) return; const open = h.hidden; h.hidden = !open; b.setAttribute("aria-expanded", String(open)); return; }
     const m = actual;
     if ((b = t.closest(".fl-nodo")) && m) { seleccionar(b.dataset.paso === selPaso ? "" : b.dataset.paso); return; }
+    if ((b = t.closest("[data-asis]")) && m) {
+      const x = buscaEn(m.sesiones, b.dataset.asis); if (!x) return;
+      const i = x.asistentes.indexOf(b.dataset.v); if (i < 0) x.asistentes.push(b.dataset.v); else x.asistentes.splice(i, 1);
+      b.classList.toggle("active", i < 0); tocado(m); return;
+    }
     if (!(b = t.closest("[data-act]"))) return;
     const act = b.dataset.act, id = b.dataset.id;
     // --- Lista ---
@@ -1220,6 +1545,110 @@
     }
     else if (act === "prop-no" && m) { if (!m.descartes.includes(b.dataset.k)) m.descartes.push(b.dataset.k); tocado(m); repintar(); }
     else if (act === "prop-recuperar" && m) { m.descartes = []; tocado(m); repintar(); }
+    // --- Paso 1 · Traer de AMFE ---
+    else if (act === "amfe-buscar" && m) {
+      let l = null; try { l = L.leerAmfe(JSON.parse(leer("amfe-intercambio") || "null")); } catch (er) { /* */ }
+      if (l && l.length) { amfesLeidos = l; amfeElegido = l[0].id; repintar(); }
+      else confirmar("<p>No hay ningún AMFE de la app <b>AMFE</b> en este navegador.</p><p>Si lo tienes en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-amfe").click(), { titulo: "Traer de AMFE", peligro: false });
+    }
+    else if (act === "amfe-cancelar") { amfesLeidos = null; repintar(); }
+    else if (act === "amfe-traer" && m && amfesLeidos) {
+      const a = amfesLeidos.find(x => x.id === amfeElegido) || amfesLeidos[0];
+      const r = L.traerDeAmfe(m, a, genId, a.appVersion || "", hoyIso()); amfesLeidos = null; tocado(m); repintar();
+      const partes = [r.proceso && "el proceso", r.subprocesos && plural(r.subprocesos, "subproceso", "subprocesos"), r.fallos && plural(r.fallos, "fallo", "fallos"), r.acciones && plural(r.acciones, "acción de mejora", "acciones de mejora")].filter(Boolean);
+      toast(`${partes.length ? "Traído de AMFE: " + L.listaY(partes) + "." : "No había nada nuevo que traer."}${r.enlazados ? ` ${plural(r.enlazados, "fallo enlazado", "fallos enlazados")} con su punto crítico.` : ""}${r.fallosOmitidos ? " Los fallos no se han traído porque este mapa ya tenía fallos." : ""}`, 6000);
+    }
+    // --- Paso 5 ---
+    else if (act === "eq-sug" && m) {
+      const p = A.PERFILES_SUG[Number(b.dataset.i)]; if (!p) return;
+      if (m.equipo.some(x => L.normal(x.perfil) === L.normal(p.perfil))) { toast("Ese perfil ya está en el equipo.", 2500); return; }
+      m.equipo.push(Object.assign(A.nuevoMiembro(genId()), { perfil: p.perfil, rol: m.equipo.some(x => x.rol === p.rol && (p.rol === "coordinador" || p.rol === "secretario")) ? "miembro" : p.rol }));
+      tocado(m); repintar();
+    }
+    else if (act === "eq-add" && m) {
+      const x = A.nuevoMiembro(genId()); m.equipo.push(x); tocado(m); repintar();
+      const el = $(`[data-m="${x.id}"][data-f="perfil"]`); if (el) { el.focus(); el.scrollIntoView({ block: "center" }); }
+    }
+    else if (act === "eq-del" && m) {
+      const x = buscaEn(m.equipo, id); if (!x) return;
+      const hacer = () => { m.equipo = m.equipo.filter(y => y.id !== id); m.sesiones.forEach(y => { y.asistentes = y.asistentes.filter(z => z !== id); }); tocado(m); repintar(); };
+      if (lleno(x.perfil) || lleno(x.justificacion)) confirmar(`<p>Se quitará «${esc(L.corto(etiquetaMiembro(x), 60))}» del equipo.</p>`, "Quitar", hacer); else hacer();
+    }
+    else if (act === "ses-add" && m) { const x = A.nuevaSesion(genId()); m.sesiones.push(x); tocado(m); repintar(); }
+    else if (act === "ses-tipo" && m) {
+      A.SESIONES_TIPO.forEach(s => m.sesiones.push(Object.assign(A.nuevaSesion(genId()), s, { asistentes: m.equipo.map(x => x.id) })));
+      tocado(m); repintar(); toast("Propuestas las 3 sesiones habituales. Pon las fechas y ajústalas.", 3500);
+    }
+    else if (act === "ses-del" && m) {
+      const x = buscaEn(m.sesiones, id); if (!x) return;
+      const hacer = () => { m.sesiones = m.sesiones.filter(y => y.id !== id); tocado(m); repintar(); };
+      if (lleno(x.actividad) || lleno(x.resultados)) confirmar("<p>Se quitará esta sesión.</p>", "Quitar", hacer); else hacer();
+    }
+    else if (act === "tec" && m) {
+      const T = m.metodologia.tecnicas, v = b.dataset.v, i = T.indexOf(v);
+      if (i < 0) T.push(v); else T.splice(i, 1);
+      b.classList.toggle("active", i < 0); tocado(m); refrescar();
+    }
+    // --- Paso 6 ---
+    else if (act === "pasar-amfe" && m) {
+      const n = L.pasarPuntosAlAmfe(m, genId); tocado(m); repintar();
+      toast(`${plural(n, "punto crítico ha pasado", "puntos críticos han pasado")} al AMFE. Escribe ahora el efecto, la causa y los controles de cada fallo.`, 4500);
+    }
+    else if (act === "fa-toggle") {
+      if (abiertosF.has(id)) abiertosF.delete(id); else abiertosF.add(id);
+      const card = $(`.fallo[data-fid="${id}"]`); if (!card) return;
+      const ab = abiertosF.has(id);
+      $(".rg-body", card).hidden = !ab; $(".rg-toggle", card).setAttribute("aria-expanded", ab);
+      if (ab) $$("textarea.txt-in", card).forEach(autoAlto); else if (card.getBoundingClientRect().top < 60) card.scrollIntoView({ block: "start" });
+    }
+    else if (act === "fa-abrir-todos" && m) { if (abiertosF.size) abiertosF.clear(); else m.fallos.forEach(f => abiertosF.add(f.id)); repintar(); }
+    else if (act === "fa-add" && m) {
+      const f = Object.assign(A.nuevoFallo(genId(), A.siguienteNum(m)), { subprocesoId: b.dataset.sub || "", puntoId: "" });
+      m.fallos.push(f); abiertosF.add(f.id); tocado(m); repintar();
+      const el = $(`[data-fa="${f.id}"][data-f="fallo"]`); if (el) { el.focus(); el.scrollIntoView({ block: "center" }); }
+    }
+    else if (act === "fa-del" && m) {
+      const f = buscaEn(m.fallos, id); if (!f) return;
+      const hacer = () => { m.fallos = m.fallos.filter(x => x.id !== id); abiertosF.delete(id); tocado(m); repintar(); };
+      if ([f.fallo, f.efecto, f.causa, f.controles].some(lleno)) confirmar(`<p>Se quitará el fallo nº ${f.num} «${esc(L.corto(f.fallo || "sin describir", 60))}».${f.acciones.length ? ` También sus ${plural(f.acciones.length, "acción de mejora", "acciones de mejora")}.` : ""}</p>`, "Quitar", hacer); else hacer();
+    }
+    else if (act === "pegarf-abrir") { pegarFallos = true; repintar(); const el = $("#pegar-fallos"); if (el) el.focus(); }
+    else if (act === "pegarf-cerrar") { pegarFallos = false; repintar(); }
+    else if (act === "pegarf-ok" && m) {
+      const p = A.parsearTabla($("#pegar-fallos").value); if (!p.filas.length) return;
+      const ns = A.incorporarFilas(m, p.filas, genId);
+      m.fallos.forEach(f => { if (f.puntoId === undefined) f.puntoId = ""; });
+      pegarFallos = false; tocado(m); repintar();
+      toast(`Añadidos ${plural(p.filas.length, "fallo", "fallos")}${ns ? ` y ${plural(ns, "subproceso nuevo", "subprocesos nuevos")}` : ""}.`, 4000);
+    }
+    // --- Paso 7 ---
+    else if (act === "v7" && m) { vista7 = b.dataset.v; escribir(KEY_VISTA7, vista7); repintar(); window.scrollTo(0, ($(".vista3") || { offsetTop: 0 }).offsetTop - 70); }
+    else if (act === "prio-modo" && m) { m.prioridad.modo = b.dataset.v; tocado(m); repintar(); }
+    else if (act === "mz-tam") { tamMatriz = Number(b.dataset.v) === 5 ? 5 : 10; escribir(KEY_MATRIZ, String(tamMatriz)); const z = $("[data-zona='matriz']"); if (z && m) z.innerHTML = matrizHtml(m); }
+    else if (act === "mz-solo") { soloPrio = b.dataset.v === "1"; const z = $("[data-zona='matriz']"); if (z && m) z.innerHTML = matrizHtml(m); }
+    else if (act === "ir-fallo" && m) {
+      vista7 = "priorizar"; escribir(KEY_VISTA7, vista7); repintar();
+      const el = $(`[data-pf="${id}"]`); if (!el) return;
+      el.scrollIntoView({ block: "center" }); el.classList.remove("pf--flash"); void el.offsetWidth; el.classList.add("pf--flash");
+    }
+    else if (act === "pf-prio" && m) {
+      const f = buscaEn(m.fallos, id); if (!f || f.critico) return;
+      const e = A.prioridad(m)[f.id];
+      f.manual = f.manual ? "" : (e.prio ? "no" : "si");
+      if (f.manual === "si" && !lleno(f.motivo)) f.motivo = A.sugerirMotivo(m, f);
+      tocado(m); repintar();
+      if (f.manual) { const el = $(`[data-fa="${f.id}"][data-f="motivo"]`); if (el) el.focus(); }
+    }
+    else if (act === "pf-critico" && m) {
+      const f = buscaEn(m.fallos, id); if (!f) return;
+      f.critico = b.checked; tocado(m); repintar();
+      if (f.critico) { const el = $(`[data-fa="${f.id}"][data-f="motivoCritico"]`); if (el) el.focus(); }
+    }
+    else if (act === "pf-motivo" && m) {
+      const f = buscaEn(m.fallos, id), k = b.dataset.k; if (!f) return;
+      const s = A.sugerirMotivo(m, f), hacer = () => { f[k] = s; tocado(m); repintar(); };
+      if (lleno(f[k])) confirmar("<p>Se sustituirá el motivo que has escrito por el propuesto.</p>", "Sustituir", hacer, { peligro: false }); else hacer();
+    }
     // --- Vista para imprimir ---
     else if (act === "informe") irInforme();
     else if (act === "volver") location.hash = rutaActual();
@@ -1237,6 +1666,17 @@
       let l = null; try { l = L.leerFlujograma(JSON.parse(fr.result)); } catch (er) { /* */ }
       if (!l || !l.length) { toast("Ese archivo no es una copia de la app Flujograma (o es de una versión que no se reconoce).", 4500); return; }
       flujosLeidos = l; flujoElegido = l[0].id; if (actual) repintar();
+    };
+    fr.readAsText(fl);
+  });
+  // Copia de seguridad de la app AMFE (para «Traer de AMFE» desde otro dispositivo)
+  $("#input-amfe").addEventListener("change", e => {
+    const fl = e.target.files && e.target.files[0]; e.target.value = ""; if (!fl) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      let l = null; try { l = L.leerAmfe(JSON.parse(fr.result)); } catch (er) { /* */ }
+      if (!l || !l.length) { toast("Ese archivo no es una copia de la app AMFE (o es de una versión que no se reconoce).", 4500); return; }
+      amfesLeidos = l; amfeElegido = l[0].id; if (actual) repintar();
     };
     fr.readAsText(fl);
   });

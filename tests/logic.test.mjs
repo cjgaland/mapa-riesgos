@@ -27,6 +27,15 @@ t("función que falta se avisa", /le falta: disponer/.test(comprobarMotor("flujo
 // Todo lo que esta app usa del motor de Flujograma está en el contrato que Flujograma se compromete a mantener
 t("lo que se usa de Flujograma está en su contrato", MOTORES.flujo.usa.every(k => LF.CONTRATO.includes(k)) || console.log("   fuera del contrato:", MOTORES.flujo.usa.filter(k => !LF.CONTRATO.includes(k)).join(", ")));
 t("no se ha copiado el motor (logic.js propio no define disponer)", !/function disponer/.test(require("fs").readFileSync(path.join(aqui, "../logic.js"), "utf8")));
+// Y lo que se usa de AMFE está en su contrato (la lista CONTRATO_MAPA de sus tests)
+{
+  const txt = require("fs").readFileSync(path.join(ESCRITORIO, "AMFE/Aplicación/tests/logic.test.mjs"), "utf8"), i = txt.indexOf("CONTRATO_MAPA = {"), bloque = i < 0 ? "" : txt.slice(i, txt.indexOf("};", i));
+  const fuera = MOTORES.amfe.usa.filter(k => !new RegExp(`"${k}"`).test(bloque));
+  t("lo que se usa de AMFE está en su contrato", !fuera.length || console.log("   fuera del contrato de AMFE:", fuera.join(", ")));
+}
+const usadas = (f, v) => [...new Set((require("fs").readFileSync(path.join(aqui, "..", f), "utf8").match(new RegExp(`\\b${v}\\.([A-Za-z_0-9]+)`, "g")) || []).map(x => x.split(".")[1]))];
+t("todo lo usado de AMFE está declarado", [...usadas("logic.js", "LA"), ...usadas("app.js", "A")].filter(k => !["filter", "map", "length", "some", "every", "find", "push", "forEach"].includes(k) && !MOTORES.amfe.usa.includes(k)).length === 0 || console.log("   sin declarar:", [...usadas("logic.js", "LA"), ...usadas("app.js", "A")].filter(k => !MOTORES.amfe.usa.includes(k)).join(", ")));
+t("todo lo usado de Flujograma está declarado", [...usadas("logic.js", "LF"), ...usadas("app.js", "LF")].every(k => MOTORES.flujo.usa.includes(k)));
 const L = crear(LF, LA);
 
 // ---------- Modelo ----------
@@ -132,9 +141,64 @@ t("las propuestas aceptadas no vuelven tras copiar", !L.propuestas(cp).some(p =>
 t("ids nuevos y referencias rehechas", cp.id !== U.id && !JSON.stringify(cp).includes("ej-mapa") && cp.puntos.every(x => LF.pasoDe(cp, x.pasoId) && cp.subprocesos.some(sb => sb.id === x.subprocesoId)) && LF.errores(cp).length === 0);
 
 // ---------- Contenido ----------
-t("Aprende: 4 temas y 4 próximamente", C.TEMAS.length === 4 && C.TEMAS_PROX.length === 4);
+t("Aprende: 6 temas y 2 próximamente", C.TEMAS.length === 6 && C.TEMAS_PROX.length === 2);
 t("temas completos", C.TEMAS.every(x => x.minuto.length && x.secciones.length && x.minicaso && x.practica.href));
 t("glosario sin repetidos", new Set(C.GLOSARIO.map(g => g[0])).size === C.GLOSARIO.length && C.GLOSARIO.length >= 25);
+
+// ---------- Entrega 2 · el AMFE dentro del mapa ----------
+t("un mapa es también un AMFE", ["equipo", "sesiones", "fallos", "escalas", "prioridad"].every(k => k in L.nuevoMapa("x", "")) && L.nuevoMapa("x", "").prioridad.n === "15");
+t("ejemplo: equipo de 10 y 3 sesiones", U.equipo.length === 10 && U.sesiones.length === 3 && U.sesiones.every(s => s.asistentes.length === 10));
+t("ejemplo: 49 fallos, cada uno con su punto crítico (mismo nº y subproceso)", U.fallos.length === 49 && U.fallos.every(f => { const x = L.puntoDe(U, f); return x && x.num === f.num && x.subprocesoId === f.subprocesoId; }));
+const IPR_CURSO = { 10: 343, 8: 336, 5: 294, 15: 294, 29: 294, 9: 252, 23: 252, 36: 252, 45: 252, 7: 216, 16: 216, 30: 216, 43: 216, 3: 210, 11: 180, 6: 36, 20: 45 };
+t("ejemplo: mismos IPR que el curso", Object.entries(IPR_CURSO).every(([n, v]) => LA.iprDe(U.fallos.find(f => f.num === Number(n))) === v));
+t("ejemplo: los 15 prioritarios y en el orden del curso", LA.prioritarios(U).map(f => f.num).join() === "10,8,5,15,29,9,23,36,45,7,16,30,43,3,11");
+t("ejemplo: pasos 5, 6 y 7 hechos", [5, 6, 7].every(k => L.progreso(U)[k]));
+t("ejemplo: los avisos del AMFE no llevan el nº de paso de la app AMFE", [5, 6, 7].every(n => L.avisosDe(U, n).every(a => !("paso" in a))));
+t("ejemplo: sin errores al puntuar ni avisos de prioridad sin motivo", !L.avisosAnalisis(U).some(a => a.nivel === "error" || /motivo/.test(a.texto)));
+t("ejemplo: aviso de empate en el corte (nº 18, 22, 35, 37)", L.avisosPriorizar(U).some(a => /18, 22, 35, 37/.test(a.texto)));
+t("ejemplo: metodología con caso, lluvia de ideas y grupo nominal", /análisis de un caso real o simulado, lluvia de ideas y técnica de grupo nominal, en 3 sesiones/.test(L.textoMetodologia(U)));
+// Saneado de la parte de AMFE: lo hace el motor de AMFE y se conserva el punto crítico de cada fallo
+const U2 = L.sanearMapa(Object.assign(clon(U), { fallos: [...clon(U.fallos), { id: "malo", num: 3, fallo: "Repetido", g: "99", puntoId: "no-existe" }] }), genId, "2026");
+t("saneado AMFE: nº repetido renumerado y punto roto fuera", U2.fallos.length === 50 && U2.fallos.find(f => f.id === "malo").num === 50 && U2.fallos.find(f => f.id === "malo").puntoId === "" && U2.fallos[0].puntoId === U.fallos[0].puntoId);
+t("saneado AMFE: técnicas desconocidas fuera", L.sanearMapa(Object.assign(clon(U), { metodologia: { tecnicas: ["lluvia", "magia"], texto: 5 } }), genId, "").metodologia.tecnicas.join() === "lluvia");
+t("saneado sin motor de AMFE conserva los fallos", crear(LF, null).sanearMapa(clon(U), genId, "").fallos.length === 49);
+// Pasar los puntos críticos al AMFE
+const mp = L.sanearMapa(clon(C.EJEMPLOS.mapas[0]), genId, ""); mp.fallos = [];
+t("pasar los puntos al AMFE crea 49 fallos con su nº", L.pasarPuntosAlAmfe(mp, genId) === 49 && mp.fallos.every(f => f.num === L.puntoDe(mp, f).num && f.fallo === L.puntoDe(mp, f).titulo));
+t("pasar dos veces no duplica", L.pasarPuntosAlAmfe(mp, genId) === 0 && mp.fallos.length === 49);
+mp.puntos.push(Object.assign(L.nuevoPunto("nuevo-pt", 3, mp.subprocesos[0].id), { titulo: "Otro riesgo en la recepción" }));
+t("un punto nuevo con nº ocupado toma el siguiente libre", L.pasarPuntosAlAmfe(mp, genId) === 1 && mp.fallos.find(f => f.puntoId === "nuevo-pt").num === 50);
+t("avisa de puntos críticos sin pasar", L.avisosFallos(Object.assign(clon(mp), { fallos: mp.fallos.slice(0, 10) })).some(a => a.k === "puntos"));
+// Traer de AMFE con el paquete real que genera la app AMFE para su ejemplo de Urgencias
+const AC = require(path.join(ESCRITORIO, "AMFE/Aplicación/contenido.js"));
+const amfeOrig = LA.sanearAmfe(clon(AC.EJEMPLOS.amfes ? AC.EJEMPLOS.amfes.find(a => a.id === "ej-amfe-urg") : AC.EJEMPLOS.find(a => a.id === "ej-amfe-urg")), genId, "2026");
+amfeOrig.id = "amfe-real"; amfeOrig.fallos[0].manual = "si"; amfeOrig.fallos[0].motivo = "Lo decide el equipo";
+const pqA = LA.paqueteIntercambio([amfeOrig], "2026.06", "2026-10-23");
+t("leer el paquete de AMFE", L.leerAmfe(pqA).length === 1 && L.leerAmfe({ amfes: [], intercambio: pqA }).length === 1 && L.leerAmfe({ formato: "flujograma-procesos", version: 1, flujos: [] }) === null);
+const a1 = L.leerAmfe(pqA)[0], ma = L.nuevoMapa("m-amfe", "2026");
+const ra = L.traerDeAmfe(ma, a1, genId, a1.appVersion, "2026-10-23");
+t("trae proceso, 7 subprocesos, 49 fallos y sus acciones", ra.proceso && ra.subprocesos === 7 && ra.fallos === 49 && ra.acciones === 9 && ma.origen.amfe.appVersion === "2026.06");
+t("misma prioridad que en AMFE", LA.prioritarios(ma).map(f => f.num).join() === LA.prioritarios(amfeOrig).map(f => f.num).join());
+t("se respeta lo marcado a mano", ma.fallos.find(f => f.num === amfeOrig.fallos[0].num).manual === "si");
+t("trae los controles y el residual", ma.fallos.find(f => f.num === 10).controles.length > 10 && LA.iprResidual(ma.fallos.find(f => f.num === 10)) > 0);
+t("traer dos veces no duplica los fallos", L.traerDeAmfe(ma, a1, genId, "", "").fallosOmitidos && ma.fallos.length === 49 && ma.subprocesos.length === 7);
+// Con los puntos críticos del ejemplo, los fallos traídos se enlazan con su punto por subproceso y título
+const mU = L.sanearMapa(clon(C.EJEMPLOS.mapas[0]), genId, ""); mU.fallos = [];
+const rU = L.traerDeAmfe(mU, a1, genId, "", "");
+t("los fallos traídos se enlazan con los puntos críticos del mapa", rU.enlazados >= 40 && rU.subprocesos === 0);
+t("lo traído sobrevive al saneado", L.sanearMapa(clon(ma), genId, "").fallos.length === 49);
+// Paquete «mapariesgos-mapas» v1 para otras apps (Auditorías)
+const mu = Object.assign(clon(U), { id: "usuario-1" });
+const pq = L.paqueteIntercambio([U, mu], "2026.02", "2026-10-23");
+t("paquete: formato y versión, sin ejemplos", pq.formato === "mapariesgos-mapas" && pq.version === 1 && pq.mapas.length === 1);
+t("paquete: bloque amfe con la forma de amfe-fallos (lo lee el motor de AMFE)", LA.leerIntercambio({ formato: "amfe-fallos", version: 1, amfes: [pq.mapas[0].amfe] }).length === 1 && pq.mapas[0].amfe.fallos.length === 49);
+t("paquete: bloque flujo con la forma de flujograma-procesos (lo lee el motor de Flujograma)", LF.leerIntercambio({ formato: "flujograma-procesos", version: 1, flujos: [pq.mapas[0].flujo] }).length === 1 && pq.mapas[0].flujo.dibujo.nodos.length === 33);
+t("paquete: 15 hallazgos con frecuencia proporcional al riesgo", pq.mapas[0].hallazgos.length === 15 && pq.mapas[0].hallazgos[0].frecuencia === "trimestral" && pq.mapas[0].hallazgos[14].frecuencia === "semestral");
+t("leer el paquete propio", L.leerIntercambio(pq).length === 1 && L.leerIntercambio({ mapas: [], intercambio: pq }).length === 1 && L.leerIntercambio(pqA) === null);
+t("frecuencia: gravedad 9-10 al menos semestral", L.frecuenciaSugerida(100, 9) === "semestral" && L.frecuenciaSugerida(100, 5) === "anual" && L.frecuenciaSugerida(0, 9) === "");
+// Copiar el ejemplo con su AMFE
+const cpa = L.renovarIds(clon(U), genId);
+t("copiar: fallos enlazados a sus puntos y asistentes al equipo", cpa.fallos.every(f => cpa.puntos.some(x => x.id === f.puntoId)) && cpa.sesiones.every(s => s.asistentes.every(id => cpa.equipo.some(x => x.id === id))) && LA.prioritarios(cpa).length === 15);
 
 console.log(`${ok} bien, ${mal} mal`);
 if (mal) process.exit(1);

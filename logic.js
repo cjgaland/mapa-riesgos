@@ -7,8 +7,11 @@
 //  Un mapa ES un flujograma (mismos campos que en Flujograma: proceso, actores,
 //  subprocesos, pasos, puntos críticos, vista, marco…) con los campos propios del
 //  mapa añadidos. Así las funciones del motor de Flujograma se usan tal cual
-//  (avisosPasos, disponer, dibujar, propuestasPuntos…). En la entrega 2 se
-//  añaden los campos con forma de AMFE (equipo, sesiones, fallos…).
+//  (avisosPasos, disponer, dibujar, propuestasPuntos…). Y lleva también los
+//  campos de un AMFE de la app AMFE (equipo, sesiones, fallos, escalas,
+//  prioridad…), así que las funciones del motor de AMFE (prioridad, matriz,
+//  avisosFallos…) también lo reciben tal cual: un mapa es a la vez un
+//  flujograma y un AMFE.
 //  Este archivo exporta una FÁBRICA: crear(LogicaFlujo, LogicaAmfe) → API.
 //  En el navegador: window.Logica = crear(window.LogicaFlujo, window.LogicaAmfe).
 //  En Node (tests): module.exports = { crear, MOTORES }.
@@ -26,7 +29,12 @@
         "cambiarTipo", "ponerSalida", "anadirActores", "disponer", "dibujar", "sanearFlujo", "leerIntercambio", "paqueteIntercambio",
         "NIVELES_IPR", "nivelDeIPR"] },
     amfe: { nombre: "AMFE", global: "LogicaAmfe", motor: 1, ruta: "../amfe/logic.js",
-      usa: ["ESCALAS_CURSO", "ipr", "iprDe", "NIVELES_IPR", "nivelIPR", "zonaMatriz", "prioridad", "matriz"] }
+      usa: ["ESCALAS_CURSO", "ESCALA_NOM", "TRAMOS", "tramo", "entero1a10", "ipr", "iprDe", "NIVELES_IPR", "nivelIPR", "ZONAS", "zonaMatriz",
+        "ordenarFallos", "puestos", "prioridad", "prioritarios", "nPrioridad", "sugerirMotivo", "matriz", "porSubproceso", "resumen", "progreso",
+        "ROLES", "PERFILES_SUG", "SESIONES_TIPO", "estamentoDe", "nuevoAmfe", "nuevoMiembro", "nuevaSesion", "nuevoFallo", "siguienteNum",
+        "tipoRedaccion", "avisosEquipo", "avisosFallos", "avisosPuntuar", "avisosPriorizar", "avisosMejorar",
+        "TIPOS_ACCION", "CLASES_ACCION", "ACTUA", "ESTADOS_ACCION", "nuevaAccion", "fuerzaMedida", "accionCompleta", "iprResidual", "resumenMejora",
+        "parsearTabla", "incorporarFilas", "sanearAmfe", "leerIntercambio", "paqueteIntercambio"] }
   };
   // ¿Está el motor y es de la versión esperada? Devuelve "" si está bien o el problema explicado.
   function comprobarMotor(k, M) {
@@ -72,8 +80,15 @@
     // ---------- Fábricas ----------
     // Un mapa = un flujograma del motor + lo propio del mapa
     function nuevoMapa(id, fecha) {
-      return Object.assign(LF.nuevoFlujo(id, fecha), { ambito: "", descripcion: "", origen: nuevoOrigen() });
+      return Object.assign(LF.nuevoFlujo(id, fecha), camposAmfe(), { ambito: "", descripcion: "", origen: nuevoOrigen(), metodologia: nuevaMetodologia() });
     }
+    // Los campos de un AMFE (los mismos que crea el motor de AMFE en nuevoAmfe)
+    function camposAmfe() {
+      const a = LA ? LA.nuevoAmfe("x", "") : null;
+      return { equipo: [], sesiones: [], fallos: [], escalas: a ? a.escalas : { g: [], o: [], d: [] }, prioridad: a ? a.prioridad : { modo: "top", n: "15", umbral: "200" },
+        introduccion: "", conclusiones: "", proxRevision: "", ideas: [], bloques: [], tgn: a ? a.tgn : { modo: "321", votos: [] } };
+    }
+    const nuevaMetodologia = () => ({ tecnicas: [], texto: "" });
     const nuevoOrigenRef = () => ({ id: "", titulo: "", appVersion: "", traido: "" });
     const nuevoOrigen = () => ({ flujo: nuevoOrigenRef(), amfe: nuevoOrigenRef(), dafo: nuevoOrigenRef() });
     const nuevoSubproceso = (id, color) => LF.nuevoSubproceso(id, color);
@@ -157,18 +172,21 @@
       const vistos = new Map(); m.puntos.filter(x => lleno(x.titulo)).forEach(x => { const n = normal(x.titulo); if (vistos.has(n)) r.push({ nivel: "nota", punto: x.id, texto: `El punto crítico nº ${x.num} repite el nº ${vistos.get(n).num}. Si son el mismo riesgo en dos subprocesos, está bien; si no, únelos.` }); else vistos.set(n, x); });
       return r;
     }
-    const AVISOS = { 1: avisosProceso, 2: avisosSubprocesos, 3: avisosFlujo, 4: avisosPuntos };
+    const AVISOS = { 1: avisosProceso, 2: avisosSubprocesos, 3: avisosFlujo, 4: avisosPuntos, 5: m => avisosEquipo(m), 6: m => avisosFallos(m), 7: m => avisosAnalisis(m) };
     const avisosDe = (m, n) => (AVISOS[n] || (() => []))(m);
 
     // ---------- Progreso y «tu siguiente paso» ----------
     function progreso(m) {
-      const pf = LF.progreso(m);
+      const pf = LF.progreso(m), pa = LA ? LA.progreso(m) : null;
       return {
         1: lleno(m.proceso) && lleno(m.inicio) && lleno(m.fin),
         2: m.subprocesos.filter(s => lleno(s.nombre)).length >= 2,
         3: pf[3] && lleno(m.validado),
         4: m.puntos.some(x => lleno(x.titulo)) && m.puntos.every(x => lleno(x.titulo) && subDePunto(m, x)),
-        5: false, 6: false, 7: false, 8: false, 9: false, 10: false
+        5: !!pa && pa[2],
+        6: !!pa && pa[4],
+        7: !!pa && pa[5] && pa[6],
+        8: false, 9: false, 10: false
       };
     }
     function pasoPendiente(m, entrega) {
@@ -179,7 +197,10 @@
       1: m => lleno(m.proceso) ? `escribe dónde empieza y dónde acaba «${corto(m.proceso, 50)}».` : "describe el proceso: nombre, dónde empieza y dónde acaba. O tráelo de Flujograma.",
       2: () => "divide el proceso en subprocesos, cada uno con su inicio, su fin y quién interviene.",
       3: m => !m.pasos.length ? "escribe los pasos del proceso (o pega una lista): la app dibuja el flujograma." : LF.errores(m).length ? "corrige los errores del flujograma (en rojo)." : "revisa el flujograma con el equipo y márcalo como validado.",
-      4: m => m.puntos.length ? "completa los puntos críticos: cada uno con su título, su descripción y su subproceso." : "busca los puntos críticos: dónde puede fallar cada subproceso. La app te propone dónde mirar."
+      4: m => m.puntos.length ? "completa los puntos críticos: cada uno con su título, su descripción y su subproceso." : "busca los puntos críticos: dónde puede fallar cada subproceso. La app te propone dónde mirar.",
+      5: () => "forma el equipo que hará el análisis (al menos 6 perfiles) y planifica las sesiones.",
+      6: m => !m.fallos.length && m.puntos.length ? "pasa los puntos críticos al AMFE y escribe el efecto y la causa de cada fallo." : "completa los fallos: cada uno en su subproceso, con su efecto, su causa y los controles actuales.",
+      7: m => m.fallos.some(f => lleno(f.fallo) && !(LA && LA.iprDe(f))) ? "puntúa la gravedad, la ocurrencia y la detección de cada fallo." : "revisa los fallos prioritarios y la matriz de riesgos; escribe el motivo de los que cambiéis a mano."
     };
     function siguientePaso(datos, entrega) {
       const L = datos.mapas;
@@ -187,11 +208,13 @@
       const m = L.slice().sort((x, y) => String(y.modificado).localeCompare(String(x.modificado)))[0];
       const p = pasoPendiente(m, entrega), nom = corto(m.titulo || m.proceso || "tu mapa", 50);
       if (p && TEXTO_PASO[p.n]) return { k: "paso" + p.n, texto: `«${nom}»: ${TEXTO_PASO[p.n](m)}`, href: `#/mapa/${m.id}/${p.n}`, btn: `Ir al paso ${p.n}` };
-      return { k: "listo", texto: `«${nom}» ya tiene el proceso, sus subprocesos, el flujograma y los puntos críticos. El análisis AMFE (pasos 5 a 7) llegará en la próxima versión; mientras, puedes hacerlo en la app AMFE.`, href: `#/mapa/${m.id}/4`, btn: "Ver los puntos críticos" };
+      return { k: "listo", texto: entrega >= 2 ? `«${nom}» ya tiene el proceso, el flujograma, los puntos críticos y el AMFE con sus fallos priorizados. Las acciones de mejora y el mapa llegarán en la próxima versión.` : `«${nom}» ya tiene el proceso, sus subprocesos, el flujograma y los puntos críticos.`, href: `#/mapa/${m.id}/${entrega >= 2 ? 7 : 4}`, btn: entrega >= 2 ? "Ver la priorización" : "Ver los puntos críticos" };
     }
     function resumen(m) {
-      const r = LF.resumen(m);
-      return Object.assign(r, { subprocesos: m.subprocesos.filter(s => lleno(s.nombre)).length, puntos: m.puntos.length });
+      const r = LF.resumen(m), F = m.fallos.filter(f => lleno(f.fallo));
+      return Object.assign(r, { subprocesos: m.subprocesos.filter(s => lleno(s.nombre)).length, puntos: m.puntos.length,
+        equipo: m.equipo.filter(x => lleno(x.perfil)).length, fallos: F.length, puntuados: LA ? F.filter(LA.iprDe).length : 0, prioritarios: LA && F.length ? LA.prioritarios(m).length : 0,
+        maxIPR: LA ? F.reduce((x, f) => Math.max(x, LA.iprDe(f) || 0), 0) : 0 });
     }
 
     // ---------- Puntos críticos ----------
@@ -215,6 +238,17 @@
       if (p && p.subprocesoId) x.subprocesoId = p.subprocesoId;
     }
 
+    // ¿Dos nombres dicen lo mismo? Iguales, o con al menos el 60 % de sus palabras con contenido en común
+    // («Comunicación de resultados y decisión clínica» ≈ «… y decisión final»; «térmico/ambiental» ≈ «térmico o ambiental»)
+    const palabras = s => new Set(normal(s).split(" ").filter(w => w.length > 3));
+    function parecido(a, b) {
+      if (!lleno(a) || !lleno(b)) return false;
+      if (normal(a) === normal(b)) return true;
+      const x = palabras(a), y = palabras(b); if (!x.size || !y.size) return false;
+      const comunes = [...x].filter(w => y.has(w)).length;
+      return comunes / (x.size + y.size - comunes) >= 0.6;
+    }
+
     // ---------- «Traer de Flujograma» (paquete «flujograma-procesos» v1, ver ECOSISTEMA.md, sección 4) ----------
     // Acepta el paquete de localStorage["flujograma-intercambio"] o la copia .json de la app Flujograma (clave «intercambio»)
     function leerFlujograma(o) {
@@ -233,7 +267,7 @@
       // Subprocesos: se emparejan por origen o por nombre; los que faltan se crean
       const mapaSub = new Map();
       (fl.subprocesos || []).slice().sort((a, b) => (a.orden || 0) - (b.orden || 0)).forEach(x => {
-        let s = m.subprocesos.find(y => (y.origenApp === "flujograma" && y.origenId === x.id) || (lleno(x.nombre) && normal(y.nombre) === normal(x.nombre)));
+        let s = m.subprocesos.find(y => y.origenApp === "flujograma" && y.origenId === x.id) || m.subprocesos.find(y => parecido(y.nombre, x.nombre));
         if (!s) {
           s = nuevoSubproceso(genId(), LF.colorLibre(m));
           Object.assign(s, { nombre: t(x.nombre, 200), descripcion: t(x.descripcion, 1000), inicio: t(x.inicio, 300), fin: t(x.fin, 300), roles: t(x.roles, 500) });
@@ -277,6 +311,141 @@
       return hecho;
     }
 
+    // ---------- El AMFE dentro del mapa (pasos 5 a 7, motor de AMFE) ----------
+    const sinPaso = l => l.map(a => { const r = Object.assign({}, a); delete r.paso; return r; });
+    const avisosEquipo = m => LA ? sinPaso(LA.avisosEquipo(m)) : [];
+    function avisosFallos(m) {
+      if (!LA) return [];
+      const r = sinPaso(LA.avisosFallos(m)).filter(a => !/Define primero los subprocesos/.test(a.texto));
+      const sinFallo = m.puntos.filter(x => lleno(x.titulo) && !m.fallos.some(f => f.puntoId === x.id));
+      if (m.puntos.length && sinFallo.length) r.unshift({ nivel: "nota", k: "puntos", texto: `${sinFallo.length === 1 ? "Un punto crítico no ha pasado" : sinFallo.length + " puntos críticos no han pasado"} al AMFE. Cada punto crítico suele ser, al menos, un modo de fallo.` });
+      return r;
+    }
+    const avisosPuntuar = m => LA ? sinPaso(LA.avisosPuntuar(m)) : [];
+    const avisosPriorizar = m => LA ? sinPaso(LA.avisosPriorizar(m)) : [];
+    const avisosAnalisis = m => [...avisosPuntuar(m), ...avisosPriorizar(m)];
+    // Técnicas para encontrar los fallos (apartado «Metodología empleada» del documento final)
+    const TECNICAS = {
+      lluvia: "Lluvia de ideas", tgn: "Técnica de grupo nominal", caso: "Análisis de un caso real o simulado", incidentes: "Revisión de incidentes notificados",
+      entrevistas: "Entrevistas al personal", observacion: "Observación directa del proceso", ishikawa: "Diagrama de Ishikawa"
+    };
+    function textoMetodologia(m) {
+      const T = m.metodologia.tecnicas.filter(k => TECNICAS[k]).map(k => TECNICAS[k].toLowerCase()), n = m.sesiones.length;
+      if (!T.length && !n) return "";
+      return `La recogida de fallos se realizó mediante ${T.length ? listaY(T) : "el trabajo del equipo"}${n ? `, en ${plural(n, "sesión de trabajo", "sesiones de trabajo")}` : ""}.`;
+    }
+    // Paso 4 → paso 6: cada punto crítico pasa a ser un modo de fallo (como entre los ejercicios 8 y 10 del curso)
+    function pasarPuntosAlAmfe(m, genId) {
+      if (!LA) return 0;
+      let n = 0;
+      ordenPuntos(m).forEach(x => {
+        if (!lleno(x.titulo) || m.fallos.some(f => f.puntoId === x.id)) return;
+        const usado = m.fallos.some(f => Number(f.num) === Number(x.num));
+        const s = subDePunto(m, x), f = LA.nuevoFallo(genId(), usado ? LA.siguienteNum(m) : x.num);
+        Object.assign(f, { subprocesoId: s ? s.id : "", fallo: x.titulo, puntoId: x.id });
+        m.fallos.push(f); n++;
+      });
+      m.fallos.sort((a, b) => a.num - b.num);
+      return n;
+    }
+    const puntoDe = (m, f) => m.puntos.find(x => x.id === f.puntoId) || null;
+
+    // ---------- «Traer de AMFE» (paquete «amfe-fallos» v1, ver ECOSISTEMA.md, sección 4) ----------
+    // Acepta el paquete de localStorage["amfe-intercambio"] o la copia .json de la app AMFE (clave «intercambio»)
+    function leerAmfe(o) {
+      if (!LA || !o || typeof o !== "object") return null;
+      const p = o.formato ? o : o.intercambio, l = LA.leerIntercambio(p);
+      return l && l.map(x => Object.assign({}, x, { appVersion: String(p.appVersion || "").slice(0, 20) }));
+    }
+    const resumenAmfe = a => `${a.titulo || a.proceso || "AMFE sin nombre"} · ${plural((a.subprocesos || []).length, "subproceso", "subprocesos")} · ${plural((a.fallos || []).length, "fallo", "fallos")}`;
+    // Copia el AMFE traído en el mapa: proceso (si está vacío), subprocesos (emparejados por origen o nombre) y, si el mapa
+    // aún no tiene fallos, los fallos con su puntuación, su prioridad, sus acciones y su residual. Lo que ya hay no se borra.
+    function traerDeAmfe(m, a, genId, appVersion, hoy) {
+      const hecho = { proceso: false, subprocesos: 0, fallos: 0, acciones: 0, enlazados: 0, fallosOmitidos: false };
+      const t = (v, n) => String(v == null ? "" : v).slice(0, n), g = v => Number.isInteger(v) && v >= 1 && v <= 10 ? String(v) : "";
+      [["proceso", a.proceso || a.titulo], ["unidad", a.unidad]].forEach(([k, v]) => { if (!lleno(m[k]) && lleno(v)) { m[k] = t(v, 300); hecho.proceso = true; } });
+      const mapaSub = new Map();
+      (a.subprocesos || []).slice().sort((x, y) => (x.orden || 0) - (y.orden || 0)).forEach(x => {
+        let s = m.subprocesos.find(y => y.origenApp === "amfe" && y.origenId === x.id) || m.subprocesos.find(y => parecido(y.nombre, x.nombre));
+        if (!s) {
+          s = nuevoSubproceso(genId(), LF.colorLibre(m));
+          Object.assign(s, { nombre: t(x.nombre, 200), inicio: t(x.inicio, 300), fin: t(x.fin, 300), roles: t(x.roles, 500) });
+          m.subprocesos.push(s); hecho.subprocesos++;
+        }
+        if (!s.origenApp) { s.origenApp = "amfe"; s.origenId = t(x.id, 60); }
+        mapaSub.set(x.id, s.id);
+      });
+      if (m.fallos.length) hecho.fallosOmitidos = true;
+      else if (LA) {
+        const c = a.criterio || {};
+        m.prioridad = { modo: c.modo === "umbral" ? "umbral" : "top", n: c.n ? String(c.n) : "15", umbral: c.umbral ? String(c.umbral) : "200" };
+        if (a.escalas && typeof a.escalas === "object") ["g", "o", "d"].forEach(k => { if (Array.isArray(a.escalas[k]) && a.escalas[k].length === 5) m.escalas[k] = a.escalas[k].map(x => t(x, 300)); });
+        const usados = new Set();
+        (a.fallos || []).forEach(x => {
+          let num = Number(x.num); if (!Number.isInteger(num) || num < 1 || usados.has(num)) num = Math.max(0, ...usados) + 1; usados.add(num);
+          const f = LA.nuevoFallo(genId(), num);
+          Object.assign(f, { subprocesoId: mapaSub.get(x.subprocesoId) || "", fallo: t(x.fallo, 1000), efecto: t(x.efecto, 1000), causa: t(x.causa, 1000), controles: t(x.controles, 1000),
+            g: g(x.g), o: g(x.o), d: g(x.d), critico: x.critico === true, motivoCritico: x.critico === true ? t(x.motivo, 1000) : "" });
+          if (x.prioritario === true && x.motivoPrioridad === "manual") { f.manual = "si"; f.motivo = t(x.motivo, 1000); }
+          f._prio = x.prioritario === true;
+          f.acciones = (x.acciones || []).slice(0, 20).map(y => {
+            const ac = LA.nuevaAccion(genId());
+            ["que", "porque", "donde", "plazo", "fin", "quien", "como"].forEach(k => { ac[k] = t(y[k], k === "fin" ? 20 : 1500); });
+            if (LA.TIPOS_ACCION[y.tipo]) ac.tipo = y.tipo; if (LA.CLASES_ACCION[y.clase]) ac.clase = y.clase;
+            if (Array.isArray(y.actuaSobre)) ac.actuaSobre = y.actuaSobre.filter(k => LA.ACTUA[k]).slice(0, 3);
+            if (y.indicador) ["nombre", "formula", "estandar", "fuente"].forEach(k => { ac.indicador[k] = t(y.indicador[k], 500); });
+            if (LA.ESTADOS_ACCION[y.estado]) ac.estado = y.estado;
+            hecho.acciones++; return ac;
+          });
+          if (x.residual) Object.assign(f.residual, { g: g(x.residual.g), o: g(x.residual.o), d: g(x.residual.d) });
+          // Enlazar con el punto crítico del mismo subproceso que tenga el mismo título
+          const pt = m.puntos.find(y => y.subprocesoId === f.subprocesoId && !m.fallos.some(z => z.puntoId === y.id) && parecido(y.titulo, f.fallo));
+          if (pt) { f.puntoId = pt.id; hecho.enlazados++; }
+          m.fallos.push(f); hecho.fallos++;
+        });
+        // Lo que el equipo quitó a mano de los prioritarios en AMFE se respeta
+        const pr = LA.prioridad(m);
+        m.fallos.forEach(f => { if (pr[f.id] && pr[f.id].prio && !f._prio && !f.critico) { f.manual = "no"; f.motivo = f.motivo || "Quitado de los prioritarios en el AMFE de origen."; } delete f._prio; });
+      }
+      m.origen.amfe = { id: t(a.id, 60), titulo: t(a.titulo || a.proceso, 300), appVersion: t(appVersion, 20), traido: t(hoy, 10) };
+      return hecho;
+    }
+
+    // ---------- Paquete de intercambio «mapariesgos-mapas» v1 (Diseño, 7.3) ----------
+    // Por dentro habla los mismos idiomas que las herramientas: un bloque `amfe` con la forma exacta de «amfe-fallos» v1 y
+    // un bloque `flujo` con la de «flujograma-procesos» v1. Añadir campos no sube la versión; quitar o cambiar uno, sí.
+    const FORMATO_INTERCAMBIO = "mapariesgos-mapas", VERSION_INTERCAMBIO = 1;
+    // Frecuencia de auditoría proporcional al riesgo (la misma regla que el Plan Anual de Auditorías)
+    function frecuenciaSugerida(ipr, g) {
+      if (!ipr) return "";
+      let k = ipr >= 250 ? "trimestral" : ipr >= 150 ? "semestral" : "anual";
+      if (k === "anual" && g >= 9) k = "semestral";
+      return k;
+    }
+    function hallazgos(m) {
+      if (!LA) return [];
+      return LA.prioritarios(m).map(f => {
+        const v = LA.iprDe(f), s = subDe(m, f.subprocesoId), a1 = (f.acciones || [])[0], ai = (f.acciones || []).find(x => lleno(x.indicador.nombre)), nv = LA.nivelIPR(v);
+        return { num: f.num, falloId: f.id, subproceso: s ? s.nombre : "", fallo: f.fallo, ipr: v, nivel: nv ? nv.k : "", g: Number(f.g) || null, critico: f.critico,
+          accion: a1 ? a1.que : "", indicador: ai ? [ai.indicador.nombre, ai.indicador.estandar].filter(lleno).join(" · ") : "", frecuencia: frecuenciaSugerida(v, Number(f.g) || 0),
+          motivo: f.critico ? f.motivoCritico : f.motivo || (LA.sugerirMotivo ? LA.sugerirMotivo(m, f) : "") };
+      });
+    }
+    function paqueteIntercambio(mapas, appVersion, fecha) {
+      return { formato: FORMATO_INTERCAMBIO, version: VERSION_INTERCAMBIO, app: "mapariesgos", appVersion, generado: fecha,
+        mapas: mapas.filter(m => !/^ej-/.test(m.id)).map(m => ({
+          id: m.id, titulo: m.titulo || m.proceso, proceso: m.proceso, unidad: m.unidad, fecha: m.fecha, edicion: m.edicion, proxRevision: m.proxRevision || "",
+          amfe: LA ? LA.paqueteIntercambio([m], appVersion, fecha).amfes[0] : null,
+          flujo: m.pasos.length ? (LF.paqueteIntercambio([m], appVersion, fecha).flujos[0] || null) : null,
+          hallazgos: hallazgos(m)
+        })) };
+    }
+    function leerIntercambio(o) {
+      const p = o && typeof o === "object" && o.formato ? o : o && o.intercambio;
+      if (!p || p.formato !== FORMATO_INTERCAMBIO || p.version !== VERSION_INTERCAMBIO || !Array.isArray(p.mapas)) return null;
+      return p.mapas.filter(x => x && typeof x === "object");
+    }
+
     // ---------- Saneado (lo que se carga o se importa nunca se usa sin pasar por aquí) ----------
     const idValido = v => typeof v === "string" && /^[a-z0-9-]{1,40}$/i.test(v);
     const txt = (v, max) => (typeof v === "string" || typeof v === "number") ? String(v).slice(0, max) : "";
@@ -290,6 +459,11 @@
       if (!o || typeof o !== "object" || Array.isArray(o)) return null;
       const m = LF.sanearFlujo(o, genId, fecha); if (!m) return null;
       m.ambito = txt(o.ambito, 300); m.descripcion = txt(o.descripcion, 3000);
+      // La parte de AMFE la sanea el motor de AMFE (con los mismos subprocesos); si no se ha cargado, se conserva tal cual
+      const a = LA ? LA.sanearAmfe(Object.assign({}, o, { subprocesos: m.subprocesos }), genId, fecha) : null, def = camposAmfe();
+      Object.keys(def).forEach(k => { m[k] = a ? a[k] : (o[k] !== undefined ? o[k] : def[k]); });
+      const mt = o.metodologia && typeof o.metodologia === "object" ? o.metodologia : {};
+      m.metodologia = { tecnicas: Array.isArray(mt.tecnicas) ? [...new Set(mt.tecnicas.filter(k => TECNICAS[k]))] : [], texto: txt(mt.texto, 2000) };
       const og = o.origen && typeof o.origen === "object" ? o.origen : {};
       m.origen = { flujo: sanearOrigenRef(og.flujo), amfe: sanearOrigenRef(og.amfe), dafo: sanearOrigenRef(og.dafo) };
       // El motor no conoce el subproceso propio de cada punto crítico: se recupera del original
@@ -299,6 +473,9 @@
         const p = x.pasoId ? LF.pasoDe(m, x.pasoId) : null;
         x.subprocesoId = (p && p.subprocesoId) || s;
       });
+      // El motor de AMFE no conoce el punto crítico del que salió cada fallo: se recupera del original
+      const pts = new Set(m.puntos.map(x => x.id)), origF = new Map((Array.isArray(o.fallos) ? o.fallos : []).filter(x => x && idValido(x.id)).map(x => [x.id, x]));
+      m.fallos.forEach(f => { const y = origF.get(f.id); f.puntoId = y && idValido(y.puntoId) && pts.has(y.puntoId) ? y.puntoId : ""; });
       return m;
     }
     function sanearDatos(o, genId, fecha) {
@@ -318,11 +495,23 @@
       c.actores.forEach(a => { a.id = nuevo(a.id); }); c.subprocesos.forEach(s => { s.id = nuevo(s.id); });
       c.pasos.forEach(p => { p.id = nuevo(p.id); });
       c.pasos.forEach(p => { p.actorId = nuevo(p.actorId); p.subprocesoId = nuevo(p.subprocesoId); p.con = nuevo(p.con); p.siguientes.forEach(s => { s.a = nuevo(s.a); }); p.ajuste.lado = nuevo(p.ajuste.lado); });
-      c.puntos.forEach(x => { x.id = genId(); x.pasoId = nuevo(x.pasoId); x.subprocesoId = nuevo(x.subprocesoId); });
+      c.puntos.forEach(x => { x.id = nuevo(x.id); x.pasoId = nuevo(x.pasoId); x.subprocesoId = nuevo(x.subprocesoId); });
       // Las claves de las propuestas («tras:idA:idB», «dec:id», «pal:id») llevan ids de pasos
       const clave = k => String(k || "").split(":").map((y, i) => i && mp.has(y) ? mp.get(y) : y).join(":");
       c.puntos.forEach(x => { x.clave = x.clave ? clave(x.clave) : ""; });
       c.descartes = (c.descartes || []).map(clave);
+      // La parte de AMFE: equipo, sesiones, fallos (con sus acciones, votos e Ishikawa) e ideas
+      (c.equipo || []).forEach(x => { x.id = nuevo(x.id); });
+      (c.sesiones || []).forEach(x => { x.id = genId(); x.asistentes = x.asistentes.map(nuevo); });
+      (c.bloques || []).forEach(x => { x.id = nuevo(x.id); });
+      (c.fallos || []).forEach(f => { f.id = nuevo(f.id); });
+      (c.fallos || []).forEach(f => {
+        f.subprocesoId = nuevo(f.subprocesoId); f.puntoId = nuevo(f.puntoId);
+        (f.acciones || []).forEach(x => { x.id = genId(); }); (f.ishikawa || []).forEach(x => { x.id = genId(); });
+        (f.votos || []).forEach(v => { v.miembroId = nuevo(v.miembroId); });
+      });
+      (c.ideas || []).forEach(x => { x.id = genId(); x.subprocesoId = nuevo(x.subprocesoId); x.bloqueId = nuevo(x.bloqueId); x.falloId = nuevo(x.falloId); });
+      if (c.tgn) c.tgn.votos.forEach(v => { v.miembroId = nuevo(v.miembroId); v.bloqueId = nuevo(v.bloqueId); });
       c.anteriorId = "";
       return c;
     }
@@ -337,7 +526,9 @@
       progreso, pasoPendiente, siguientePaso, resumen,
       propuestas, aceptarPropuesta, anadirPunto, colocarPunto,
       leerFlujograma, resumenFlujo, traerDeFlujograma,
-      sanearMapa, sanearDatos, fusionar, renovarIds, sugerirObjetivo,
+      avisosEquipo, avisosFallos, avisosPuntuar, avisosPriorizar, avisosAnalisis, TECNICAS, textoMetodologia, pasarPuntosAlAmfe, puntoDe,
+      leerAmfe, resumenAmfe, traerDeAmfe, FORMATO_INTERCAMBIO, VERSION_INTERCAMBIO, frecuenciaSugerida, hallazgos, paqueteIntercambio, leerIntercambio,
+      sanearMapa, sanearDatos, fusionar, renovarIds, sugerirObjetivo, parecido,
       LF, LA
     };
   }

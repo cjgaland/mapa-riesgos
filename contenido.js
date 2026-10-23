@@ -74,12 +74,44 @@
         { t: "Del punto crítico al mapa", h: `<p>Cada punto crítico se coloca en el <b>paso del flujograma</b> donde ocurre. En el AMFE se convierte en uno o varios modos de fallo, que se puntúan y se priorizan. Al final, en el mapa, los fallos prioritarios aparecen <b>en ese mismo paso</b>, con su número y del color de su riesgo.</p>` }
       ],
       minicaso: "<p>En el triaje de Urgencias, la enfermera asigna un nivel 3 a una paciente mayor con fiebre, taquicardia y tensión baja. Puntos críticos de ese paso: clasificación errónea de la prioridad, constantes que no se valoran como sospecha de sepsis, paciente frágil no detectado y pulsera identificativa no colocada.</p>",
-      practica: { texto: "Ver los puntos críticos de Urgencias", href: "#/mapa/ej-mapa-urgencias/4" } }
+      practica: { texto: "Ver los puntos críticos de Urgencias", href: "#/mapa/ej-mapa-urgencias/4" } },
+    { n: 5, c: "V", titulo: "El AMFE: fallo, efecto y causa", sub: "Gravedad, ocurrencia, detección e IPR",
+      minuto: [
+        "El <b>AMFE</b> (Análisis Modal de Fallos y Efectos) analiza cada punto crítico de forma ordenada: <b>qué puede fallar</b>, <b>qué pasaría</b> y <b>por qué</b>.",
+        "Lo hace un <b>equipo multidisciplinar</b> (al menos 6 perfiles, con quien hace el proceso cada día) en varias sesiones.",
+        "Cada fallo se puntúa de 1 a 10 en <b>gravedad</b> (G), <b>ocurrencia</b> (O) y <b>detección</b> (D).",
+        "<b>IPR = G × O × D</b>, de 1 a 1.000: cuanto más alto, antes hay que actuar."
+      ],
+      secciones: [
+        { t: "Modo de fallo, efecto y causa", h: `<div class="table-wrap"><table class="mini"><tr><th>Columna</th><th>Pregunta</th><th>Ejemplo</th></tr>
+          <tr><td><b>Modo de fallo</b></td><td>¿Qué sale mal?</td><td>No colocación de pulsera identificativa</td></tr>
+          <tr><td><b>Efecto</b></td><td>¿Qué pasaría?</td><td>Error de identidad, confusión en pruebas o medicación</td></tr>
+          <tr><td><b>Causa</b></td><td>¿Por qué?</td><td>Rutina interrumpida, recursos saturados</td></tr>
+          <tr><td><b>Controles actuales</b></td><td>¿Qué hay hoy para evitarlo o detectarlo?</td><td>Protocolo de identificación; impresora de pulseras en el triaje</td></tr></table></div>
+          <div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p>El error más frecuente: escribir una <b>causa</b> como fallo («sobrecarga asistencial», «falta de formación») o un <b>efecto</b> como fallo («daño al paciente»). La app te avisa cuando lo detecta.</p></div>` },
+        { t: "Las escalas de 1 a 10", h: `<p><b>Gravedad</b>: cuánto daño haría si ocurre (1–2 sin daño; 9–10 discapacidad o muerte).</p><p><b>Ocurrencia</b>: con qué frecuencia puede pasar (1–2 casi nunca; 9–10 casi siempre).</p><p><b>Detección</b>: si se descubre antes de causar daño. <b>Va al revés</b>: 1–2 se detecta casi seguro; 9–10 es casi imposible de detectar.</p>
+          <div class="box box--practica"><span class="box-tag">En la práctica</span><p>Antes de puntuar la detección, mirad los <b>controles actuales</b>: si no hay ninguno, difícilmente se detectará a tiempo. Y usad toda la escala: si todo sale 5 o 6, quizá falta información.</p></div>` },
+        { t: "El equipo y las sesiones", h: `<p>El equipo tiene una <b>coordinación</b> (dirige y modera), una <b>secretaría</b> (registra y prepara los documentos) y miembros de todos los estamentos que intervienen en el proceso, más alguien que domine la metodología y, si se puede, una mirada externa.</p><p>Lo habitual son <b>tres sesiones de unas dos horas</b>: analizar el proceso y sus puntos críticos; buscar los fallos (lluvia de ideas y grupo nominal); y puntuarlos.</p>` }
+      ],
+      minicaso: "<p>En el triaje de Urgencias, el fallo «Omisión de constantes clave o mal registro» tiene como efecto un fallo en la alerta de sepsis (G 7), ocurre con frecuencia (O 7) y es difícil de detectar porque el sistema deja cerrar el triaje sin las constantes (D 7). IPR = 7 × 7 × 7 = 343: el primero del mapa.</p>",
+      practica: { texto: "Ver los fallos de Urgencias", href: "#/mapa/ej-mapa-urgencias/6" } },
+    { n: 6, c: "A", titulo: "Priorizar los riesgos", sub: "IPR, los más graves y la matriz de riesgos",
+      minuto: [
+        "No se puede actuar sobre todo a la vez: priorizar es decidir <b>por dónde empezar</b>.",
+        "Lo habitual: los <b>N de mayor IPR</b> (en el curso, los 15 primeros) o los que superan un <b>umbral</b>.",
+        "Un fallo con <b>gravedad 9–10</b> merece atención aunque su IPR sea bajo.",
+        "La <b>matriz de riesgos</b> (gravedad × ocurrencia) comunica el riesgo de un vistazo, con zonas verde, amarilla, naranja y roja."
+      ],
+      secciones: [
+        { t: "Criterio de prioridad", h: `<p>Ordenad los fallos por IPR. A igual IPR, va antes el de más gravedad. Elegid los N primeros o un umbral acordado por el equipo (como orientación: 300 o más es muy alto; de 200 a 299, alto; de 100 a 199, medio).</p><p>Si hay <b>empates</b> justo en el corte, la app os lo dice: decidid si añadís alguno a mano.</p>` },
+        { t: "Fallo crítico y decisiones del equipo", h: `<p>La marca <b>«fallo crítico»</b> sube un fallo a prioritario aunque su IPR sea bajo: un evento centinela, una exigencia normativa… El equipo también puede <b>añadir o quitar</b> un fallo a mano.</p><div class="box box--trampa"><span class="box-tag">Ojo, trampa</span><p>Abusar de «crítico» o de los cambios a mano hace que la priorización deje de ser objetiva. Escribid siempre el motivo.</p></div>` },
+        { t: "La matriz de riesgos", h: `<p>Coloca cada fallo según su <b>gravedad</b> (filas) y su <b>ocurrencia</b> (columnas). No tiene en cuenta la detección, así que <b>no sustituye al IPR</b>, pero ayuda a explicarlo. Puede verse en 10 × 10 (cada valor) o agrupada en 5 × 5, como la del documento final del curso.</p><p>Un fallo en la <b>zona roja</b> que no sale prioritario suele ser porque «se detecta fácil»: comprobad que esa detección existe de verdad.</p>` }
+      ],
+      minicaso: "<p>En Urgencias, los 15 fallos de mayor IPR van de 343 a 180. Otros cuatro también tienen 180 y quedan fuera por el corte (a igual IPR, la app pone antes el de más gravedad): el equipo decide si alguno merece entrar a mano. En la matriz, los 15 caen en las zonas naranja y amarilla.</p>",
+      practica: { texto: "Ver la priorización de Urgencias", href: "#/mapa/ej-mapa-urgencias/7" } }
   ];
   // Temas que llegarán con las próximas versiones (se muestran como «próximamente»)
   const TEMAS_PROX = [
-    { n: 5, titulo: "El AMFE: fallo, efecto y causa", sub: "Gravedad, ocurrencia, detección e IPR" },
-    { n: 6, titulo: "Priorizar los riesgos", sub: "IPR, los más graves y la matriz de riesgos" },
     { n: 7, titulo: "Acciones de mejora", sub: "5W1H, fuerza de la medida e indicadores" },
     { n: 8, titulo: "El mapa de riesgos", sub: "Qué es, cómo se lee y para qué se usa" }
   ];
@@ -112,6 +144,13 @@
     ["Causa", "Por qué se produce el fallo."],
     ["IPR", "Índice de Prioridad de Riesgo: gravedad × ocurrencia × detección. Va de 1 a 1000; cuanto más alto, antes hay que actuar."],
     ["Matriz de riesgos", "Cuadrícula de gravedad por ocurrencia en la que cada fallo cae en una zona de color: verde, amarillo, naranja o rojo."],
+    ["Equipo AMFE", "Grupo multidisciplinar que hace el análisis: coordinación, secretaría y profesionales de todos los estamentos que intervienen en el proceso."],
+    ["Controles actuales", "Lo que hoy ya existe para evitar un fallo o detectarlo antes de que dañe: protocolos, dobles chequeos, alertas, listas de verificación."],
+    ["Gravedad (G)", "Cuánto daño haría el fallo si ocurre, de 1 (sin daño) a 10 (discapacidad o muerte)."],
+    ["Ocurrencia (O)", "Con qué frecuencia puede ocurrir el fallo, de 1 (casi nunca) a 10 (casi siempre)."],
+    ["Detección (D)", "Si el fallo se descubre antes de causar daño. Va al revés: 1 = se detecta casi seguro; 10 = casi imposible de detectar."],
+    ["Fallo prioritario", "Fallo sobre el que se actuará primero: por su IPR, por su gravedad o porque el equipo lo ha marcado como crítico."],
+    ["Fallo crítico", "Fallo que el equipo sube a prioritario aunque su IPR sea bajo (evento centinela, exigencia normativa…). Siempre con su motivo."],
     ["5W1H", "Forma de describir una acción de mejora: qué, por qué, dónde, cuándo, quién y cómo."],
     ["Control documental", "Datos de quién elabora, revisa y aprueba un documento, y el histórico de sus ediciones."],
     ["Plan de acogida", "Formación para los profesionales que se incorporan a una unidad. El mapa de riesgos les muestra de un vistazo dónde están los riesgos."],
@@ -251,9 +290,114 @@
       [6, 25, "Ausencia de notificación al familiar sobre el ingreso", "La familia no es informada, lo que puede conllevar confusión, pérdida de pertenencias o cuidados deficientes."]
     ] });
 
+  // Equipo del ejercicio 9 (solo perfiles y cargos, sin nombres): [perfil, cargo, papel, justificación]
+  const EQUIPO_URG = [
+    ["Médico/a de Urgencias", "Facultativo responsable de guardia", "coordinador", "Visión clínica integral del proceso, toma de decisiones médicas y conocimiento global del funcionamiento del servicio."],
+    ["Enfermero/a de Urgencias", "Supervisor/a o referente de turno", "referente", "Conocimiento detallado del flujo asistencial, cuidados y protocolos. Aporta experiencia sobre la operativa diaria."],
+    ["Técnico/a en Cuidados Auxiliares de Enfermería (TCAE)", "TCAE del área de observación", "operativo", "Identifica riesgos asociados a la movilización, la higiene y el apoyo directo al paciente."],
+    ["Celador/a", "Celador de guardia", "miembro", "Aporta la perspectiva de los traslados y la accesibilidad física del paciente dentro del servicio."],
+    ["Administrativo/a de Admisión", "Administrativo/a de Urgencias", "miembro", "Apunta riesgos del registro inicial, la identificación y la gestión documental."],
+    ["Farmacéutico/a Hospitalario", "Referente de conciliación en Urgencias", "experto", "Su visión es esencial para detectar fallos relacionados con la medicación y la conciliación farmacológica."],
+    ["Médico/a de Medicina Interna", "Médico/a de interconsulta frecuente", "externo", "Aporta una mirada externa y transversal desde otra especialidad que colabora habitualmente con Urgencias."],
+    ["Técnico/a de Calidad", "Técnico de Calidad del hospital", "secretario", "Organiza, registra y estructura las sesiones. Asegura el uso correcto de la metodología AMFE."],
+    ["Enfermero/a de Triaje", "Enfermero/a con formación específica en triaje", "miembro", "Identifica riesgos críticos del proceso inicial de clasificación y priorización."],
+    ["Responsable de Seguridad del Paciente", "Coordinador/a de Seguridad del Área", "metodologico", "Supervisa el análisis desde la perspectiva de la seguridad del paciente y garantiza la trazabilidad del proceso de mejora."]
+  ];
+  // Los 49 fallos del ejercicio 11 resuelto (los mismos IPR que la app AMFE): [nº, efecto, causa, G, O, D]. El modo de
+  // fallo es el título de su punto crítico (nº igual), del que sale. Controles actuales: añadidos para el ejemplo en los 15 primeros.
+  const FALLOS_URG = [
+    [1, "Errores en la historia clínica, duplicación, retrasos", "Error tipográfico no corregido, alta carga asistencial", 5, 5, 4],
+    [2, "Error de identidad, mezcla de historiales", "Proceso no protocolizado o no exigido en todos los turnos", 6, 4, 6],
+    [3, "Falta de información crítica para el triaje y la atención médica", "No recogida sistemática, desconocimiento de la importancia", 7, 6, 5],
+    [4, "Imposibilidad de recabar información en caso de urgencia", "Falta de campo obligatorio o de rutina en el sistema informático", 5, 5, 4],
+    [5, "Riesgo en la atención inicial por falta de alertas previas", "Historia clínica fragmentada, mal interoperada o sin codificación", 7, 6, 7],
+    [6, "Pérdida de continuidad asistencial", "Omisión del campo o proceso automatizado no verificado", 4, 3, 3],
+    [7, "No se activa circuito preferente ni seguimiento específico", "Desconocimiento del riesgo o falta de cribado geriátrico inicial", 6, 6, 6],
+    [8, "Retraso en la atención, progresión del cuadro clínico", "Subestimación de signos vitales alterados, presión asistencial", 8, 7, 6],
+    [9, "Pérdida de oportunidad de atención prioritaria y acompañamiento", "Falta de cribado geriátrico, comunicación deficiente", 7, 6, 6],
+    [10, "Asignación incorrecta de prioridad, fallo en la alerta de sepsis", "Automatización excesiva, omisión por prisa", 7, 7, 7],
+    [11, "Riesgo de error de identidad, confusión en pruebas o medicación", "Rutina interrumpida, recursos saturados", 6, 6, 5],
+    [12, "Fallo en la conciliación posterior o en la detección de interacciones", "No integración enfermería–médico en la fase de triaje", 6, 5, 5],
+    [13, "Dificultad para recabar la historia clínica real", "Se asume presencia ocasional, no protocolizado", 5, 4, 3],
+    [14, "Desatención percibida, riesgo de descompensación por estrés", "Focalización en datos objetivos, falta de escucha activa", 4, 5, 4],
+    [15, "Empeoramiento del estado sin detección", "Saturación del servicio, falta de protocolos de vigilancia activa", 7, 7, 6],
+    [16, "Riesgo de caídas, desorientación o ansiedad", "Recursos humanos limitados, paciente frágil sin alerta de riesgo", 6, 6, 6],
+    [17, "Incomodidad, hipo o hipertermia, estrés añadido", "Problemas estructurales o falta de monitorización", 4, 5, 4],
+    [18, "Error de citación, traslado o intervención", "Omisión inicial de identificación, pérdida durante la espera", 6, 6, 5],
+    [19, "Dificultad para comunicarse o desplazarse", "Entorno desorganizado, falta de seguimiento del paciente vulnerable", 4, 4, 4],
+    [20, "Ansiedad, percepción negativa de la atención", "Comunicación deficiente, falta de circuitos informativos", 3, 5, 3],
+    [21, "Deshidratación, frustración, malestar físico y emocional", "Alta ocupación, roles no definidos, ausencia de atención humanizada", 5, 5, 5],
+    [22, "Diagnóstico inexacto o incompleto", "Ausencia de familiar acompañante, paciente con deterioro cognitivo", 6, 6, 5],
+    [23, "Interacciones, duplicidades o errores de tratamiento", "Falta de tiempo, no consultar la historia previa o la base de datos farmacológica", 7, 6, 6],
+    [24, "Omisión de signos relevantes", "Sobrecarga asistencial, fatiga profesional", 6, 5, 5],
+    [25, "Decisiones clínicas inadecuadas a su perfil o vulnerabilidad", "Foco exclusivo en lo biomédico", 5, 4, 5],
+    [26, "Retrasos en el diagnóstico o pruebas repetidas", "Falta de experiencia o de coordinación", 5, 4, 4],
+    [27, "Pérdida de trazabilidad del caso, errores posteriores", "Desorganización, fallos informáticos o falta de formación", 6, 5, 5],
+    [28, "Descoordinación en los cuidados, retrasos en los procedimientos", "Trabajo en paralelo sin briefing ni comunicación estructurada", 5, 5, 4],
+    [29, "Riesgo de realizar pruebas al paciente equivocado", "Omisión previa en el triaje o retirada accidental no detectada", 7, 6, 7],
+    [30, "Error de localización o atención a un paciente erróneo", "Falta de etiquetado visible, desorganización en pasillos o boxes", 6, 6, 6],
+    [31, "Retraso en las pruebas, deterioro clínico no monitorizado", "Falta de celadores, priorización deficiente de los traslados", 6, 5, 5],
+    [32, "Pruebas mal orientadas o incompletas", "Desconexión entre el médico prescriptor y el personal técnico", 5, 4, 4],
+    [33, "Repetición innecesaria, demora en el diagnóstico", "Errores administrativos, confusión entre nombres similares", 5, 4, 3],
+    [34, "Riesgo de caída, desorientación o ansiedad", "No identificación de la situación de fragilidad", 6, 5, 5],
+    [35, "Omisión en la toma de decisiones o retraso clínico", "Falta de integración entre sistemas informáticos o interrupciones en el flujo", 6, 5, 6],
+    [36, "Diagnóstico erróneo o retrasado", "Saturación, distracciones, falta de seguimiento", 7, 6, 6],
+    [37, "Toma de decisiones descontextualizada", "Falta de tiempo, historia clínica dispersa, desconocimiento del paciente", 6, 6, 5],
+    [38, "Ansiedad, desinformación, resistencia al tratamiento", "Pérdida de oportunidad, falta de cultura comunicativa", 6, 5, 5],
+    [39, "Incomprensión del diagnóstico, mal cumplimiento posterior", "Déficit en habilidades de comunicación clínica", 5, 4, 4],
+    [40, "Imposibilidad de verificar que se ha informado al paciente", "Omisión de la anotación en la historia clínica", 4, 4, 3],
+    [41, "Tratamiento o ingreso inadecuado a su situación global", "No integración del modelo biopsicosocial", 6, 5, 5],
+    [42, "Rechazo posterior, pérdida de adherencia, conflicto ético", "Cultura paternalista, falta de tiempo o presión asistencial", 5, 5, 4],
+    [43, "Empeoramiento del estado clínico, descompensación", "Saturación hospitalaria, falta de planificación anticipada", 6, 6, 6],
+    [44, "Falta de seguimiento, pérdida de oportunidad terapéutica", "Recursos insuficientes, decisiones transitorias que se prolongan", 6, 5, 5],
+    [45, "Omisión de datos importantes, duplicación o discontinuidad asistencial", "Comunicación incompleta, registros no compartidos, traslado precipitado", 7, 6, 6],
+    [46, "Riesgo de errores en el tratamiento o los cuidados", "Falta de impresión, sistemas no interoperables, protocolo ineficaz", 6, 5, 5],
+    [47, "Tareas no asignadas, retrasos o pérdidas de información", "Ambigüedad en los circuitos o turnos cambiantes sin traspaso efectivo", 5, 4, 4],
+    [48, "Asignación a una unidad inadecuada", "Desconocimiento del perfil del paciente, presión para agilizar ingresos", 6, 5, 4],
+    [49, "Confusión, falta de pertenencias, retraso en cuidados básicos", "Omisión del contacto de referencia, fallo en la comunicación", 5, 4, 4]
+  ];
+  const CONTROLES_URG = {
+    10: "Registro de constantes en el módulo de triaje, sin obligación de completarlas para cerrarlo.",
+    8: "Sistema de triaje estructurado de cinco niveles; no se revisa después la clasificación.",
+    5: "Consulta manual de la historia clínica cuando hay tiempo; el sistema no genera alertas.",
+    15: "Reevaluación solo si el paciente o su acompañante avisan; sin tiempos fijados.",
+    29: "Protocolo de identificación con pulsera; no se comprueba al volver de pruebas.",
+    9: "Preguntas generales en el triaje; no se usa ninguna escala de fragilidad.",
+    23: "Consulta de la receta electrónica a criterio de cada médico.",
+    36: "Aviso de resultados disponibles en la estación clínica.",
+    45: "Llamada telefónica a la planta e informe de enfermería al trasladar.",
+    7: "Ninguno específico.",
+    16: "Vigilancia visual de la sala por la TCAE cuando sus tareas lo permiten.",
+    30: "Identificación verbal del paciente al volver al box.",
+    43: "Gestión de camas por la supervisión de guardia.",
+    3: "Se pregunta por alergias en admisión, pero no de forma sistemática.",
+    11: "Protocolo de identificación e impresora de pulseras en el triaje."
+  };
+  function amfeUrgencias(base) {
+    const id = base.id, equipo = EQUIPO_URG.map(([perfil, cargo, rol, justificacion], i) => ({ id: `${id}-m${i + 1}`, perfil, cargo, rol, justificacion, nombre: "" }));
+    const todos = equipo.map(x => x.id);
+    return {
+      equipo,
+      sesiones: [
+        { id: `${id}-x1`, fecha: "2025-10-07", actividad: "Lectura del caso y análisis del proceso", duracion: "2 h", asistentes: todos.slice(), resultados: "Identificación de los 7 subprocesos y de sus puntos críticos" },
+        { id: `${id}-x2`, fecha: "2025-10-21", actividad: "Lluvia de ideas y técnica de grupo nominal", duracion: "2 h", asistentes: todos.slice(), resultados: "Identificación consensuada de 49 fallos potenciales" },
+        { id: `${id}-x3`, fecha: "2025-11-04", actividad: "Asignación de escalas G-O-D y cálculo del IPR", duracion: "2 h", asistentes: todos.slice(), resultados: "Priorización de los fallos según su criticidad e impacto en el proceso" }
+      ],
+      metodologia: { tecnicas: ["caso", "lluvia", "tgn"], texto: "" },
+      fallos: FALLOS_URG.map(([num, efecto, causa, g, o, d]) => {
+        const x = base.puntos[num - 1];
+        return { id: `${id}-f${num}`, num, subprocesoId: x.subprocesoId, puntoId: x.id, fallo: x.titulo.replace(" (ej. 3 en lugar de 2)", ""), efecto, causa, controles: CONTROLES_URG[num] || "",
+          g: String(g), o: String(o), d: String(d), critico: false, motivoCritico: "", manual: "", motivo: "", acciones: [], residual: { g: "", o: "", d: "", fecha: "", nota: "" }, votos: [], ishikawa: [] };
+      }),
+      prioridad: { modo: "top", n: "15", umbral: "200" }
+    };
+  }
+  Object.assign(URGENCIAS, amfeUrgencias(URGENCIAS));
+  URGENCIAS.notas += " El AMFE (pasos 5 a 7) es el del curso: equipo del ejercicio 9, tres sesiones y los 49 fallos con la puntuación del ejercicio 11; los controles actuales de los 15 primeros se han añadido para el ejemplo.";
+
   const EJEMPLOS = {
     mapas: [URGENCIAS],
-    urgencias: { t: "Atención integral en el Servicio de Urgencias", s: "El ejemplo completo del curso: 7 subprocesos, el flujograma general con sus 33 pasos y el marco de procesos, y los 49 puntos críticos que analiza el AMFE. Con cada versión de la app se irá completando hasta el documento final.", href: "#/mapa/ej-mapa-urgencias/1" }
+    urgencias: { t: "Atención integral en el Servicio de Urgencias", s: "El ejemplo completo del curso: 7 subprocesos, el flujograma general con sus 33 pasos y el marco de procesos, los 49 puntos críticos y el AMFE con su equipo, sus sesiones y los 49 fallos puntuados y priorizados. Con cada versión de la app se irá completando hasta el documento final.", href: "#/mapa/ej-mapa-urgencias/1" }
   };
 
   const API = { TEMAS, TEMAS_PROX, GLOSARIO, EJEMPLOS };
