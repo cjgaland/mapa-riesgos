@@ -1582,3 +1582,4 @@ body.presentando .view { max-width: none; padding: 0; margin: 0; }
 .pres-ops .zoom-btns { display: inline-flex; gap: 4px; }
 .pres-mapa--zoom { justify-content: flex-start; max-height: calc(100vh - 110px); }
 .pres-mapa--zoom svg { flex: none; }
+.pres, .pres button { touch-action: manipulation; }   /* sin el «doble toque» de Safari al pulsar + dos veces */
