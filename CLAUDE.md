@@ -45,5 +45,5 @@ Sin publicar. Repositorio previsto `cjgaland/mapa-riesgos` (GitHub Pages desde `
 
 ## 5. Estado y pendiente
 - **Diseño aprobado** (2026-10-22). Estructura creada; solo este `CLAUDE.md`.
-- **Entrega 0**, en las sesiones de AMFE y Flujograma: publicar `window.LogicaAmfe` / `window.LogicaFlujo` con `MOTOR = 1`; dibujo.js con color por icono; test de contrato y regla en sus `CLAUDE.md`. Pedida el 2026-10-22.
+- **Entrega 0**, en las sesiones de AMFE y Flujograma: publicar `window.LogicaAmfe` / `window.LogicaFlujo` con `MOTOR = 1`; dibujo.js con color por icono; test de contrato y regla en sus `CLAUDE.md`. Pedida el 2026-10-22. **AMFE hecha** (commit 5c0f4a9, `window.LogicaAmfe`, `MOTOR = 1`, test `CONTRATO_MAPA`; sin publicar). Flujograma en curso.
 - Siguiente: **entrega 1** (identidad, carga de motores, pasos 1–4, «Traer de Flujograma», ejemplo de Urgencias parte 1, Aprende 1–4, glosario, tests).
