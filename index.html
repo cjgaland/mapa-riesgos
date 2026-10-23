@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d1b2a" id="meta-theme-color" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Mapa de Riesgos" />
+  <meta name="description" content="Elabora paso a paso el mapa de riesgos de cualquier proceso sanitario: proceso, flujograma, puntos críticos, AMFE, acciones de mejora, el mapa visual y el documento final" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=1" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=1" />
+  <link rel="apple-touch-icon" href="icon-180.png?v=1" />
+  <title>Mapa de Riesgos · Procesos sanitarios</title>
+  <script>
+    // Tema antes del primer pintado (evita parpadeo): preferencia guardada o del sistema
+    (function () {
+      var t = null; try { t = localStorage.getItem("mapariesgos-tema"); } catch (e) {}
+      if (!t) t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "oscuro" : "claro";
+      document.documentElement.setAttribute("data-tema", t);
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css?v=2026.01" />
+</head>
+<body>
+
+  <header class="app-header">
+    <a class="header-brand" href="#/" aria-label="Inicio">
+      <span class="header-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="2" width="8" height="5" rx="1.2" fill="currentColor" opacity=".55"/><rect x="2" y="17" width="8" height="5" rx="1.2" fill="currentColor" opacity=".55"/><path d="M6 7v10" stroke="currentColor" stroke-width="1.6"/><path d="M17 3.5l5.5 9.5h-11z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M17 7.6v2.6M17 11.6v.1" stroke="var(--bg-2,#fff)" stroke-width="1.6" stroke-linecap="round"/><rect x="13" y="16" width="9" height="6" rx="1.2" fill="currentColor"/></svg>
+      </span>
+      <span>
+        <span class="header-title">Mapa de Riesgos</span>
+        <span class="header-subtitle">Procesos sanitarios</span>
+      </span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-btn" id="btn-tema" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-acerca" aria-label="Acerca de" title="Acerca de">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5v.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <nav class="calc-nav" id="calc-nav" aria-label="Secciones"></nav>
+
+  <div class="banner-ejemplo no-print" id="banner-ejemplo" hidden>
+    <span>📘 Estás viendo un <b>ejemplo</b>. Puedes tocarlo todo, pero <b>no se guarda</b> ni se mezcla con tus datos.</span>
+    <span class="banner-acc"><a href="#/ejemplos">Ver el ejemplo</a><button type="button" class="link-btn" id="banner-copiar">Copiar a mis datos</button></span>
+  </div>
+
+  <main id="view" class="view" tabindex="-1"></main>
+
+  <footer class="app-footer">
+    <span class="autor-titulo">Aplicación desarrollada por</span>
+    <span class="autor"><b>Carlos J. Galán Doval</b> · Médico de Familia · Técnico en Calidad y Seguridad del Paciente</span>
+    <span class="autor"><b>Rafael J. Romero de Castilla Gil</b> · Médico de Familia · Responsable del Área de Calidad y Seguridad del Paciente</span>
+    <span class="autor-area">Área de Gestión Sanitaria Sur de Córdoba · Andalucía</span>
+    <span class="autor-uso">De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</span>
+    <span class="footer-version" id="footer-version"></span>
+  </footer>
+
+  <!-- MODAL BIENVENIDA -->
+  <div class="modal-overlay" id="modal-bienvenida" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bienv-titulo">
+      <div class="modal-header">
+        <h2 id="bienv-titulo">Te damos la bienvenida a Mapa de Riesgos</h2>
+        <p class="modal-sub">Del proceso al mapa de sus riesgos, paso a paso</p>
+      </div>
+      <div class="modal-body">
+        <div class="modal-bloque modal-bloque--aviso">
+          <strong>Aviso importante</strong>
+          <p>Esta es una <b>herramienta docente y de apoyo</b>. Te guía para elaborar el mapa de riesgos de un proceso, pero <b>no sustituye el criterio profesional</b> ni el trabajo del equipo que hace el proceso cada día.</p>
+        </div>
+        <div class="modal-bloque">
+          <strong>Cómo se usa</strong>
+          <p>Sigue los <b>10 pasos numerados</b>: el proceso y sus subprocesos, el flujograma (la app lo dibuja sola), los puntos críticos, el análisis AMFE, las acciones de mejora y, al final, <b>el mapa</b> y el documento. La app te avisa de los errores habituales. Cada ⓘ explica el campo, cada paso tiene su «Explicado fácil» y en «Ejemplo» tienes el de Urgencias.</p>
+          <p><b>Tus datos se guardan solo en este dispositivo</b> (no se envían a ningún servidor). Un mapa de riesgos no necesita datos de pacientes: <b>nunca escribas nombres ni números de historia</b>. Haz de vez en cuando una <b>copia de seguridad</b> desde la página de inicio.</p>
+        </div>
+        <label class="modal-check"><input type="checkbox" id="modal-no-repetir" /> <span>No mostrar este mensaje al iniciar</span></label>
+      </div>
+      <div class="modal-footer"><button class="btn btn--primary" id="btn-bienv-ok">He leído y entiendo</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL ACERCA DE -->
+  <div class="modal-overlay" id="modal-acerca" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="acerca-titulo">
+      <div class="modal-header">
+        <h2 id="acerca-titulo">Acerca de Mapa de Riesgos</h2>
+        <button class="icon-btn modal-close" id="btn-acerca-cerrar" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Aplicación web (PWA) estática, sin dependencias externas y utilizable sin conexión, para elaborar, paso a paso y aprendiendo mientras se hace, el mapa de riesgos de cualquier proceso sanitario: proceso y subprocesos, flujograma, puntos críticos, análisis AMFE, priorización, acciones de mejora, el mapa visual (el flujograma con los riesgos encima, coloreados por su IPR) y el documento final. Usa por dentro el motor de las apps AMFE y Flujograma.</p>
+        <div class="modal-bloque">
+          <strong>Apps hermanas</strong>
+          <p>Forma parte de un conjunto de apps de calidad y seguridad del paciente: <a href="https://cjgaland.github.io/flujograma/" target="_blank" rel="noopener">Flujograma</a> (dibujar el proceso), <a href="https://cjgaland.github.io/amfe/" target="_blank" rel="noopener">AMFE</a> (qué puede fallar en cada paso), <a href="https://cjgaland.github.io/auditorias/" target="_blank" rel="noopener">Auditorías</a> (del Mapa de Riesgos a la mejora continua), <a href="https://cjgaland.github.io/indicadores-calidad/" target="_blank" rel="noopener">Indicadores</a>, <a href="https://cjgaland.github.io/tamano-muestral/" target="_blank" rel="noopener">Tamaño Muestral</a> y <a href="https://cjgaland.github.io/dafo/" target="_blank" rel="noopener">DAFO · CAME</a> (analizar una unidad y decidir qué proceso mejorar).</p>
+        </div>
+        <div class="modal-bloque">
+          <strong>Tus datos</strong>
+          <p>Se guardan solo en este navegador y este dispositivo. No viajan a ningún servidor. Si borras los datos del navegador o cambias de móvil, se pierden: usa <b>Copia de seguridad</b> e <b>Importar</b> en la página de inicio. Para trabajar en equipo, cada persona puede importar la copia de otra: se juntan sin duplicar.</p>
+          <p><b>Protección de datos:</b> un mapa de riesgos no necesita datos de pacientes; no escribas nombres ni números de historia clínica.</p>
+        </div>
+        <div class="modal-bloque">
+          <strong>Fuentes</strong>
+          <ul>
+            <li>Curso <i>Elaboración de Mapas de Riesgo en Procesos Sanitarios. Aplicación práctica del Análisis de Modos de Fallo y sus Efectos</i> (Área de Gestión Sanitaria Sur de Córdoba): temas de seguridad del paciente, herramientas, procesos, AMFE y mapa de riesgos; ejercicios prácticos, caso clínico, test de conocimientos y Documento Final del Mapa de Riesgos del Servicio de Urgencias.</li>
+          </ul>
+        </div>
+        <div class="modal-bloque" id="instalar-bloque">
+          <strong>Instalar en el móvil o el ordenador</strong>
+          <p class="instalada-msg">Ya estás usando la aplicación instalada.</p>
+          <ul class="instalar-lista">
+            <li><b>iPhone o iPad</b> (Safari): pulsa el botón <b>Compartir</b> (el cuadrado con una flecha hacia arriba) y elige <b>«Añadir a pantalla de inicio»</b>.</li>
+            <li><b>Android</b> (Chrome): abre el menú <b>⋮</b> y elige <b>«Instalar aplicación»</b> o «Añadir a pantalla de inicio».</li>
+            <li><b>Ordenador</b> (Chrome o Edge): pulsa el icono de instalar que aparece a la derecha de la barra de direcciones.</li>
+          </ul>
+          <p>Una vez instalada se abre como una app más y <b>funciona sin conexión</b>.</p>
+          <button type="button" class="btn btn--primary" id="btn-instalar" hidden>Instalar ahora</button>
+        </div>
+        <div class="modal-bloque">
+          <strong>Historial de versiones</strong>
+          <div id="historial-versiones"></div>
+        </div>
+        <p class="about-version" id="about-version"></p>
+        <div class="about-credit">
+          <span class="autor-titulo">Aplicación desarrollada por</span>
+          <span class="autor"><b>Carlos J. Galán Doval</b> · Médico de Familia · Técnico en Calidad y Seguridad del Paciente</span>
+          <span class="autor"><b>Rafael J. Romero de Castilla Gil</b> · Médico de Familia · Responsable del Área de Calidad y Seguridad del Paciente</span>
+          <span class="autor-area">Área de Gestión Sanitaria Sur de Córdoba · Andalucía</span>
+          <span class="autor-uso">De libre uso con fines docentes y divulgativos. No sustituye el criterio profesional.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOVEDADES (tras actualizar) -->
+  <div class="modal-overlay" id="modal-novedades" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="novedades-titulo">
+      <div class="modal-header">
+        <h2 id="novedades-titulo">Mapa de Riesgos se ha actualizado</h2>
+        <p class="modal-sub" id="novedades-sub">Esto es lo nuevo</p>
+      </div>
+      <div class="modal-body" id="novedades-body"></div>
+      <div class="modal-footer"><button class="btn btn--primary" id="btn-novedades-ok">Entendido</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAR (borrar, sustituir datos…) -->
+  <div class="modal-overlay" id="modal-confirmar" hidden>
+    <div class="modal modal--sm" role="alertdialog" aria-modal="true" aria-labelledby="conf-titulo">
+      <div class="modal-header"><h2 id="conf-titulo">¿Seguro?</h2></div>
+      <div class="modal-body" id="conf-texto"></div>
+      <div class="modal-footer modal-footer--2">
+        <button class="btn" id="btn-conf-no">Cancelar</button>
+        <button class="btn btn--peligro" id="btn-conf-si">Sí</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="input-importar" accept=".json,application/json" hidden />
+  <input type="file" id="input-flujo" accept=".json,application/json" hidden />
+
+  <!-- Motores de las apps hermanas, en vivo (no se copian: ver Diseño, sección 6). Después, lo propio. -->
+  <script src="../amfe/logic.js"></script>
+  <script src="../flujograma/logic.js"></script>
+  <script src="../flujograma/dibujo.js"></script>
+  <script src="logic.js?v=2026.01"></script>
+  <script src="contenido.js?v=2026.01"></script>
+  <script src="xlsx.js?v=2026.01"></script>
+  <script src="docx.js?v=2026.01"></script>
+  <script src="app.js?v=2026.01"></script>
+</body>
+</html>
