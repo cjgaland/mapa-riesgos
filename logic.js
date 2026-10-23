@@ -24,7 +24,7 @@
     flujo: { nombre: "Flujograma", global: "LogicaFlujo", motor: 1, ruta: "../flujograma/logic.js",
       usa: ["lleno", "corto", "normal", "plural", "listaY", "sinTildes", "TIPOS", "ORDEN_TIPOS", "ACTORES_SUG", "MARCO_SUG",
         "nuevoFlujo", "nuevoActor", "nuevoSubproceso", "nuevoPaso", "nuevaFlecha", "nuevoPunto", "siguienteNum", "colorLibre",
-        "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "avisosProceso", "avisosActores", "avisosPasos", "errores", "rolesSinCalle",
+        "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "nuevoControl", "avisosProceso", "avisosActores", "avisosPasos", "errores", "rolesSinCalle",
         "progreso", "resumen", "propuestasPuntos", "aceptarPropuesta", "leerPegado", "incorporarPasos", "insertarDespues", "quitarPaso",
         "cambiarTipo", "ponerSalida", "anadirActores", "disponer", "dibujar", "sanearFlujo", "leerIntercambio", "paqueteIntercambio",
         "NIVELES_IPR", "nivelDeIPR"] },
@@ -81,10 +81,12 @@
     // ---------- Fábricas ----------
     // Un mapa = un flujograma del motor + lo propio del mapa
     function nuevoMapa(id, fecha) {
-      return Object.assign(LF.nuevoFlujo(id, fecha), camposAmfe(), { ambito: "", descripcion: "", origen: nuevoOrigen(), metodologia: nuevaMetodologia(), vistaMapa: nuevaVistaMapa(), textosMapa: nuevosTextosMapa(), criteriosAcciones: nuevosCriterios() });
+      return Object.assign(LF.nuevoFlujo(id, fecha), camposAmfe(), { control: nuevoControl() }, { ambito: "", descripcion: "", origen: nuevoOrigen(), metodologia: nuevaMetodologia(), vistaMapa: nuevaVistaMapa(), textosMapa: nuevosTextosMapa(), criteriosAcciones: nuevosCriterios() });
     }
+    // Control documental con la ubicación de cada persona, como el documento final del curso
+    function nuevoControl() { const c = LF.nuevoControl(); ["elaborado", "revisado", "aprobado"].forEach(k => c[k].forEach(x => { x.ubicacion = ""; })); return c; }
     // Paso 9: qué fallos se ven en el mapa, calor por subproceso, título del mapa, orden de la leyenda
-    const nuevaVistaMapa = () => ({ mostrar: "prioritarios", calor: false, titulo: "", leyenda: "num" });
+    const nuevaVistaMapa = () => ({ mostrar: "prioritarios", calor: false, titulo: "", leyenda: "num", despues: false });
     // Apartados 7.1 a 7.3 del documento final
     const nuevosTextosMapa = () => ({ objetivos: "", estructura: "", interpretacion: "" });
     // Apartado 6.1 del documento final: criterios con los que se han elegido las acciones
@@ -179,7 +181,7 @@
       const vistos = new Map(); m.puntos.filter(x => lleno(x.titulo)).forEach(x => { const n = normal(x.titulo); if (vistos.has(n)) r.push({ nivel: "nota", punto: x.id, texto: `El punto crítico nº ${x.num} repite el nº ${vistos.get(n).num}. Si son el mismo riesgo en dos subprocesos, está bien; si no, únelos.` }); else vistos.set(n, x); });
       return r;
     }
-    const AVISOS = { 1: avisosProceso, 2: avisosSubprocesos, 3: avisosFlujo, 4: avisosPuntos, 5: m => avisosEquipo(m), 6: m => avisosFallos(m), 7: m => avisosAnalisis(m), 8: (m, hoy) => avisosAcciones(m, hoy), 9: m => avisosMapa(m) };
+    const AVISOS = { 1: avisosProceso, 2: avisosSubprocesos, 3: avisosFlujo, 4: avisosPuntos, 5: m => avisosEquipo(m), 6: m => avisosFallos(m), 7: m => avisosAnalisis(m), 8: (m, hoy) => avisosAcciones(m, hoy), 9: m => avisosMapa(m), 10: m => avisosCierre(m) };
     const avisosDe = (m, n, hoy) => (AVISOS[n] || (() => []))(m, hoy);
 
     // ---------- Progreso y «tu siguiente paso» ----------
@@ -195,7 +197,7 @@
         7: !!pa && pa[5] && pa[6],
         8: !!pa && pa[7],
         9: !!LA && LA.prioritarios(m).length > 0 && !sinUbicar(m).length && (m.pasos.length > 0 || m.subprocesos.length > 0),
-        10: false
+        10: lleno(m.conclusiones) && /^\d{4}-\d{2}-\d{2}$/.test(m.proxRevision || "") && ((m.control.elaborado || []).some(x => lleno(x.cargo) || lleno(x.nombre)))
       };
     }
     function pasoPendiente(m, entrega) {
@@ -211,7 +213,8 @@
       6: m => !m.fallos.length && m.puntos.length ? "pasa los puntos críticos al AMFE y escribe el efecto y la causa de cada fallo." : "completa los fallos: cada uno en su subproceso, con su efecto, su causa y los controles actuales.",
       7: m => m.fallos.some(f => lleno(f.fallo) && !(LA && LA.iprDe(f))) ? "puntúa la gravedad, la ocurrencia y la detección de cada fallo." : "revisa los fallos prioritarios y la matriz de riesgos; escribe el motivo de los que cambiéis a mano.",
       8: m => { const n = LA ? LA.prioritarios(m).filter(f => !LA.accionesDe(f).length).length : 0; return n ? `propón acciones de mejora para ${n === 1 ? "el fallo prioritario que queda" : "los " + n + " fallos prioritarios que quedan"}: qué, por qué, dónde, cuándo, quién y cómo.` : "completa las acciones: cada una con su responsable, su plazo y su indicador."; },
-      9: m => sinUbicar(m).length ? "coloca en el mapa los fallos prioritarios que faltan: en qué paso del proceso ocurre cada uno." : "revisa el mapa y descarga la lámina para colgarla o proyectarla."
+      9: m => sinUbicar(m).length ? "coloca en el mapa los fallos prioritarios que faltan: en qué paso del proceso ocurre cada uno." : "revisa el mapa y descarga la lámina para colgarla o proyectarla.",
+      10: () => "escribe las conclusiones, el control documental y la fecha de revisión, y descarga el Documento Final."
     };
     function siguientePaso(datos, entrega) {
       const L = datos.mapas;
@@ -219,6 +222,7 @@
       const m = L.slice().sort((x, y) => String(y.modificado).localeCompare(String(x.modificado)))[0];
       const p = pasoPendiente(m, entrega), nom = corto(m.titulo || m.proceso || "tu mapa", 50);
       if (p && TEXTO_PASO[p.n]) return { k: "paso" + p.n, texto: `«${nom}»: ${TEXTO_PASO[p.n](m)}`, href: `#/mapa/${m.id}/${p.n}`, btn: `Ir al paso ${p.n}` };
+      if (entrega >= 4) { const d = diasRevision(m); return { k: "listo", texto: d !== null && d <= 30 ? `«${nom}» tiene la revisión ${d < 0 ? "pasada desde el " : "prevista para el "}${fFecha(m.proxRevision)}: crea una edición nueva y revisad el mapa.` : `«${nom}» está completo: el mapa, el documento final y los hallazgos para Auditorías.`, href: `#/mapa/${m.id}/10`, btn: "Ir al documento final" }; }
       if (entrega >= 3) return { k: "listo", texto: `«${nom}» ya tiene el mapa: el flujograma con los fallos prioritarios encima. El documento final llegará en la próxima versión; mientras, descarga la lámina del mapa.`, href: `#/mapa/${m.id}/9`, btn: "Ver el mapa" };
       return { k: "listo", texto: entrega >= 2 ? `«${nom}» ya tiene el proceso, el flujograma, los puntos críticos y el AMFE con sus fallos priorizados. Las acciones de mejora y el mapa llegarán en la próxima versión.` : `«${nom}» ya tiene el proceso, sus subprocesos, el flujograma y los puntos críticos.`, href: `#/mapa/${m.id}/${entrega >= 2 ? 7 : 4}`, btn: entrega >= 2 ? "Ver la priorización" : "Ver los puntos críticos" };
     }
@@ -362,6 +366,14 @@
     }
     const puntoDe = (m, f) => m.puntos.find(x => x.id === f.puntoId) || null;
 
+    function avisosCierre(m) {
+      const r = [], fallan = notaCalidad(m).filter(x => !x.ok);
+      if (fallan.length) r.push({ nivel: "nota", texto: `La nota de calidad tiene ${plural(fallan.length, "punto pendiente", "puntos pendientes")}: míralos abajo antes de entregar el documento.` });
+      const d = diasRevision(m);
+      if (d !== null && d < 0) r.push({ nivel: "warn", texto: `La fecha de revisión (${fFecha(m.proxRevision)}) ya ha pasado: crea una edición nueva para revisar el mapa.` });
+      if (LA && prioridadDe(m).some(f => lleno(f.residual.g) && lleno(f.residual.o) && Number(f.residual.g) < Number(f.g))) r.push({ nivel: "nota", texto: "Alguna acción baja la gravedad. Es raro: una acción suele bajar la ocurrencia o mejorar la detección; el daño que causaría el fallo suele ser el mismo." });
+      return r;
+    }
     // ---------- Paso 8 · Acciones de mejora (motor de AMFE) ----------
     const CRITERIOS_ACCIONES = { viabilidad: "La viabilidad de su implantación", impacto: "El grado de impacto esperado", cultura: "Su alineación con la cultura de seguridad del centro", medible: "La posibilidad de medirlas con indicadores" };
     const hoyIso = () => new Date().toISOString().slice(0, 10);
@@ -377,6 +389,9 @@
     }
     const enMapa = m => !LA ? [] : m.vistaMapa.mostrar === "todos" ? LA.ordenarFallos(m.fallos.filter(f => lleno(f.fallo) && LA.iprDe(f)), "num") : LA.ordenarFallos(LA.prioritarios(m), "num");
     const nivelDe = f => LF.nivelDeIPR(LA ? LA.iprDe(f) : 0);
+    // Mapa «después» (mejora D): el color sale del IPR esperado tras las acciones, si ya se ha vuelto a puntuar
+    const iprMapa = (m, f) => !LA ? 0 : m.vistaMapa.despues && LA.iprResidual(f) ? LA.iprResidual(f) : LA.iprDe(f);
+    const nivelMapa = (m, f) => LF.nivelDeIPR(iprMapa(m, f));
     const marcaCritico = f => f.critico === true || (LA && (LA.entero1a10(f.g) || 0) >= 9);
     // Sin flujograma (mejora G): un mapa por subprocesos, una caja por subproceso en fila, para no quedarse sin mapa
     function flujoBase(m) {
@@ -400,7 +415,7 @@
     // Los fallos del mapa como «puntos críticos» del motor de Flujograma: un aviso por paso con sus números, del color del IPR más alto
     function puntosMapa(m, b = flujoBase(m)) {
       const r = [];
-      enMapa(m).forEach(f => ubicacionMapa(m, b, f).forEach(pid => r.push({ id: f.id + "@" + pid, num: f.num, pasoId: pid, titulo: f.fallo, descripcion: "", fallos: [String(f.num)], origen: "manual", clave: "", nivel: nivelDe(f), critico: marcaCritico(f) })));
+      enMapa(m).forEach(f => ubicacionMapa(m, b, f).forEach(pid => r.push({ id: f.id + "@" + pid, num: f.num, pasoId: pid, titulo: f.fallo, descripcion: "", fallos: [String(f.num)], origen: "manual", clave: "", nivel: nivelMapa(m, f), critico: marcaCritico(f) })));
       return r;
     }
     const COLOR_NIVEL = { muyalto: "#e51400", alto: "#f97316", medio: "#eab308", bajo: "#22c55e" };
@@ -417,12 +432,12 @@
       if (m.vistaMapa.calor) { const c = calorSub(m); d.bandas.forEach(x => { const k = c[x.subprocesoId]; if (k && k.nivel) { x.color = COLOR_NIVEL[k.nivel]; x.nombre = `${x.nombre} · IPR máx. ${k.max}`; } }); }
       return d;
     }
-    const tituloMapa = m => lleno(m.vistaMapa.titulo) ? m.vistaMapa.titulo : `Mapa de riesgo · ${m.proceso || m.titulo || "proceso sin nombre"}`;
+    const tituloMapa = m => (lleno(m.vistaMapa.titulo) ? m.vistaMapa.titulo : `Mapa de riesgo · ${m.proceso || m.titulo || "proceso sin nombre"}`) + (m.vistaMapa.despues ? " · tras las acciones" : "");
     // Leyenda (ejercicio 14): nº, fallo, subproceso, IPR, nivel y dónde está
     function leyendaMapa(m) {
       if (!LA) return [];
       const b = flujoBase(m), num = id => { const p = b.pasos.find(q => q.id === id); return p ? (b.sinFlujo ? p.texto : p.num) : ""; };
-      const l = enMapa(m).map(f => ({ id: f.id, num: f.num, fallo: f.fallo, subproceso: (subDe(m, f.subprocesoId) || {}).nombre || "", ipr: LA.iprDe(f), nivel: nivelDe(f), critico: marcaCritico(f), pasos: ubicacionMapa(m, b, f).map(num) }));
+      const l = enMapa(m).map(f => ({ id: f.id, num: f.num, fallo: f.fallo, subproceso: (subDe(m, f.subprocesoId) || {}).nombre || "", ipr: iprMapa(m, f), nivel: nivelMapa(m, f), critico: marcaCritico(f), pasos: ubicacionMapa(m, b, f).map(num) }));
       return m.vistaMapa.leyenda === "ipr" ? l.sort((a, c) => c.ipr - a.ipr || a.num - c.num) : l;
     }
     const sinUbicar = m => LA ? LA.prioritarios(m).filter(f => !ubicacionMapa(m, flujoBase(m), f).length) : [];
@@ -546,6 +561,256 @@
       return p.mapas.filter(x => x && typeof x === "object");
     }
 
+    // ======================= Paso 10 · Documento final y cierre =======================
+    const fFecha = s => /^\d{4}-\d{2}-\d{2}$/.test(s || "") ? s.split("-").reverse().join("/") : (s || "");
+    const prioridadDe = m => LA ? LA.prioritarios(m) : [];
+    function introduccionSugerida(m) {
+      const p = m.proceso || "el proceso analizado";
+      return `La gestión proactiva de la seguridad del paciente requiere identificar de forma sistemática los riesgos de los procesos asistenciales. El mapa de riesgos es una herramienta para analizar los procesos clave en profundidad, localizar los puntos críticos donde pueden surgir fallos, evaluar su impacto y priorizar las intervenciones preventivas. Además, facilita la formación de los equipos, la estandarización de los procedimientos y su inclusión en los planes de acogida de los nuevos profesionales.\n\nEste documento presenta el mapa de riesgos del proceso «${p}»: la delimitación del proceso y sus subprocesos, la identificación de los puntos críticos, el análisis mediante la metodología AMFE (Análisis Modal de Fallos y Efectos), la priorización de los riesgos, las acciones de mejora propuestas y, como resultado final, la representación visual del mapa de riesgos sobre el flujograma del proceso. La metodología es reproducible y adaptable a otros procesos clínicos o de soporte.`;
+    }
+    function conclusionesSugeridas(m) {
+      if (!LA) return "";
+      const F = m.fallos.filter(f => lleno(f.fallo)), P = prioridadDe(m), S = m.subprocesos.filter(s => lleno(s.nombre)), A = P.filter(f => LA.accionesDe(f).length);
+      const V = P.map(LA.iprDe).filter(Boolean), r = LA.resumenMejora(m, hoyIso());
+      const partes = [`El documento ha permitido desarrollar y representar de forma estructurada el mapa de riesgos del proceso «${m.proceso || "analizado"}». Entre los principales resultados destacan:`];
+      const l = [];
+      if (F.length) l.push(`La identificación sistemática de ${plural(F.length, "fallo potencial", "fallos potenciales")} distribuidos en ${plural(S.length, "subproceso", "subprocesos")}.`);
+      if (P.length) l.push(`La priorización de los riesgos según su gravedad, su ocurrencia y su detección, con la selección de ${plural(P.length, "fallo prioritario", "fallos prioritarios")}${V.length ? ` (IPR de ${Math.max(...V)} a ${Math.min(...V)})` : ""}.`);
+      if (A.length) l.push(`La formulación de acciones de mejora para ${A.length === P.length ? "todos ellos" : plural(A.length, "de ellos", "de ellos")}, con responsable, plazo e indicador de seguimiento${r.iprResidual && r.iprInicial ? `; si funcionan como se espera, el IPR conjunto bajaría un ${r.reduccion} %` : ""}.`);
+      if (m.pasos.length || S.length) l.push("La elaboración del mapa visual del proceso, con los puntos críticos marcados y coloreados según su riesgo, útil como herramienta formativa y de gestión.");
+      return partes[0] + "\n" + l.map(x => "• " + x).join("\n") + "\n\nEste trabajo es la base para diseñar auditorías internas que verifiquen la eficacia de las mejoras, para la formación de los equipos (especialmente en la acogida de nuevos profesionales) y para la toma de decisiones en las comisiones de calidad y seguridad del paciente.";
+    }
+    // Comprobaciones antes de entregar el documento (mejora C), cada una con el paso donde se arregla
+    function notaCalidad(m) {
+      const P = prioridadDe(m), F = m.fallos.filter(f => lleno(f.fallo)), E = m.equipo.filter(x => lleno(x.perfil)), C = m.control;
+      const conCargo = l => (l || []).some(x => lleno(x.cargo) || lleno(x.nombre));
+      return [
+        { ok: lleno(m.proceso) && lleno(m.inicio) && lleno(m.fin), paso: 1, texto: "El proceso está delimitado: nombre, dónde empieza y dónde acaba." },
+        { ok: m.subprocesos.filter(s => lleno(s.nombre)).length >= 2, paso: 2, texto: "El proceso está dividido en subprocesos." },
+        { ok: m.pasos.length > 0 && lleno(m.validado), paso: 3, texto: "El flujograma está dibujado y validado con el equipo." },
+        { ok: m.puntos.length > 0 && m.subprocesos.every(s => puntosDeSub(m, s.id).length), paso: 4, texto: "Cada subproceso tiene sus puntos críticos." },
+        { ok: E.length >= 6 && E.some(x => x.rol === "coordinador") && E.some(x => x.rol === "secretario"), paso: 5, texto: "El equipo tiene al menos 6 perfiles, con coordinación y secretaría." },
+        { ok: F.length > 0 && !!LA && F.every(LA.iprDe), paso: 7, texto: "Todos los fallos tienen su gravedad, su ocurrencia y su detección." },
+        { ok: P.length > 0 && !avisosPriorizar(m).some(a => /motivo/.test(a.texto)), paso: 7, texto: "Hay fallos prioritarios y los cambios a mano o los críticos tienen su motivo." },
+        { ok: P.length > 0 && !!LA && P.every(f => LA.accionesDe(f).length && LA.accionesDe(f).every(x => LA.accionCompleta(x) && lleno(x.indicador.nombre))), paso: 8, texto: "Cada fallo prioritario tiene acciones con responsable, plazo e indicador." },
+        { ok: P.length > 0 && !sinUbicar(m).length, paso: 9, texto: "Todos los fallos prioritarios están en el mapa." },
+        { ok: lleno(m.conclusiones), paso: 10, texto: "Las conclusiones están escritas." },
+        { ok: conCargo(C.elaborado) && conCargo(C.aprobado), paso: 10, texto: "El control documental dice quién lo elabora y quién lo aprueba." },
+        { ok: /^\d{4}-\d{2}-\d{2}$/.test(m.proxRevision || ""), paso: 10, texto: "Tiene fecha de próxima revisión." }
+      ];
+    }
+    // Revisión periódica (mejora K): días que faltan para la próxima revisión (negativo = pasada)
+    function diasRevision(m, hoy = hoyIso()) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(m.proxRevision || "")) return null;
+      return Math.round((new Date(m.proxRevision) - new Date(hoy)) / 864e5);
+    }
+    // Nueva edición: copia completa con los mismos ids de fallos (para comparar con la anterior)
+    function nuevaEdicion(m, genId, fecha) {
+      const c = JSON.parse(JSON.stringify(m)), n = String((parseInt(m.edicion, 10) || 0) + 1).padStart(2, "0");
+      Object.assign(c, { id: genId(), edicion: n, anteriorId: m.id, proxRevision: "", validado: "", creado: fecha, modificado: fecha, origen: m.origen });
+      c.control.historial.push({ edicion: n, fecha: fecha.slice(0, 10), cambio: "Revisión del mapa de riesgos" });
+      return c;
+    }
+    // Comparación con la edición anterior (por nº de fallo): IPR antes y ahora, nuevos y quitados
+    function compararEdiciones(ant, m) {
+      if (!LA) return null;
+      const porNum = x => new Map(x.fallos.filter(f => lleno(f.fallo)).map(f => [f.num, f]));
+      const A = porNum(ant), B = porNum(m), filas = [];
+      B.forEach((f, n) => { const g = A.get(n); if (g) filas.push({ num: n, fallo: f.fallo, antes: LA.iprDe(g), ahora: LA.iprDe(f) }); });
+      const suma = l => l.reduce((s, v) => s + (v || 0), 0);
+      return { filas: filas.filter(x => x.antes !== x.ahora), nuevos: [...B.keys()].filter(n => !A.has(n)), quitados: [...A.keys()].filter(n => !B.has(n)),
+        prioritarios: [prioridadDe(ant).length, prioridadDe(m).length], iprTotal: [suma([...A.values()].map(LA.iprDe)), suma([...B.values()].map(LA.iprDe))] };
+    }
+
+    // ---------- Documentos (bloques que docx.js convierte en Word y app.js en HTML para el PDF) ----------
+    const FONDO_NIVEL = { muyalto: "FFE4E6", alto: "FFEDD5", medio: "FEF3C7", bajo: "DCFCE7" };
+    const FONDO_ZONA = { verde: "BBF7D0", amarillo: "FEF08A", naranja: "FED7AA", rojo: "FCA5A5" };
+    const celdaIpr = v => { const k = LF.nivelDeIPR(v); return v ? { texto: String(v), centro: true, negrita: true, fondo: FONDO_NIVEL[k] } : { texto: "", centro: true }; };
+    const Ce = t => ({ texto: t == null ? "" : String(t), centro: true });
+    function bloquesControl(m) {
+      const C = m.control, pers = l => (l || []).filter(x => lleno(x.nombre) || lleno(x.cargo)), B = [], filas = [];
+      [["Elaborado", C.elaborado], ["Revisado", C.revisado], ["Aprobado", C.aprobado]].forEach(([k, l]) => pers(l).forEach((x, i) => filas.push([i ? "" : { texto: k, negrita: true }, x.nombre, x.cargo, x.ubicacion || ""])));
+      if (filas.length) B.push({ t: "tabla", cab: ["", "Nombre", "Cargo", "Ubicación"], filas, anchos: [14, 28, 30, 28], fuente: 9 });
+      const H = (C.historial || []).filter(h => lleno(h.edicion) || lleno(h.cambio));
+      if (H.length) { B.push({ t: "h2", texto: "Histórico de revisiones" }); B.push({ t: "tabla", cab: ["Edición", "Fecha", "Denominación"], filas: H.map(h => [Ce(h.edicion), fFecha(h.fecha), h.cambio]), anchos: [14, 20, 66], fuente: 9 }); }
+      return B;
+    }
+    function bloqueMatriz(m, fallos, tam = 5) {
+      const etq = i => tam === 10 ? String(i) : LA.TRAMOS[i - 1];
+      return { t: "tabla", fuente: 8, cab: ["G \\ O", ...Array.from({ length: tam }, (_, i) => etq(i + 1))], anchos: [12, ...Array(tam).fill(88 / tam)],
+        filas: LA.matriz(fallos, tam).map(fila => [{ texto: etq(fila[0].g), negrita: true, centro: true }, ...fila.map(cl => ({ texto: cl.fallos.map(f => f.num).join(", "), centro: true, negrita: true, fondo: FONDO_ZONA[cl.zona] }))]) };
+    }
+    const filaFallo = (m, f) => [(subDe(m, f.subprocesoId) || {}).nombre || "", Ce(f.num), { texto: f.fallo, negrita: true }, f.efecto, f.causa, Ce(f.g), Ce(f.o), Ce(f.d), celdaIpr(LA.iprDe(f))];
+    const CAB_FALLO = ["Subproceso", "Id", "Fallo", "Efecto", "Causa", "G", "O", "D", "IPR"], ANCHO_FALLO = [14, 5, 20, 20, 21, 4, 4, 4, 8];
+    // El Documento Final, en el orden y con los títulos del documento de Urgencias del curso
+    function documentoFinal(m, fecha, img) {
+      const nom = m.proceso || m.titulo || "Proceso sin nombre", B = [], P = prioridadDe(m), F = m.fallos.filter(f => lleno(f.fallo)), S = m.subprocesos;
+      const parrafos = (txt, def) => String(lleno(txt) ? txt : def || "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean).forEach(x => {
+        const lineas = x.split("\n"), items = lineas.filter(l => /^\s*[•\-]/.test(l)), resto = lineas.filter(l => !/^\s*[•\-]/.test(l)).join(" ");
+        if (lleno(resto)) B.push({ t: "p", texto: resto });
+        if (items.length) B.push({ t: "lista", items: items.map(l => l.replace(/^\s*[•\-]\s*/, "")) });
+      });
+      B.push({ t: "portada", titulo: "Mapa de Riesgos", sub: nom, extra: [m.unidad, m.ambito, m.fecha || fecha, `Edición ${m.edicion || "00"}`].filter(lleno) });
+      const ctl = bloquesControl(m);
+      if (ctl.length) { B.push({ t: "h1", texto: "Control del documento" }); B.push(...ctl); }
+      B.push({ t: "salto" });
+      B.push({ t: "h1", texto: "1. Índice" });
+      B.push({ t: "lista", items: ["2. Introducción", "3. Descripción del proceso", "4. Identificación de puntos críticos", "5. Análisis AMFE", "6. Acciones de mejora", "7. Mapa de Riesgos", "8. Conclusiones", "9. Anexo I: Escalas de priorización en AMFE", "10. Anexo II: Tablas de fallos priorizados", "11. Matriz de riesgo"] });
+      B.push({ t: "h1", texto: "2. Introducción" });
+      parrafos(m.introduccion, introduccionSugerida(m));
+      B.push({ t: "h1", texto: "3. Descripción del proceso" });
+      if (lleno(m.descripcion)) B.push({ t: "p", runs: [{ texto: "Objetivo general: ", negrita: true }, { texto: m.descripcion }] });
+      B.push({ t: "h2", texto: "3.1. Objetivo del proceso" });
+      B.push({ t: "p", texto: lleno(m.objetivo) ? m.objetivo : sugerirObjetivo(m) || "—" });
+      const lim = [lleno(m.inicio) && `Empieza: ${m.inicio}.`, lleno(m.fin) && `Termina: ${m.fin}.`, lleno(m.incluye) && `Incluye: ${m.incluye}.`, lleno(m.excluye) && `Queda fuera: ${m.excluye}.`].filter(Boolean);
+      if (lim.length) B.push({ t: "lista", items: lim });
+      B.push({ t: "h2", texto: "3.2. Subprocesos incluidos" });
+      if (S.length) {
+        B.push({ t: "p", texto: `Para facilitar su análisis, el proceso se ha desglosado en ${plural(S.length, "subproceso", "subprocesos")}:` });
+        B.push({ t: "tabla", cab: ["Id", "Subproceso", "Descripción", "Inicio del subproceso", "Fin del subproceso", "Roles implicados"], filas: S.map((s, i) => [Ce(i + 1), { texto: s.nombre, negrita: true }, s.descripcion, s.inicio, s.fin, s.roles]), anchos: [5, 19, 24, 18, 18, 16], fuente: 8.5 });
+      }
+      B.push({ t: "h1", texto: "4. Identificación de puntos críticos" });
+      B.push({ t: "p", texto: "Se ha analizado de forma sistemática cada subproceso para localizar los puntos críticos: los momentos en los que pueden producirse fallos con impacto en la seguridad del paciente o en la continuidad asistencial." });
+      B.push({ t: "h2", texto: "4.1. Tabla de subprocesos y riesgos detectados" });
+      puntosPorSub(m).filter(g => g.puntos.length).forEach(g => B.push({ t: "tabla", cab: ["Id", "Subproceso", "Error o punto crítico", "Descripción del error o riesgo identificado"], filas: g.puntos.map(x => [Ce(idPunto(m, x)), g.sub ? g.sub.nombre : "", { texto: x.titulo, negrita: true }, x.descripcion]), anchos: [7, 20, 30, 43], fuente: 8.5 }));
+      if (!m.puntos.length) B.push({ t: "p", texto: "No se han registrado puntos críticos.", estilo: "nota" });
+      B.push({ t: "h1", texto: "5. Análisis AMFE" });
+      B.push({ t: "h2", texto: "5.1. Utilidad del AMFE en la gestión de riesgos" });
+      B.push({ t: "p", texto: "El Análisis Modal de Fallos y Efectos (AMFE) es una herramienta de análisis proactivo que permite identificar, clasificar y priorizar los fallos potenciales de un proceso, considerando el impacto que tendrían sobre la seguridad del paciente, su frecuencia de aparición y la dificultad para detectarlos antes de que causen daño. Permite comprender mejor los puntos vulnerables del proceso, tomar decisiones basadas en el riesgo, planificar acciones preventivas eficaces y priorizar los esfuerzos de mejora de forma objetiva." });
+      B.push({ t: "h2", texto: "5.2. Composición del equipo de trabajo" });
+      const E = m.equipo.filter(x => lleno(x.perfil));
+      if (E.length && LA) { B.push({ t: "p", texto: "Se constituyó un grupo de trabajo multidisciplinar, con conocimiento operativo del proceso y representación de los distintos perfiles implicados:" }); B.push({ t: "tabla", cab: ["Id", "Perfil profesional", "Cargo", "Rol", "Justificación"], filas: E.map((x, i) => [Ce(i + 1), { texto: x.perfil, negrita: true }, x.cargo, LA.ROLES[x.rol].nom, x.justificacion]), anchos: [5, 22, 22, 16, 35], fuente: 8.5 }); }
+      else B.push({ t: "p", texto: "No se ha registrado el equipo de trabajo.", estilo: "nota" });
+      B.push({ t: "h2", texto: "5.3. Metodología empleada" });
+      const met = [textoMetodologia(m), m.metodologia.texto].filter(lleno).join(" ");
+      if (met) B.push({ t: "p", texto: met });
+      if (m.sesiones.length) B.push({ t: "tabla", cab: ["Sesión", "Fecha", "Actividad principal", "Duración", "Resultados alcanzados"], filas: m.sesiones.map((x, i) => [Ce(i + 1), fFecha(x.fecha), x.actividad, Ce(x.duracion), x.resultados]), anchos: [8, 13, 33, 10, 36], fuente: 8.5 });
+      B.push({ t: "h2", texto: "5.4. Resultados del análisis" });
+      if (F.length && LA) B.push({ t: "p", texto: `Se identificaron ${plural(F.length, "fallo potencial", "fallos potenciales")}, organizados según el subproceso al que pertenecen y priorizados según su Índice de Prioridad de Riesgo (IPR = gravedad × ocurrencia × detección). Las escalas se detallan en el Anexo I y el listado completo de fallos, primero por subproceso y luego por IPR, en el Anexo II. ${P.length ? `Los ${plural(P.length, "fallo prioritario se ha representado", "fallos prioritarios se han representado")} además en una matriz de riesgos (gravedad × ocurrencia) con zonas de color (apartado 11): no es el criterio de priorización, pero refuerza la comunicación del riesgo.` : ""}` });
+      B.push({ t: "h2", texto: "5.5. Fallos con mayor criticidad (IPR más elevado)" });
+      if (P.length) { B.push({ t: "p", texto: `${P.length === 1 ? "El fallo" : "Los " + P.length + " fallos"} con mayor IPR, ${P.length === 1 ? "considerado prioritario" : "considerados prioritarios"} para ser ${P.length === 1 ? "abordado" : "abordados"} con medidas correctoras o preventivas:` }); B.push({ t: "tabla", cab: CAB_FALLO, filas: P.map(f => filaFallo(m, f)), anchos: ANCHO_FALLO, fuente: 8 }); }
+      B.push({ t: "h1", texto: "6. Acciones de mejora" });
+      B.push({ t: "p", texto: "Una vez priorizados los riesgos, se diseñaron acciones de mejora para los fallos prioritarios, con la finalidad de reducir la probabilidad de que ocurran, mejorar su detección temprana y disminuir su impacto en la seguridad del paciente." });
+      B.push({ t: "h2", texto: "6.1. Criterios para seleccionar acciones" });
+      const crit = Object.keys(CRITERIOS_ACCIONES).filter(k => m.criteriosAcciones[k]).map(k => CRITERIOS_ACCIONES[k] + ".");
+      B.push({ t: "lista", items: crit.length ? crit : Object.values(CRITERIOS_ACCIONES).map(x => x + ".") });
+      B.push({ t: "h2", texto: "6.2. Tabla de acciones propuestas para los fallos con mayor IPR" });
+      const AC = P.flatMap(f => (f.acciones || []).filter(x => lleno(x.que)).map(x => [Ce(f.num), (subDe(m, f.subprocesoId) || {}).nombre || "", f.fallo, { texto: x.que, negrita: true }, x.porque, x.donde, x.plazo || fFecha(x.fin), x.quien, x.como, [x.indicador.nombre, x.indicador.estandar].filter(lleno).join(" · ")]));
+      if (AC.length) B.push({ t: "tabla", cab: ["Id", "Subproceso", "Fallo", "Acción de mejora (qué)", "¿Por qué?", "¿Dónde?", "Plazo", "Responsable", "¿Cómo?", "Indicador · estándar"], filas: AC, anchos: [4, 9, 10, 14, 11, 9, 7, 10, 14, 12], fuente: 7 });
+      else B.push({ t: "p", texto: "Aún no se han propuesto acciones de mejora.", estilo: "nota" });
+      const R = P.filter(f => LA && LA.iprResidual(f));
+      if (R.length) { const rm = LA.resumenMejora(m, hoyIso()); B.push({ t: "p", texto: `Reevaluación esperada tras las acciones: en conjunto, el IPR de ${plural(R.length, "fallo", "fallos")} pasaría de ${rm.iprInicial} a ${rm.iprResidual} (${rm.reduccion} % menos).` }); B.push({ t: "tabla", cab: ["Id", "Fallo", "IPR antes", "G·O·D después", "IPR después"], filas: R.map(f => [Ce(f.num), f.fallo, celdaIpr(LA.iprDe(f)), Ce([f.residual.g, f.residual.o, f.residual.d].join(" · ")), celdaIpr(LA.iprResidual(f))]), anchos: [6, 50, 14, 16, 14], fuente: 8.5 }); }
+      B.push({ t: "h2", texto: "6.3. Justificación y alineación con auditoría" });
+      B.push({ t: "p", texto: "Las acciones se han diseñado a partir de los fallos de mayor criticidad y de su impacto esperado sobre la seguridad del paciente. Sus indicadores servirán de base para la auditoría de seguimiento que evaluará su grado de implantación y su efectividad real." });
+      const H = hallazgos(m);
+      if (H.length) B.push({ t: "tabla", cab: ["Id", "Hallazgo clave (fallo prioritario)", "IPR", "Frecuencia de auditoría propuesta"], filas: H.map(h => [Ce(h.num), h.fallo, celdaIpr(h.ipr), Ce(h.frecuencia)]), anchos: [6, 60, 12, 22], fuente: 8.5 });
+      B.push({ t: "h1", texto: "7. Mapa de Riesgos" });
+      B.push({ t: "p", texto: `Como resultado del trabajo, se ha elaborado el ${m.pasos.length ? "flujograma completo" : "esquema"} del proceso «${nom}», en el que se integran los subprocesos y las actividades clave, marcando de forma visual los puntos en los que se han identificado fallos potenciales a través del análisis AMFE.` });
+      B.push({ t: "h2", texto: "7.1. Objetivos del mapa" });
+      parrafos(m.textosMapa.objetivos, sugerirTextoMapa(m, "objetivos"));
+      B.push({ t: "h2", texto: "7.2. Estructura del flujograma" });
+      parrafos(m.textosMapa.estructura, sugerirTextoMapa(m, "estructura"));
+      B.push({ t: "h2", texto: "7.3. Interpretación y utilidad" });
+      parrafos(m.textosMapa.interpretacion, sugerirTextoMapa(m, "interpretacion"));
+      B.push({ t: "salto" });
+      B.push({ t: "h2", texto: "7.4. Mapa de Riesgo" });
+      if (img) B.push({ t: "imagen", png: img.png, svg: img.svg, w: img.w, h: img.h, maxAlto: 23, pie: tituloMapa(m) + "." });
+      const LY = leyendaMapa(m);
+      if (LY.length) B.push({ t: "tabla", cab: ["Nº", "Fallo", "IPR"], filas: LY.map(x => [{ texto: String(x.num), centro: true, negrita: true, fondo: FONDO_NIVEL[x.nivel] }, x.fallo, celdaIpr(x.ipr)]), anchos: [8, 78, 14], fuente: 8 });
+      B.push({ t: "h1", texto: "8. Conclusiones" });
+      parrafos(m.conclusiones, conclusionesSugeridas(m));
+      if (/^\d{4}-\d{2}-\d{2}$/.test(m.proxRevision || "")) B.push({ t: "p", texto: `Próxima revisión del mapa de riesgos: ${fFecha(m.proxRevision)}.` });
+      if (LA) {
+        B.push({ t: "salto" });
+        B.push({ t: "h1", texto: "9. Anexo I: Escalas de priorización en AMFE" });
+        ["g", "o", "d"].forEach(k => { B.push({ t: "h2", texto: `Escala de ${LA.ESCALA_NOM[k].toLowerCase()}` }); B.push({ t: "tabla", cab: ["Puntuación", LA.ESCALA_NOM[k]], filas: LA.TRAMOS.map((x, i) => [Ce(x), m.escalas[k][i]]), anchos: [18, 82], fuente: 9 }); });
+        B.push({ t: "h1", texto: "10. Anexo II: Tablas de fallos priorizados" });
+        if (F.length) {
+          B.push({ t: "h2", texto: "Fallos por subproceso" }); B.push({ t: "tabla", cab: CAB_FALLO, filas: LA.ordenarFallos(F, "sub", S).map(f => filaFallo(m, f)), anchos: ANCHO_FALLO, fuente: 7.5 });
+          B.push({ t: "h2", texto: "Fallos por IPR" }); B.push({ t: "tabla", cab: CAB_FALLO, filas: LA.ordenarFallos(F.filter(LA.iprDe)).map(f => filaFallo(m, f)), anchos: ANCHO_FALLO, fuente: 7.5 });
+        }
+        B.push({ t: "h1", texto: "11. Matriz de riesgo" });
+        B.push({ t: "p", texto: "La matriz de riesgos representa el nivel de criticidad de cada fallo según su gravedad (filas) y su ocurrencia (columnas). La zona en la que cae indica su nivel de riesgo: verde, bajo (aceptable); amarillo, moderado (requiere vigilancia); naranja, alto (requiere intervención); rojo, muy alto (requiere intervención inmediata)." });
+        if (P.length) B.push(bloqueMatriz(m, P, 5));
+      }
+      if (lleno(m.notas) && /^ej-/.test(m.id)) B.push({ t: "p", texto: m.notas, estilo: "nota" });
+      B.push({ t: "p", texto: `Documento generado con la app Mapa de Riesgos el ${fecha}. Herramienta docente y de apoyo: no sustituye el criterio profesional.`, estilo: "nota" });
+      return { titulo: "Mapa de Riesgos · " + nom, bloques: B };
+    }
+    // Resumen para la Dirección: una página con las cifras, los 5 de mayor IPR y sus acciones
+    function documentoResumen(m, fecha, img) {
+      const nom = m.proceso || m.titulo || "Proceso sin nombre", r = resumen(m), P = prioridadDe(m), B = [];
+      // Sin portada (ocupa media página): título y datos en dos líneas, para que todo quepa en una página
+      B.push({ t: "h1", texto: "Mapa de Riesgos · " + nom });
+      B.push({ t: "p", texto: [m.unidad, fecha, `Edición ${m.edicion || "00"}`].filter(lleno).join(" · "), estilo: "nota" });
+      B.push({ t: "tabla", sinCab: true, filas: [[{ texto: "Subprocesos", negrita: true }, String(r.subprocesos)], [{ texto: "Puntos críticos", negrita: true }, String(r.puntos)], [{ texto: "Fallos analizados", negrita: true }, String(r.fallos)], [{ texto: "Fallos prioritarios", negrita: true }, String(r.prioritarios)], [{ texto: "IPR máximo", negrita: true }, celdaIpr(r.maxIPR)]], anchos: [40, 60] });
+      if (P.length && LA) {
+        B.push({ t: "h2", texto: "Los riesgos más altos" });
+        B.push({ t: "tabla", cab: ["Nº", "Fallo", "IPR", "Acción", "Responsable", "Plazo"], filas: LA.ordenarFallos(P).slice(0, 5).map(f => { const a = LA.accionesDe(f)[0]; return [Ce(f.num), { texto: f.fallo, negrita: true }, celdaIpr(LA.iprDe(f)), a ? a.que : "", a ? a.quien : "", a ? a.plazo || fFecha(a.fin) : ""]; }), anchos: [5, 26, 9, 32, 16, 12], fuente: 8.5 });
+      }
+      if (img) B.push({ t: "imagen", png: img.png, svg: img.svg, w: img.w, h: img.h, maxAlto: 8.5 });
+      return { titulo: "Mapa de Riesgos · resumen · " + nom, bloques: B };
+    }
+    // Ficha de acogida (mejora J): una página por subproceso con sus riesgos principales y qué se hace
+    function documentoAcogida(m, fecha) {
+      const nom = m.proceso || m.titulo || "Proceso sin nombre", B = [];
+      B.push({ t: "portada", titulo: "Riesgos del proceso para profesionales que se incorporan", sub: nom, extra: [m.unidad, fecha].filter(lleno) });
+      B.push({ t: "p", texto: "Esta ficha resume, subproceso a subproceso, dónde puede fallar la atención al paciente y qué medidas se han puesto en marcha. Léela antes de empezar y pregunta cualquier duda a tu responsable." });
+      const pr = LA ? LA.prioridad(m) : {};
+      m.subprocesos.filter(s => lleno(s.nombre)).forEach((s, i) => {
+        const F = LA ? LA.ordenarFallos(m.fallos.filter(f => f.subprocesoId === s.id && lleno(f.fallo) && LA.iprDe(f))) : [];
+        if (i) B.push({ t: "salto" });
+        B.push({ t: "h1", texto: `${i + 1}. ${s.nombre}` });
+        const datos = [lleno(s.descripcion) && s.descripcion, lleno(s.inicio) && `Empieza: ${s.inicio}.`, lleno(s.fin) && `Termina: ${s.fin}.`, lleno(s.roles) && `Intervienen: ${s.roles}.`].filter(Boolean);
+        if (datos.length) B.push({ t: "lista", items: datos });
+        const top = F.filter(f => pr[f.id] && pr[f.id].prio).concat(F.filter(f => !(pr[f.id] && pr[f.id].prio))).slice(0, 5);
+        if (top.length) {
+          B.push({ t: "h2", texto: "Riesgos principales" });
+          B.push({ t: "tabla", cab: ["Nº", "Qué puede fallar", "Qué pasaría", "IPR", "Qué se hace"], filas: top.map(f => [Ce(f.num), { texto: f.fallo, negrita: true }, f.efecto, celdaIpr(LA.iprDe(f)), LA.accionesDe(f).map(a => a.que).join(" · ") || f.controles]), anchos: [5, 26, 24, 9, 36], fuente: 8.5 });
+        } else B.push({ t: "p", texto: "No hay fallos analizados en este subproceso.", estilo: "nota" });
+      });
+      return { titulo: "Ficha de acogida · " + nom, bloques: B };
+    }
+    // ---------- Excel ----------
+    const ESTILOS_XLSX = {
+      titulo: { negrita: true, tamano: 14, colorTexto: "FFFFFF", colorFondo: "7A1424", borde: false },
+      sub: { cursiva: true, colorTexto: "444444", borde: false },
+      cab: { negrita: true, colorTexto: "FFFFFF", colorFondo: "0D1B2A", alineacion: "center", ajustarTexto: true },
+      celda: { ajustarTexto: true, vertical: "top" }, negrita: { negrita: true, ajustarTexto: true, vertical: "top" }, centro: { alineacion: "center", vertical: "top", ajustarTexto: true },
+      n_muyalto: { negrita: true, alineacion: "center", colorFondo: "FFE4E6" }, n_alto: { negrita: true, alineacion: "center", colorFondo: "FFEDD5" }, n_medio: { negrita: true, alineacion: "center", colorFondo: "FEF3C7" }, n_bajo: { negrita: true, alineacion: "center", colorFondo: "DCFCE7" },
+      si: { negrita: true, alineacion: "center", colorTexto: "15803D" }
+    };
+    function hojasExcel(m, fecha) {
+      const T = (texto, estilo = "celda") => ({ texto: texto == null ? "" : String(texto), estilo }), N = v => v ? { numero: v, estilo: "n_" + LF.nivelDeIPR(v) } : T("");
+      const nom = m.proceso || m.titulo || "Mapa de riesgos";
+      const cab = (titulo, cols) => { const r = [[T(titulo, "titulo")], [T([m.unidad, "Exportado de la app Mapa de Riesgos · " + fecha].filter(lleno).join(" · "), "sub")], cols.map(x => T(x, "cab"))]; r[0][0].combinar = cols.length; return r; };
+      const sub = f => (subDe(m, f.subprocesoId) || {}).nombre || "";
+      const pr = LA ? LA.prioridad(m) : {}, P = LA ? LA.puestos(m.fallos) : {};
+      const h1 = cab("Fallos · " + nom, ["Subproceso", "Nº", "Modo de fallo", "Efecto", "Causa", "Controles actuales", "G", "O", "D", "IPR", "Puesto", "Prioritario"]);
+      (LA ? LA.ordenarFallos(m.fallos.filter(f => lleno(f.fallo)), "sub", m.subprocesos) : []).forEach(f => h1.push([T(sub(f)), T(f.num, "centro"), T(f.fallo, "negrita"), T(f.efecto), T(f.causa), T(f.controles), T(f.g, "centro"), T(f.o, "centro"), T(f.d, "centro"), N(LA.iprDe(f)), T(P[f.id] || "", "centro"), pr[f.id] && pr[f.id].prio ? T("Sí", "si") : T("")]));
+      const h2 = cab("Acciones de mejora · " + nom, ["Nº", "Fallo", "IPR", "Qué", "Por qué", "Dónde", "Plazo", "Fin", "Quién", "Cómo", "Indicador", "Estándar", "Estado", "IPR después"]);
+      prioridadDe(m).forEach(f => (f.acciones.length ? f.acciones : [null]).forEach(x => h2.push([T(f.num, "centro"), T(f.fallo, "negrita"), N(LA.iprDe(f)), T(x ? x.que : ""), T(x ? x.porque : ""), T(x ? x.donde : ""), T(x ? x.plazo : ""), T(x ? fFecha(x.fin) : ""), T(x ? x.quien : ""), T(x ? x.como : ""), T(x ? x.indicador.nombre : ""), T(x ? x.indicador.estandar : ""), T(x ? LA.ESTADOS_ACCION[x.estado] : ""), N(LA.iprResidual(f))])));
+      const h3 = cab("Hallazgos para Auditorías · " + nom, ["Nº", "Subproceso", "Fallo", "IPR", "Gravedad", "Crítico", "Acción", "Indicador", "Frecuencia de auditoría", "Motivo"]);
+      hallazgos(m).forEach(h => h3.push([T(h.num, "centro"), T(h.subproceso), T(h.fallo, "negrita"), N(h.ipr), T(h.g, "centro"), T(h.critico ? "Sí" : "", "centro"), T(h.accion), T(h.indicador), T(h.frecuencia, "centro"), T(h.motivo)]));
+      const h4 = cab("Puntos críticos · " + nom, ["Id", "Subproceso", "Error o punto crítico", "Descripción", "Paso"]);
+      puntosPorSub(m).forEach(g => g.puntos.forEach(x => { const p = LF.pasoDe(m, x.pasoId); h4.push([T(idPunto(m, x), "centro"), T(g.sub ? g.sub.nombre : ""), T(x.titulo, "negrita"), T(x.descripcion), T(p ? `${p.num}. ${p.texto}` : "")]); }));
+      const h5 = cab("Proceso y equipo · " + nom, ["Dato", "Valor", "", ""]);
+      [["Proceso", nom], ["Unidad", m.unidad], ["Objetivo", m.objetivo], ["Empieza", m.inicio], ["Termina", m.fin], ["Edición", m.edicion], ["Próxima revisión", fFecha(m.proxRevision)]].forEach(([k, v]) => h5.push([T(k, "negrita"), T(v)]));
+      h5.push([]); h5.push(["Subproceso", "Inicio", "Fin", "Roles"].map(x => T(x, "cab")));
+      m.subprocesos.forEach(s => h5.push([T(s.nombre, "negrita"), T(s.inicio), T(s.fin), T(s.roles)]));
+      h5.push([]); h5.push(["Perfil", "Cargo", "Rol", "Justificación"].map(x => T(x, "cab")));
+      m.equipo.forEach(x => h5.push([T(x.perfil, "negrita"), T(x.cargo), T(LA ? LA.ROLES[x.rol].nom : x.rol), T(x.justificacion)]));
+      return { estilos: ESTILOS_XLSX, hojas: [
+        { nombre: "Fallos", filas: h1, opciones: { anchoColumnas: [24, 6, 36, 32, 32, 30, 5, 5, 5, 8, 8, 10], congelar: { filas: 3, columnas: 0 }, altoFilas: { 1: 24 }, primera: true } },
+        { nombre: "Acciones", filas: h2, opciones: { anchoColumnas: [6, 30, 8, 40, 30, 20, 12, 12, 22, 36, 30, 12, 12, 10], congelar: { filas: 3, columnas: 0 } } },
+        { nombre: "Hallazgos Auditorías", filas: h3, opciones: { anchoColumnas: [6, 24, 36, 8, 9, 8, 36, 34, 14, 40], congelar: { filas: 3, columnas: 0 } } },
+        { nombre: "Puntos críticos", filas: h4, opciones: { anchoColumnas: [7, 26, 40, 50, 30], congelar: { filas: 3, columnas: 0 } } },
+        { nombre: "Proceso y equipo", filas: h5, opciones: { anchoColumnas: [30, 40, 30, 50] } }
+      ] };
+    }
+    // «Llevar a Auditorías»: un archivo con la forma de «amfe-fallos» v1, que el «Traer de AMFE» de Auditorías ya acepta
+    const paqueteAuditorias = (m, appVersion, fecha) => LA ? LA.paqueteIntercambio([m], appVersion, fecha) : null;
+
     // ---------- Saneado (lo que se carga o se importa nunca se usa sin pasar por aquí) ----------
     const idValido = v => typeof v === "string" && /^[a-z0-9-]{1,40}$/i.test(v);
     const txt = (v, max) => (typeof v === "string" || typeof v === "number") ? String(v).slice(0, max) : "";
@@ -565,7 +830,10 @@
       const mt = o.metodologia && typeof o.metodologia === "object" ? o.metodologia : {};
       m.metodologia = { tecnicas: Array.isArray(mt.tecnicas) ? [...new Set(mt.tecnicas.filter(k => TECNICAS[k]))] : [], texto: txt(mt.texto, 2000) };
       const vm = o.vistaMapa && typeof o.vistaMapa === "object" ? o.vistaMapa : {};
-      m.vistaMapa = { mostrar: vm.mostrar === "todos" ? "todos" : "prioritarios", calor: vm.calor === true, titulo: txt(vm.titulo, 200), leyenda: vm.leyenda === "ipr" ? "ipr" : "num" };
+      m.vistaMapa = { mostrar: vm.mostrar === "todos" ? "todos" : "prioritarios", calor: vm.calor === true, titulo: txt(vm.titulo, 200), leyenda: vm.leyenda === "ipr" ? "ipr" : "num", despues: vm.despues === true };
+      // Control documental: el motor de Flujograma guarda nombre y cargo; el documento final lleva también la ubicación
+      const oc = o.control && typeof o.control === "object" ? o.control : {};
+      ["elaborado", "revisado", "aprobado"].forEach(k => m.control[k].forEach((x, i) => { const y = Array.isArray(oc[k]) ? oc[k][i] : null; x.ubicacion = y ? txt(y.ubicacion, 200) : ""; }));
       const tm = o.textosMapa && typeof o.textosMapa === "object" ? o.textosMapa : {};
       m.textosMapa = { objetivos: txt(tm.objetivos, 3000), estructura: txt(tm.estructura, 3000), interpretacion: txt(tm.interpretacion, 3000) };
       const ca = o.criteriosAcciones && typeof o.criteriosAcciones === "object" ? o.criteriosAcciones : {};
@@ -634,6 +902,8 @@
       propuestas, aceptarPropuesta, anadirPunto, colocarPunto,
       leerFlujograma, resumenFlujo, traerDeFlujograma,
       avisosEquipo, avisosFallos, avisosPuntuar, avisosPriorizar, avisosAnalisis, TECNICAS, textoMetodologia, pasarPuntosAlAmfe, puntoDe,
+      introduccionSugerida, conclusionesSugeridas, notaCalidad, diasRevision, nuevaEdicion, compararEdiciones, avisosCierre, nuevoControl,
+      documentoFinal, documentoResumen, documentoAcogida, ESTILOS_XLSX, hojasExcel, paqueteAuditorias, iprMapa,
       CRITERIOS_ACCIONES, avisosAcciones, ubicacion, enMapa, flujoBase, puntosMapa, COLOR_NIVEL, calorSub, dibujoMapa, tituloMapa, leyendaMapa, sinUbicar, avisosMapa, sugerirTextoMapa,
       leerAmfe, resumenAmfe, traerDeAmfe, FORMATO_INTERCAMBIO, VERSION_INTERCAMBIO, frecuenciaSugerida, hallazgos, paqueteIntercambio, leerIntercambio,
       sanearMapa, sanearDatos, fusionar, renovarIds, sugerirObjetivo, parecido,

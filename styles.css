@@ -1541,3 +1541,12 @@ body.modo-reunion .lienzo { max-height: 80vh; }
 .leyenda-mapa--compacta { font-size: 11px; }
 .leyenda-mapa--compacta td, .leyenda-mapa--compacta th { padding: 3px 5px; }
 @media print { .lamina-mapa svg { max-height: 120mm; } .ley-cols { grid-template-columns: repeat(3, 1fr); } }
+
+/* Entrega 4: control documental con ubicación y nota de calidad */
+.ctl-fila--3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
+@media (max-width: 520px) { .ctl-fila--3 { grid-template-columns: minmax(0, 1fr) auto; } .ctl-fila--3 > .input-wrap { grid-column: 1; } }
+.nota-cal { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 5px; }
+.nota-cal li { font-size: 14px; }
+.nc-ok { color: var(--green); } .nc-no { color: var(--text-2); }
+.nc-no a { margin-left: 6px; font-size: 13px; }
+.punt-ipr--res { flex-wrap: wrap; }

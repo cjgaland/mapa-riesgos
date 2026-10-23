@@ -234,5 +234,47 @@ t("textos del mapa propuestos", ["objetivos", "estructura", "interpretacion"].ev
 t("paquete: hallazgos con acción e indicador", (h => h.accion.length > 10 && /≥ 95 %/.test(h.indicador))(L.paqueteIntercambio([Object.assign(clon(U), { id: "u-1" })], "x", "x").mapas[0].hallazgos[0]));
 t("copiar el ejemplo conserva la ubicación de los fallos", (c => L.ubicacion(c, c.fallos.find(f => f.num === 29)).length === 2 && L.sinUbicar(c).length === 0)(L.renovarIds(clon(U), genId)));
 
+// ---------- Entrega 4 · documento final y cierre ----------
+const Dx = require("../docx.js"), Xx = require("../xlsx.js");
+const DF = L.documentoFinal(U, "23/10/2026", { png: new Uint8Array([137, 80, 78, 71]), w: 100, h: 200, svg: "<svg/>" });
+const h1 = DF.bloques.filter(b => b.t === "h1").map(b => b.texto);
+t("documento final: los 11 apartados del curso, en orden", ["1. Índice", "2. Introducción", "3. Descripción del proceso", "4. Identificación de puntos críticos", "5. Análisis AMFE", "6. Acciones de mejora", "7. Mapa de Riesgos", "8. Conclusiones", "9. Anexo I: Escalas de priorización en AMFE", "10. Anexo II: Tablas de fallos priorizados", "11. Matriz de riesgo"].every((x, i) => h1.includes(x) && (i === 0 || h1.indexOf(x) > h1.indexOf(["1. Índice", "2. Introducción", "3. Descripción del proceso", "4. Identificación de puntos críticos", "5. Análisis AMFE", "6. Acciones de mejora", "7. Mapa de Riesgos", "8. Conclusiones", "9. Anexo I: Escalas de priorización en AMFE", "10. Anexo II: Tablas de fallos priorizados", "11. Matriz de riesgo"][i - 1]))));
+const h2 = DF.bloques.filter(b => b.t === "h2").map(b => b.texto);
+t("documento final: subapartados 3.1 a 7.4", ["3.1. Objetivo del proceso", "3.2. Subprocesos incluidos", "4.1. Tabla de subprocesos y riesgos detectados", "5.1. Utilidad del AMFE en la gestión de riesgos", "5.2. Composición del equipo de trabajo", "5.3. Metodología empleada", "5.4. Resultados del análisis", "5.5. Fallos con mayor criticidad (IPR más elevado)", "6.1. Criterios para seleccionar acciones", "6.2. Tabla de acciones propuestas para los fallos con mayor IPR", "6.3. Justificación y alineación con auditoría", "7.1. Objetivos del mapa", "7.2. Estructura del flujograma", "7.3. Interpretación y utilidad", "7.4. Mapa de Riesgo"].every(x => h2.includes(x)));
+const tablas = DF.bloques.filter(b => b.t === "tabla");
+t("documento final: 15 prioritarios, 15 acciones, 15 hallazgos y la imagen del mapa", tablas.some(b => b.cab && b.cab[0] === "Subproceso" && b.filas.length === 15) && tablas.some(b => b.cab && b.cab[3] === "Acción de mejora (qué)" && b.filas.length === 15) && tablas.some(b => b.cab && b.cab[1] === "Hallazgo clave (fallo prioritario)" && b.filas.length === 15) && DF.bloques.some(b => b.t === "imagen"));
+t("documento final: 7 tablas de puntos críticos (una por subproceso) y los 49 fallos dos veces en el anexo II", tablas.filter(b => b.cab && b.cab[2] === "Error o punto crítico").length === 7 && tablas.filter(b => b.cab && b.cab[0] === "Subproceso" && b.filas.length === 49).length === 2);
+t("documento final: matriz 5 × 5 con zonas de color", tablas.some(b => b.cab && b.cab[0] === "G \\ O" && b.filas.length === 5 && b.filas.every(f => f.slice(1).every(c => c.fondo))));
+t("documento final: sin textos escritos usa los propuestos", DF.bloques.some(b => b.t === "p" && /gestión proactiva/.test(b.texto)) && DF.bloques.some(b => b.t === "lista" && b.items.some(x => /49 fallos potenciales/.test(x))));
+const bytes = Dx.construirDocx(Object.assign({ pie: "x" }, DF));
+t("documento final: se construye el Word con la imagen", bytes.length > 10000 && new TextDecoder().decode(bytes).includes("word/media/imagen1.png"));
+t("resumen y ficha de acogida", L.documentoResumen(U, "x", null).bloques.some(b => b.t === "tabla" && b.cab && b.cab[0] === "Nº" && b.filas.length === 5) && L.documentoAcogida(U, "x").bloques.filter(b => b.t === "h1").length === 7 && Dx.construirDocx(L.documentoAcogida(U, "x")).length > 5000);
+const XL = L.hojasExcel(U, "x");
+t("Excel: 5 hojas con los 49 fallos, las 15 acciones y los 15 hallazgos", XL.hojas.length === 5 && XL.hojas[0].filas.length === 49 + 3 && XL.hojas[1].filas.length === 15 + 3 && XL.hojas[2].filas.length === 15 + 3 && Xx.construirLibroXlsx(XL).length > 5000);
+t("conclusiones propuestas con las cifras", /49 fallos potenciales/.test(L.conclusionesSugeridas(U)) && /15 fallos prioritarios/.test(L.conclusionesSugeridas(U)) && /IPR de 343 a 180/.test(L.conclusionesSugeridas(U)));
+t("nota de calidad: el ejemplo solo tiene pendiente lo del paso 10", L.notaCalidad(U).filter(x => !x.ok).every(x => x.paso === 10));
+const UC = clon(U); UC.conclusiones = "Hecho."; UC.proxRevision = "2027-10-23"; UC.control.elaborado[0] = { nombre: "", cargo: "Coordinación de Calidad", ubicacion: "Hospital" }; UC.control.aprobado[0] = { nombre: "", cargo: "Gerencia", ubicacion: "" };
+t("paso 10 hecho con conclusiones, control y revisión", L.progreso(UC)[10] && L.notaCalidad(UC).every(x => x.ok) && !L.progreso(U)[10]);
+t("control: se guarda la ubicación", L.sanearMapa(clon(UC), genId, "").control.elaborado[0].ubicacion === "Hospital" && L.nuevoMapa("x", "").control.elaborado[0].ubicacion === "");
+t("control en el documento con nombre, cargo y ubicación", L.documentoFinal(UC, "x", null).bloques.some(b => b.t === "tabla" && b.cab && b.cab[3] === "Ubicación" && b.filas[0][3] === "Hospital"));
+t("revisión: días que faltan y aviso si ha pasado", L.diasRevision(UC, "2027-10-13") === 10 && L.diasRevision(L.nuevoMapa("r", "")) === null && L.diasRevision(U, "2026-10-23") === 12 && L.avisosCierre(Object.assign(clon(UC), { proxRevision: "2020-01-01" })).some(a => /ya ha pasado/.test(a.texto)));
+t("aviso si una acción baja la gravedad", L.avisosCierre((x => { x.fallos.find(f => f.num === 10).residual.g = "3"; return x; })(clon(U))).some(a => /baja la gravedad/.test(a.texto)));
+// Mapa «después»: colores con el IPR tras las acciones
+const UD = Object.assign(clon(U), { vistaMapa: Object.assign({}, U.vistaMapa, { despues: true }) });
+t("mapa después: el triaje deja de ser rojo y el título lo dice", L.dibujoMapa(UD).iconos.find(i => i.nums.includes(10)).nivel !== "muyalto" && /tras las acciones/.test(L.tituloMapa(UD)) && L.leyendaMapa(UD).find(x => x.num === 10).ipr === 84);
+// Ediciones
+const E1 = L.nuevaEdicion(UC, genId, "2027-10-23T10:00:00Z");
+t("nueva edición: copia con nº siguiente, enlazada y con su línea en el histórico", E1.edicion === "01" && E1.anteriorId === UC.id && E1.id !== UC.id && E1.control.historial.slice(-1)[0].edicion === "01" && E1.proxRevision === "");
+E1.fallos.find(f => f.num === 10).d = "3"; E1.fallos = E1.fallos.filter(f => f.num !== 49);
+const CE = L.compararEdiciones(UC, E1);
+t("comparar ediciones: cambios de IPR y fallos quitados", CE.filas.length === 1 && CE.filas[0].num === 10 && CE.filas[0].antes === 343 && CE.filas[0].ahora === 147 && CE.quitados.join() === "49" && !CE.nuevos.length);
+// Llevar a Auditorías: el archivo lo acepta el «Traer de AMFE» de Auditorías (paquete amfe-fallos v1 dentro de «intercambio»)
+const AU = require(path.join(ESCRITORIO, "Auditorías/Aplicación/logic.js"));
+const arch = { app: "mapariesgos", intercambio: L.paqueteAuditorias(Object.assign(clon(U), { id: "mapa-aud" }), "2026.04", "2026-10-23") };
+const leidoAud = AU.leerAmfe ? AU.leerAmfe(JSON.parse(JSON.stringify(arch))) : null;
+t("Auditorías reconoce el archivo con su «Traer de AMFE»", leidoAud && !leidoAud.error && leidoAud.amfes.length === 1);
+const mAud = leidoAud && leidoAud.amfes ? AU.mapaDesdeAmfe(leidoAud.amfes[0], genId, "2026-10-23") : null;
+t("y crea un mapa con los 49 riesgos y los 15 hallazgos clave", mAud && mAud.mapa.riesgos.length === 49 && mAud.mapa.riesgos.filter(r => r.clave).length === 15);
+
 console.log(`${ok} bien, ${mal} mal`);
 if (mal) process.exit(1);

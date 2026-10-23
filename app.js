@@ -32,8 +32,15 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.03";
+  const APP_VERSION = "2026.04";
   const NOVEDADES = [
+    { version: "2026.04", fecha: "Octubre 2026", titulo: "El documento final y «Llevar a Auditorías»", cambios: [
+      "Paso 10, Documento final: el IPR esperado tras las acciones y el «mapa después», la introducción y las conclusiones propuestas con las cifras del mapa, el control documental (con cargo y ubicación), la fecha de la próxima revisión y una nota de calidad con lo que falta antes de entregar.",
+      "Documento Final en Word y PDF, con el mismo orden y los mismos apartados que el documento de Urgencias del curso: control documental, introducción, proceso y subprocesos, puntos críticos, AMFE, acciones de mejora, el mapa como imagen con su leyenda, conclusiones, escalas, tablas de fallos y matriz.",
+      "Resumen de una página para la Dirección y ficha de acogida para quien se incorpora (una página por subproceso con sus riesgos y qué se hace).",
+      "Libro de Excel con los fallos, las acciones, los hallazgos para Auditorías, los puntos críticos y el equipo.",
+      "«Llevar a Auditorías»: los fallos prioritarios como hallazgos clave, con la frecuencia de auditoría propuesta según su riesgo; descarga el archivo y abre Auditorías, donde se carga con «Traer de AMFE».",
+      "Ediciones: una edición nueva para revisar el mapa, con los cambios respecto a la anterior, y aviso en la portada cuando se acerca la revisión."] },
     { version: "2026.03", fecha: "Octubre 2026", titulo: "Las acciones de mejora y el mapa", cambios: [
       "Paso 8, Acciones de mejora: para cada fallo prioritario, qué, por qué, dónde, cuándo, quién y cómo (5W1H), con su tipo, la fuerza de la medida, el indicador y su estándar («Traer de Indicadores»), el estado y los criterios con los que se eligieron.",
       "Paso 9, El mapa: el flujograma con los fallos prioritarios encima, en el paso de su punto crítico, y el aviso del color de su IPR (rojo, naranja, amarillo o verde) y con borde negro si es crítico o muy grave. Dentro del marco de procesos estratégicos, clave y de soporte, con su título en la barra negra, como el documento del curso.",
@@ -59,7 +66,7 @@
       "«Traer de Flujograma»: si ya dibujaste el proceso en la app Flujograma, se trae con un botón.",
       "Ejemplo completo de Urgencias (7 subprocesos, 33 pasos y 49 puntos críticos), Aprende (4 temas), glosario, vista para imprimir y copia de seguridad."] }
   ];
-  const ENTREGA = 3;   // entrega construida: pasos con entrega ≤ ENTREGA (ver L.PASOS)
+  const ENTREGA = 4;   // entrega construida: pasos con entrega ≤ ENTREGA (ver L.PASOS)
 
   // ---------- Utilidades ----------
   const hoy = () => new Date().toISOString();
@@ -180,6 +187,7 @@
         </div>
       </section>
       ${motorAmfeAviso()}
+      ${d.mapas.map(m => ({ m, dd: L.diasRevision(m) })).filter(x => x.dd !== null && x.dd <= 30).map(x => `<div class="warn">⚠ «${esc(L.corto(nombreMapa(x.m), 60))}»: ${x.dd < 0 ? "la revisión del mapa pasó el" : "toca revisar el mapa el"} ${esc(fmtFecha(x.m.proxRevision))}. <a href="#/mapa/${x.m.id}/10">Crear una edición nueva</a></div>`).join("")}
       <div class="siguiente">
         <span class="siguiente-tag">Tu siguiente paso</span>
         <p>${esc(sig.texto)}</p>
@@ -258,7 +266,7 @@
 
   function renderMapa(m, n) {
     actual = m; pasoActual = n; nAyuda = 0;
-    if (document.body.classList.contains("ver-informe")) { if (docActual === "lamina") renderLamina(m); else renderInforme(m); return; }
+    if (document.body.classList.contains("ver-informe")) { if (docActual === "lamina") renderLamina(m); else if (DOCS[docActual]) renderDoc(m, docActual); else renderInforme(m); return; }
     const p = L.PASOS[n - 1], disp = pasosDisp(), fa = faseDe(n);
     const prev = disp.filter(x => x.n < n).pop(), next = disp.find(x => x.n > n);
     const cuerpo = !disponible(p) ? pasoProximo(m, p) : RENDER[n](m);
@@ -1082,7 +1090,152 @@
       </div>` : `<div class="placeholder-box"><p>Aún no hay mapa: faltan los fallos prioritarios o los subprocesos.</p></div>`}`;
   }
 
-  const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4, 5: paso5, 6: paso6, 7: paso7, 8: paso8, 9: paso9 };
+  // ======================= Paso 10 · Documento final y cierre =======================
+  const bfr = (f, k) => `data-fr="${f.id}" data-f="${k}"`;
+  function resFila(f) {
+    const v0 = A.iprDe(f), v1 = A.iprResidual(f);
+    if (v1) return `${iprBadge(v0)} → ${iprBadge(v1)} <b class="red-pct${v1 < v0 ? "" : " red-pct--mal"}">${v1 < v0 ? "−" + Math.round((1 - v1 / v0) * 100) + " %" : "no baja"}</b>`;
+    if ([f.residual.g, f.residual.o, f.residual.d].some(lleno)) return `<span class="ipr-falta">Enteros del 1 al 10</span>`;
+    return `${iprBadge(v0)} → <span class="ipr-badge niv--sin">Después</span>`;
+  }
+  function filaResidual(m, f) {
+    const s = subDeF(m, f), act = new Set(f.acciones.flatMap(x => x.actuaSobre));
+    return `<div class="punt sub-c${s ? s.color : "x"}" data-rid="${f.id}">
+      <div class="punt-txt"><span class="rg-puesto">Nº ${f.num}</span><span><b>${esc(f.fallo)}</b><span class="punt-ef">${A.accionesDe(f).map(x => `• ${esc(L.corto(x.que, 90))} ${estadoBadge(x)}`).join("<br>")}</span></span></div>
+      <p class="punt-esc">Antes: <b>G ${esc(f.g)} · O ${esc(f.o)} · D ${esc(f.d)}</b>${act.size ? ` · Las acciones actúan sobre: ${[...act].map(k => A.ACTUA[k].toLowerCase()).join(", ")}` : ""}</p>
+      <div class="punt-god">
+        ${["g", "o", "d"].map(k => `<label class="god-c"><span>${A.ESCALA_NOM[k]} tras</span><input class="txt-in" ${bfr(f, k)} value="${esc(f.residual[k])}" inputmode="numeric" maxlength="2" placeholder="${esc(f[k])}" aria-label="${A.ESCALA_NOM[k]} del fallo ${f.num} tras las acciones" /></label>`).join("")}
+        <div class="punt-ipr punt-ipr--res" data-zres="${f.id}">${resFila(f)}</div>
+      </div>
+    </div>`;
+  }
+  function personasHtml(m, k, titulo) {
+    return `<div class="ctl-grupo"><b>${titulo}</b>${m.control[k].map((x, i) => `<div class="ctl-fila ctl-fila--3"><div class="input-wrap"><input class="txt-in" data-cp="${k}" data-i="${i}" data-f="nombre" value="${esc(x.nombre)}" placeholder="Nombre (opcional)" aria-label="${titulo}: nombre" /></div><div class="input-wrap"><input class="txt-in" data-cp="${k}" data-i="${i}" data-f="cargo" value="${esc(x.cargo)}" placeholder="Cargo" aria-label="${titulo}: cargo" /></div><div class="input-wrap"><input class="txt-in" data-cp="${k}" data-i="${i}" data-f="ubicacion" value="${esc(x.ubicacion || "")}" placeholder="Ubicación" aria-label="${titulo}: ubicación" /></div><button type="button" class="icon-mini no-print" data-act="cp-del" data-k="${k}" data-i="${i}" aria-label="Quitar">✕</button></div>`).join("")}<button type="button" class="link-btn no-print" data-act="cp-add" data-k="${k}">+ Añadir</button></div>`;
+  }
+  function controlHtml(m) {
+    const H = m.control.historial;
+    return `<div class="card">${personasHtml(m, "elaborado", "Elaborado por")}${personasHtml(m, "revisado", "Revisado por")}${personasHtml(m, "aprobado", "Aprobado por")}
+      <div class="ctl-grupo"><b>Histórico de revisiones</b>${H.map((h, i) => `<div class="ctl-fila ctl-fila--h"><div class="input-wrap"><input class="txt-in" data-ch="${i}" data-f="edicion" value="${esc(h.edicion)}" aria-label="Edición" /></div><div class="input-wrap"><input class="txt-in" type="date" data-ch="${i}" data-f="fecha" value="${esc(h.fecha)}" aria-label="Fecha" /></div><div class="input-wrap"><input class="txt-in" data-ch="${i}" data-f="cambio" value="${esc(h.cambio)}" placeholder="Qué cambia" aria-label="Cambio" /></div><button type="button" class="icon-mini no-print" data-act="ch-del" data-i="${i}" aria-label="Quitar">✕</button></div>`).join("")}<button type="button" class="link-btn no-print" data-act="ch-add">+ Añadir revisión</button></div>
+      <p class="field-sub">Sale al principio del Documento Final. Basta con los cargos; los nombres son opcionales.</p></div>`;
+  }
+  function notaHtml(m) {
+    const N = L.notaCalidad(m), ok = N.filter(x => x.ok).length;
+    return `<div class="card"><p class="field-sub"><b>${ok} de ${N.length}</b> comprobaciones superadas.</p><ul class="nota-cal">${N.map(x => `<li class="${x.ok ? "nc-ok" : "nc-no"}">${x.ok ? "✓" : "○"} ${esc(x.texto)}${x.ok ? "" : ` <a href="#/mapa/${actual.id}/${x.paso}">Ir al paso ${x.paso}</a>`}</li>`).join("")}</ul></div>`;
+  }
+  const anteriorDe = m => m.anteriorId ? (datos.mapas.find(x => x.id === m.anteriorId) || null) : null;
+  function edicionesHtml(m) {
+    const ant = anteriorDe(m), c = ant ? L.compararEdiciones(ant, m) : null;
+    return `<div class="card"><p class="field-sub">Edición <b>${esc(m.edicion || "00")}</b>${ant ? ` · viene de la edición ${esc(ant.edicion)} (<a href="#/mapa/${ant.id}/10">abrirla</a>)` : ""}.</p>
+      ${c ? `<div class="cmp-ed"><b>Cambios respecto a la edición ${esc(ant.edicion)}</b><ul>
+        <li>Fallos prioritarios: ${c.prioritarios[0]} → ${c.prioritarios[1]} · IPR total: ${c.iprTotal[0]} → ${c.iprTotal[1]}</li>
+        ${c.nuevos.length ? `<li><span class="cmp-nuevo">Nuevos</span> nº ${c.nuevos.join(", ")}</li>` : ""}${c.quitados.length ? `<li><span class="cmp-quitado">Quitados</span> nº ${c.quitados.join(", ")}</li>` : ""}
+        ${c.filas.map(x => `<li><span class="cmp-cambio">Cambia</span> nº ${x.num} «${esc(L.corto(x.fallo, 50))}»: IPR ${x.antes || "—"} → ${x.ahora || "—"}</li>`).join("")}
+        ${!c.nuevos.length && !c.quitados.length && !c.filas.length ? "<li>Aún no hay cambios en los fallos.</li>" : ""}</ul></div>` : ""}
+      <p class="field-sub">El mapa de riesgos no es un documento estático: se revisa cuando cambia el proceso, tras un incidente o tras una auditoría. Una edición nueva es una copia completa; esta se queda como está, para comparar.</p>
+      <div class="toolbar no-print"><button class="btn" data-act="ed-nueva">Nueva edición: revisión del mapa</button></div></div>`;
+  }
+  function auditoriasHtml(m) {
+    const H = L.hallazgos(m);
+    if (!H.length) return `<p class="placeholder-box">Cuando haya fallos prioritarios (paso 7), aquí verás los hallazgos clave para el Plan Anual de Auditorías.</p>`;
+    return `<div class="card"><p class="field-sub">Los fallos prioritarios son los <b>hallazgos clave</b> que conviene auditar. La frecuencia que se propone es proporcional al riesgo, con la misma regla que el Plan Anual de Auditorías: IPR de 250 o más, trimestral; de 150 o más, semestral; si no, anual; con gravedad 9–10, al menos semestral.</p>
+      <div class="table-wrap"><table class="mini tabla-riesgos"><thead><tr><th>Nº</th><th>Hallazgo clave</th><th>IPR</th><th>Frecuencia</th><th>Indicador</th></tr></thead><tbody>${H.map(h => `<tr><td>${h.num}</td><td><b>${esc(h.fallo)}</b></td><td>${iprBadge(h.ipr)}</td><td>${esc(h.frecuencia)}</td><td>${esc(h.indicador)}</td></tr>`).join("")}</tbody></table></div>
+      <div class="toolbar no-print"><button class="btn btn--primary" data-act="llevar-aud">⇨ Llevar a Auditorías</button></div>
+      <p class="field-sub">Mapa de Riesgos no escribe en Auditorías. El botón descarga un archivo con los riesgos (con la misma forma que el de la app AMFE) y abre Auditorías: allí, en «Mapa de Riesgos», pulsa <b>«Traer de AMFE»</b> y carga ese archivo.</p></div>`;
+  }
+  function paso10(m) {
+    if (!A) return sinMotorAmfe();
+    const P = A.prioritarios(m), conRes = P.filter(f => A.accionesDe(f).length), d = L.diasRevision(m);
+    return `
+      ${idea("Para cerrar: <b>revisar</b> cuánto bajaría el riesgo con las acciones, escribir las <b>conclusiones</b>, completar el <b>control documental</b> y fijar la <b>próxima revisión</b>. Después, descargar el <b>Documento Final</b> y llevar los riesgos clave a Auditorías.")}
+      ${facil(`<p>El Documento Final sigue el orden del documento de Urgencias del curso: control documental, introducción, descripción del proceso, puntos críticos, análisis AMFE, acciones de mejora, mapa de riesgos, conclusiones y anexos (escalas, tablas de fallos y matriz).</p>
+        <p>La app propone la introducción y las conclusiones con las cifras de tu mapa: revísalas y ajústalas.</p>
+        ${trampa("Bajar la gravedad sin cambiar el proceso es raro: una acción suele bajar la ocurrencia o mejorar la detección; el daño que causaría el fallo suele ser el mismo.")}`)}
+      <div data-zona="avisos">${avisosGenerales(m, 10)}</div>
+      <h2 class="sec-t">¿Cuánto bajaría el riesgo?</h2>
+      <p class="page-lead">Vuelve a puntuar los fallos prioritarios con acciones como quedarían cuando las acciones funcionen. Es opcional, pero muestra la mejora y permite ver el «mapa después».</p>
+      ${conRes.length ? `<div class="punt-lista">${conRes.map(f => filaResidual(m, f)).join("")}</div>
+        <div class="toolbar no-print"><button type="button" class="chip${m.vistaMapa.despues ? " active" : ""}" data-act="vm-despues">${m.vistaMapa.despues ? "✓ " : ""}Ver el mapa «después» (colores con el IPR tras las acciones)</button><a class="btn btn--sm" href="#/mapa/${m.id}/9">Ir al mapa</a></div>` : `<p class="placeholder-box">Aún no hay fallos prioritarios con acciones (paso 8).</p>`}
+      <h2 class="sec-t">Introducción y conclusiones</h2>
+      <div class="card">
+        ${campo(m, "introduccion", "Introducción", { area: true, rows: 5, opt: true, help: "Si la dejas vacía, el documento usa el texto propuesto.", extra: `<div class="quick no-print"><button type="button" class="chip chip--accent" data-act="sug-texto" data-v="introduccion">✎ Proponer</button></div>` })}
+        ${campo(m, "conclusiones", "Conclusiones", { area: true, rows: 6, extra: `<div class="quick no-print"><button type="button" class="chip chip--accent" data-act="sug-texto" data-v="conclusiones">✎ Proponer con las cifras del mapa</button></div>` })}
+        ${campo(m, "proxRevision", "Próxima revisión del mapa", { tipo: "date", help: "La portada avisará cuando se acerque. Lo habitual es revisarlo cada año, o antes si cambia el proceso o hay un incidente." })}
+        ${d !== null ? `<p class="field-sub">${d < 0 ? `La revisión pasó hace ${plural(-d, "día", "días")}.` : `Faltan ${plural(d, "día", "días")}.`}</p>` : ""}
+      </div>
+      <h2 class="sec-t">Control del documento</h2>
+      ${controlHtml(m)}
+      <h2 class="sec-t">Nota de calidad</h2>
+      <div data-zona="nota">${notaHtml(m)}</div>
+      <h2 class="sec-t">Documentos</h2>
+      <div class="export-grid">
+        <div class="card export-card"><h3 class="sub-h">📕 Documento Final</h3><p class="field-sub">El documento completo del mapa de riesgos, con el mapa como imagen, en el orden del documento del curso.</p><div class="toolbar"><button class="btn btn--primary" data-act="doc-word" data-doc="final">⬇ Word</button><button class="btn" data-act="doc-ver" data-doc="final">Ver / PDF</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">📄 Resumen para la Dirección</h3><p class="field-sub">Una página: cifras, los 5 riesgos más altos con su acción y el mapa pequeño.</p><div class="toolbar"><button class="btn btn--primary" data-act="doc-word" data-doc="resumen">⬇ Word</button><button class="btn" data-act="doc-ver" data-doc="resumen">Ver / PDF</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">🤝 Ficha de acogida</h3><p class="field-sub">Para quien se incorpora: una página por subproceso con sus riesgos principales y qué se hace.</p><div class="toolbar"><button class="btn btn--primary" data-act="doc-word" data-doc="acogida">⬇ Word</button><button class="btn" data-act="doc-ver" data-doc="acogida">Ver / PDF</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">🗺 Lámina del mapa</h3><p class="field-sub">El mapa y su leyenda en una página apaisada.</p><div class="toolbar"><button class="btn btn--primary" data-act="lamina">Ver la lámina</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">📊 Excel</h3><p class="field-sub">Fallos, acciones, hallazgos para Auditorías, puntos críticos y equipo.</p><div class="toolbar"><button class="btn btn--primary" data-act="ex-excel">⬇ Excel</button></div></div>
+      </div>
+      <h2 class="sec-t">Llevar a Auditorías</h2>
+      ${auditoriasHtml(m)}
+      <h2 class="sec-t">Ediciones</h2>
+      ${edicionesHtml(m)}`;
+  }
+
+  // ---------- Documentos: HTML para ver e imprimir, Word y Excel ----------
+  const escMl = s => esc(s).replace(/\n/g, "<br>");
+  function bloquesHtml(bloques) {
+    const celda = (c, cab) => { const o = c !== null && typeof c === "object" ? c : { texto: c }; const st = o.fondo ? ` style="background:#${o.fondo}"` : ""; const cl = [o.centro ? "c" : "", o.negrita ? "b" : ""].filter(Boolean).join(" "); return `<${cab ? "th" : "td"}${cl ? ` class="${cl}"` : ""}${st}>${escMl(o.texto)}</${cab ? "th" : "td"}>`; };
+    return bloques.map(b => {
+      if (b.t === "portada") return `<div class="doc-portada"><h1>${esc(b.titulo)}</h1>${b.sub ? `<p class="doc-sub">${esc(b.sub)}</p>` : ""}${(b.extra || []).map(x => `<p>${esc(x)}</p>`).join("")}</div>`;
+      if (b.t === "h1") return `<h2 class="doc-h1">${esc(b.texto)}</h2>`;
+      if (b.t === "h2") return `<h3 class="doc-h2">${esc(b.texto)}</h3>`;
+      if (b.t === "p") return `<p class="doc-p${b.estilo === "nota" ? " doc-nota" : ""}">${b.runs ? b.runs.map(r => r.negrita ? `<b>${escMl(r.texto)}</b>` : escMl(r.texto)).join("") : escMl(b.texto)}</p>`;
+      if (b.t === "lista") return `<ul class="doc-ul">${b.items.map(i => `<li>${esc(typeof i === "string" ? i : i.texto)}</li>`).join("")}</ul>`;
+      if (b.t === "salto") return `<div class="doc-salto"></div>`;
+      if (b.t === "imagen") return b.svg ? `<div class="informe-graf informe-dib">${b.svg}</div>${b.pie ? `<p class="doc-nota" style="text-align:center">${esc(b.pie)}</p>` : ""}` : "";
+      if (b.t === "tabla") {
+        const suma = (b.anchos || []).reduce((a, x) => a + x, 0);
+        const cols = b.anchos ? `<colgroup>${b.anchos.map(w => `<col style="width:${(w / suma * 100).toFixed(1)}%">`).join("")}</colgroup>` : "";
+        return `<div class="table-wrap"><table class="doc-t${b.fuente && b.fuente < 9 ? " doc-t--peq" : ""}">${cols}${b.cab && !b.sinCab ? `<thead><tr>${b.cab.map(c => celda(c, true)).join("")}</tr></thead>` : ""}<tbody>${b.filas.map(f => `<tr>${f.map(c => celda(c, false)).join("")}</tr>`).join("")}</tbody></table></div>`;
+      }
+      return "";
+    }).join("");
+  }
+  const DOCS = { final: (m, f, img) => L.documentoFinal(m, f, img), resumen: (m, f, img) => L.documentoResumen(m, f, img), acogida: (m, f) => L.documentoAcogida(m, f) };
+  function renderDoc(m, cual) {
+    let est = $("#estilo-pagina"); if (!est) { est = document.createElement("style"); est.id = "estilo-pagina"; document.head.appendChild(est); }
+    est.textContent = "@page { size: A4 portrait; margin: 14mm; }";
+    const img = hayMapa(m) ? { svg: svgMapa(m) } : null, doc = DOCS[cual](m, new Date().toLocaleDateString("es-ES"), img);
+    view.innerHTML = `<div class="informe-bar informe-only"><button class="btn" data-act="volver">← Volver</button><span class="informe-acc"><button class="btn" data-act="doc-word" data-doc="${cual}">⬇ Word</button><button class="btn btn--primary" data-act="imprimir">Guardar / imprimir</button></span></div>
+      <div class="doc-prev doc-prev--informe">${bloquesHtml(doc.bloques)}</div>${informePie()}`;
+  }
+  // El Word con el mapa como imagen PNG (se separa de la descarga para poder probarlo)
+  async function construirWord(m, cual) {
+    const fecha = new Date().toLocaleDateString("es-ES");
+    let img = null;
+    if (cual !== "acogida" && hayMapa(m)) { const s = svgMapa(m), r = await pngDe(s, 12e6); img = { png: new Uint8Array(await r.blob.arrayBuffer()), w: r.w, h: r.h }; }
+    const doc = DOCS[cual](m, fecha, img);
+    return window.Docx.construirDocx(Object.assign({ pie: doc.titulo + " · Generado con la app Mapa de Riesgos" }, doc));
+  }
+  async function descargarWord(m, cual) {
+    toast("Preparando el Word…");
+    try {
+      const bytes = await construirWord(m, cual);
+      const base = ({ resumen: "Mapa de Riesgos Resumen ", acogida: "Mapa de Riesgos Ficha de acogida " }[cual] || "Mapa de Riesgos Documento Final ") + (nombreMapa(m) || "").slice(0, 60);
+      compartirOBajar(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), `${base.replace(/[\\/:*?"<>|%]/g, "").trim()} ${fechaArchivo()}.docx`, "Word descargado. Ábrelo con Word, Pages o LibreOffice y ajústalo a tu gusto.");
+    } catch (e) { toast("No se ha podido crear el Word.", 4000); }
+  }
+  function exportarExcel(m) {
+    try { compartirOBajar(new Blob([window.Xlsx.construirLibroXlsx(L.hojasExcel(m, new Date().toLocaleDateString("es-ES")))], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), nombreArchivo("xlsx", m), "Excel descargado."); }
+    catch (e) { toast("No se ha podido crear el Excel.", 4000); }
+  }
+  // «Llevar a Auditorías»: descarga el archivo (forma «amfe-fallos» v1) y abre Auditorías en otra pestaña
+  function llevarAuditorias(m) {
+    const p = L.paqueteAuditorias(m, APP_VERSION, hoy()); if (!p) return;
+    compartirOBajar(new Blob([JSON.stringify({ app: "mapariesgos", intercambio: p }, null, 1)], { type: "application/json" }), `Mapa de Riesgos para Auditorias ${(nombreMapa(m) || "").replace(/[\\/:*?"<>|%]/g, "").slice(0, 50).trim()} ${fechaArchivo()}.json`, "Archivo descargado. En Auditorías, abre «Mapa de Riesgos» y pulsa «Traer de AMFE» para cargarlo.");
+    setTimeout(() => window.open(L.URL_AUD + "#/riesgos", "_blank", "noopener"), 600);
+  }
+
+  const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4, 5: paso5, 6: paso6, 7: paso7, 8: paso8, 9: paso9, 10: paso10 };
 
   // Refresca lo que depende de lo escrito sin repintar los campos (no se pierde el foco)
   let tLienzo = null;
@@ -1092,7 +1245,7 @@
     const Z = { pasos: () => pasosInner(m, n), avisos: () => avisosGenerales(m, n), avisos3: () => validadorHtml(m), nact: () => String(m.actores.length), validado: () => validadoHtml(m),
       nprop: () => String(L.propuestas(m).length), npc: () => String(m.puntos.length),
       neq: () => String(m.equipo.length), nses: () => String(m.sesiones.length), metodo: () => esc(L.textoMetodologia(m)),
-      resumen7: () => resumen7(m), resumen8: () => A ? resumen8(m) : "", criterio: () => criterioRes(m), matriz: () => matrizHtml(m), porsub: () => porSubHtml(m), lista7: () => listaPrio(m) };
+      nota: () => A && actual ? notaHtml(m) : "", resumen7: () => resumen7(m), resumen8: () => A ? resumen8(m) : "", criterio: () => criterioRes(m), matriz: () => matrizHtml(m), porsub: () => porSubHtml(m), lista7: () => listaPrio(m) };
     // La lista de prioridad solo se repinta si cambia el criterio (si se escribe un motivo dentro, se perdería el foco)
     if (!todo) delete Z.lista7;
     $$("[data-zona]").forEach(el => { const fn = Z[el.dataset.zona]; if (fn) el.innerHTML = fn(); });
@@ -1209,7 +1362,7 @@
       <div class="informe-bar informe-only"><button class="btn" data-act="volver">← Volver</button><span class="informe-acc"><button class="btn btn--primary" data-act="imprimir">Guardar / imprimir</button></span></div>
       ${informeCab("Mapa de Riesgos · " + titulo, m.unidad)}
       <div class="ficha">
-        <div class="ficha-cab"><span class="wiz-paso">Mapa de Riesgos · borrador (pasos 1 a 9)</span><h2 class="ficha-nombre">${esc(titulo)}</h2></div>
+        <div class="ficha-cab"><span class="wiz-paso">Mapa de Riesgos · todo el trabajo (pasos 1 a 9)</span><h2 class="ficha-nombre">${esc(titulo)}</h2></div>
         <table class="ficha-t">${fila("Unidad o servicio", m.unidad)}${fila("Ámbito", m.ambito)}${fila("Empieza", m.inicio)}${fila("Termina", m.fin)}${fila("Qué queda dentro", m.incluye)}${fila("Qué queda fuera", m.excluye)}${fila("Responsable", m.responsable)}${fila("Fecha", m.fecha)}
           <tr><th>Resumen</th><td>${plural(r.subprocesos, "subproceso", "subprocesos")} · ${plural(r.pasos, "paso", "pasos")} en el flujograma · ${plural(r.puntos, "punto crítico", "puntos críticos")}</td></tr></table>
       </div>
@@ -1542,6 +1695,9 @@
       if (lleno(r.x.indicador.nombre)) confirmar("<p>Se sustituirá el indicador de esta acción por el elegido.</p>", "Sustituir", hacer, { peligro: false }); else hacer();
       return;
     }
+    if (t.dataset.fr) { const f = buscaEn(m.fallos, t.dataset.fr); if (!f) return; f.residual[k] = t.value.trim(); tocado(m); const z = $(`[data-zres="${f.id}"]`); if (z) z.innerHTML = resFila(f); refrescar(); return; }
+    if (t.dataset.cp) { const x = m.control[t.dataset.cp][Number(t.dataset.i)]; if (!x) return; x[k] = t.value; tocado(m); refrescar(); return; }
+    if (t.dataset.ch) { const x = m.control.historial[Number(t.dataset.ch)]; if (!x) return; x[k] = t.value; tocado(m); return; }
     if (t.dataset.ubadd) { const f = buscaEn(m.fallos, t.value); if (!f) return; f.pasos = [...new Set([...L.ubicacion(m, f), t.dataset.ubadd])]; tocado(m); seleccionar(t.dataset.ubadd); refrescar(); return; }
     if (t.dataset.ubsel) { const f = buscaEn(m.fallos, t.dataset.ubsel); if (!f || !t.value) return; f.pasos = [t.value]; tocado(m); repintar(); return; }
     if (t.dataset.m) { const x = buscaEn(m.equipo, t.dataset.m); if (!x) return; x[k] = t.value; tocado(m); if (esSel) repintar(); else refrescar(); return; }
@@ -1914,6 +2070,30 @@
     else if (act === "mx-png" && m) exportarMapa(m, "png");
     else if (act === "mx-svg" && m) exportarMapa(m, "svg");
     else if (act === "mx-drawio" && m) exportarMapa(m, "drawio");
+    // --- Paso 10 ---
+    else if (act === "vm-despues" && m) { m.vistaMapa.despues = !m.vistaMapa.despues; tocado(m); repintar(); }
+    else if (act === "sug-texto" && m) {
+      const k = b.dataset.v, s = k === "conclusiones" ? L.conclusionesSugeridas(m) : L.introduccionSugerida(m);
+      if (!s) { toast("Aún no hay datos suficientes para proponer un texto.", 3000); return; }
+      const hacer = () => { m[k] = s; tocado(m); repintar(); };
+      if (lleno(m[k])) confirmar("<p>Se sustituirá lo que has escrito por el texto propuesto.</p>", "Sustituir", hacer, { peligro: false }); else hacer();
+    }
+    else if (act === "cp-add" && m) { m.control[b.dataset.k].push({ nombre: "", cargo: "", ubicacion: "" }); tocado(m); repintar(); }
+    else if (act === "cp-del" && m) { m.control[b.dataset.k].splice(Number(b.dataset.i), 1); tocado(m); repintar(); }
+    else if (act === "ch-add" && m) { const H = m.control.historial, u = H.length ? parseInt(H[H.length - 1].edicion, 10) : -1; H.push({ edicion: String((Number.isFinite(u) ? u : -1) + 1).padStart(2, "0"), fecha: hoyIso(), cambio: "" }); tocado(m); repintar(); }
+    else if (act === "ch-del" && m) { m.control.historial.splice(Number(b.dataset.i), 1); tocado(m); repintar(); }
+    else if (act === "doc-ver") irInforme(b.dataset.doc);
+    else if (act === "doc-word" && m) descargarWord(m, b.dataset.doc);
+    else if (act === "ex-excel" && m) exportarExcel(m);
+    else if (act === "llevar-aud" && m) llevarAuditorias(m);
+    else if (act === "ed-nueva" && m) {
+      const n = String((parseInt(m.edicion, 10) || 0) + 1).padStart(2, "0");
+      confirmar(`<p>Se creará la <b>edición ${n}</b> del mapa: una copia completa para revisarlo. Esta edición se queda como está, para comparar.</p>`, "Crear la edición", () => {
+        // En los ejemplos, la edición nueva también es de ejemplo (id «ej-…»): vive en memoria y no se mezcla con los datos
+        const c = L.nuevaEdicion(m, modoEjemplo ? () => "ej-ed-" + genId() : genId, hoy()); datos.mapas.push(c); if (!modoEjemplo) guardar(true);
+        location.hash = `#/mapa/${c.id}/7`; toast(`Edición ${c.edicion} creada. Revisad la puntuación de los fallos: al final veréis los cambios.`, 4500);
+      }, { titulo: "Nueva edición", peligro: false });
+    }
     // --- Vista para imprimir ---
     else if (act === "informe") irInforme();
     else if (act === "volver") location.hash = rutaActual();
@@ -2028,7 +2208,7 @@
   window.addEventListener("appinstalled", () => { const bi = $("#btn-instalar"); if (bi) bi.hidden = true; });
   if (matchMedia("(display-mode: standalone)").matches || navigator.standalone) { const i = $("#instalar-bloque"); if (i) i.classList.add("instalada"); }
 
-  window.MAPARIESGOS = { datos: () => datos, generarPDF };   // solo para pruebas desde la consola
+  window.MAPARIESGOS = { datos: () => datos, generarPDF, construirWord: cual => construirWord(actual, cual) };   // solo para pruebas desde la consola
 
   // ---------- Arranque ----------
   buildNav();

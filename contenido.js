@@ -450,6 +450,14 @@
       }),
       prioridad: { modo: "top", n: "15", umbral: "200" },
       criteriosAcciones: { viabilidad: true, impacto: true, cultura: true, medible: true },
+      // Control documental del Documento Final, solo con cargos (sin nombres de personas ni de centro)
+      control: {
+        elaborado: [{ nombre: "", cargo: "Coordinación de Calidad y Seguridad del Paciente", ubicacion: "Área de Gestión Sanitaria" }, { nombre: "", cargo: "Técnicos de Calidad y Seguridad del Paciente", ubicacion: "Área de Gestión Sanitaria" }],
+        revisado: [{ nombre: "", cargo: "Coordinación de Calidad y Seguridad del Paciente", ubicacion: "Área de Gestión Sanitaria" }, { nombre: "", cargo: "Jefatura de Servicio de Urgencias", ubicacion: "Área de Gestión Sanitaria" }],
+        aprobado: [{ nombre: "", cargo: "Gerencia del Área de Gestión Sanitaria", ubicacion: "Área de Gestión Sanitaria" }, { nombre: "", cargo: "Jefatura de Servicio de Urgencias", ubicacion: "Área de Gestión Sanitaria" }],
+        historial: [{ edicion: "00", fecha: "2025-09-30", cambio: "Documento inicial" }]
+      },
+      proxRevision: "2026-11-04",
       vistaMapa: { mostrar: "prioritarios", calor: false, titulo: "Mapa de riesgo del Servicio de Urgencias", leyenda: "num" }
     };
   }

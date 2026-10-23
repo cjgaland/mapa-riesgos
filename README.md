@@ -10,7 +10,7 @@ Aplicación web (PWA) estática, sin dependencias y utilizable sin conexión, pa
 
 Forma parte de un conjunto de apps de calidad y seguridad del paciente: [Flujograma](https://cjgaland.github.io/flujograma/), [AMFE](https://cjgaland.github.io/amfe/), [Auditorías](https://cjgaland.github.io/auditorias/), [Indicadores](https://cjgaland.github.io/indicadores-calidad/), [Tamaño Muestral](https://cjgaland.github.io/tamano-muestral/) y [DAFO · CAME](https://cjgaland.github.io/dafo/). No repite su código: usa en vivo el motor de AMFE y el de Flujograma, publicados en el mismo sitio (`../amfe/` y `../flujograma/`).
 
-Versión 2026.03: pasos 1 a 9 (conocer el proceso, analizar sus riesgos con el AMFE, las acciones de mejora y el mapa). El documento final llega en la próxima versión.
+Versión 2026.04: los 10 pasos, del proceso al Documento Final en Word y PDF, con la lámina del mapa y el paso de los riesgos clave a Auditorías.
 
 Los datos se guardan solo en el dispositivo. Herramienta docente y de apoyo: no sustituye el criterio profesional.
 
