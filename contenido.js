@@ -464,12 +464,272 @@
   Object.assign(URGENCIAS, amfeUrgencias(URGENCIAS));
   URGENCIAS.notas += " El AMFE (pasos 5 a 7) es el del curso: equipo del ejercicio 9, tres sesiones y los 49 fallos con la puntuación del ejercicio 11; los controles actuales de los 15 primeros se han añadido para el ejemplo. Las acciones son las 15 de la tabla 6.2 del documento (el texto dice «los cinco fallos con mayor IPR», pero la tabla trae los 15); su indicador, su estándar, su estado y la puntuación tras las acciones se han añadido para el ejemplo. En el mapa, los fallos van en el paso de su punto crítico y, como en la página 15, el 29 y el 30 en los dos traslados y el 45 en la consulta y en la decisión de ingreso.";
 
+  // ---------- Ponte a prueba ----------
+  // Las 30 preguntas del test de conocimientos del curso (6 temas × 5), con su justificación. El test inicial y el final son
+  // las mismas preguntas. t = tema del curso; ok = índice de la opción correcta (las opciones se barajan de forma estable al mostrarlas).
+  const TEMAS_TEST = { 1: { nom: "Seguridad del paciente", aprende: 1 }, 2: { nom: "Herramientas", aprende: 2 }, 3: { nom: "Procesos", aprende: 3 }, 4: { nom: "AMFE I", aprende: 5 }, 5: { nom: "AMFE II", aprende: 6 }, 6: { nom: "Mapa de riesgos", aprende: 8 } };
+  const TEST = [
+    { t: 1, q: "¿Cuál de las siguientes afirmaciones describe mejor el concepto de Seguridad del Paciente según la OMS?", o: ["Evitar cualquier gasto innecesario en los centros sanitarios.", "Reducir al mínimo los eventos adversos y daños asociados a la asistencia sanitaria.", "Aumentar la calidad percibida por el paciente.", "Garantizar la satisfacción de los profesionales sanitarios.", "Mejorar la experiencia del usuario en redes sociales."], ok: 1, e: "La OMS define la Seguridad del Paciente como la reducción del riesgo de daño innecesario asociado a la atención sanitaria." },
+    { t: 1, q: "¿Cuál es uno de los principios básicos de la cultura de Seguridad del Paciente?", o: ["Evitar notificar los errores para no generar alarma.", "Premiar únicamente los resultados clínicos positivos.", "Fomentar la comunicación abierta y el aprendizaje de los errores.", "Supervisar solo los eventos adversos graves.", "Limitar la participación de los pacientes en la seguridad."], ok: 2, e: "La cultura de seguridad se basa en fomentar la notificación, la transparencia y el aprendizaje, evitando la culpabilización." },
+    { t: 1, q: "¿Qué tipo de evento adverso es más frecuente en los entornos hospitalarios según los estudios?", o: ["Errores de diagnóstico.", "Infecciones relacionadas con la asistencia sanitaria.", "Reacciones adversas a vacunas.", "Agresiones a profesionales.", "Pérdida de historia clínica."], ok: 1, e: "Los estudios muestran que las infecciones relacionadas con la asistencia son uno de los eventos adversos más frecuentes." },
+    { t: 1, q: "¿Qué herramienta se considera esencial para mejorar la Seguridad del Paciente?", o: ["Uso exclusivo de tecnología de última generación.", "Acreditación voluntaria de los profesionales.", "Implementación de prácticas seguras basadas en evidencias.", "Externalizar todos los procesos críticos.", "Sustituir procesos manuales por digitales sin formación previa."], ok: 2, e: "Aplicar prácticas seguras basadas en evidencias y protocolos es un pilar de la Seguridad del Paciente." },
+    { t: 1, q: "¿Qué documento o estrategia ayuda a priorizar acciones de mejora en Seguridad del Paciente?", o: ["El manual de bienvenida de recursos humanos.", "El parte de incidencias informáticas.", "El Mapa de Riesgos asistenciales.", "El calendario de vacaciones del personal.", "El inventario de material fungible."], ok: 2, e: "El Mapa de Riesgos es clave para identificar procesos críticos y planificar medidas de prevención y mejora." },
+    { t: 2, q: "¿Cuál de las siguientes se considera una herramienta básica para la mejora de procesos en Seguridad del Paciente?", o: ["Publicidad en redes sociales del hospital.", "Registro contable anual.", "Mapa de Procesos.", "Encuesta de clima laboral.", "Manual de bienvenida."], ok: 2, e: "El Mapa de Procesos es una herramienta básica para identificar, analizar y priorizar procesos críticos." },
+    { t: 2, q: "¿Qué herramienta permite identificar causas raíz de un problema asistencial?", o: ["Diagrama de Ishikawa (causa-efecto).", "Hoja de cálculo financiera.", "Calendario de turnos.", "Protocolos de alta hospitalaria.", "Registro de llamadas."], ok: 0, e: "El Diagrama de Ishikawa o espina de pescado ayuda a analizar causas principales y secundarias de un problema." },
+    { t: 2, q: "¿Cuál es el propósito principal del Diagrama de Pareto en calidad asistencial?", o: ["Dividir a los equipos de trabajo.", "Identificar el 80 % de problemas causados por el 20 % de causas clave.", "Validar la satisfacción del paciente.", "Clasificar medicamentos de alto riesgo.", "Planificar vacaciones."], ok: 1, e: "El principio de Pareto muestra que una parte reducida de causas suele generar la mayoría de los problemas." },
+    { t: 2, q: "¿Qué herramienta se usa para representar gráficamente un proceso paso a paso?", o: ["Histograma de frecuencias.", "Flujograma.", "Gráfico de barras.", "Checklist de enfermería.", "Diagrama de Gantt."], ok: 1, e: "El flujograma es ideal para representar procesos y facilitar su análisis y mejora." },
+    { t: 2, q: "¿Qué ventaja aporta la aplicación de herramientas de análisis en la gestión de riesgos asistenciales?", o: ["Elimina totalmente los riesgos.", "Minimiza la necesidad de formación.", "Permite tomar decisiones basadas en datos objetivos.", "Aumenta la carga burocrática sin beneficios.", "Sustituye la responsabilidad de los profesionales."], ok: 2, e: "Estas herramientas aportan datos que permiten priorizar y tomar decisiones informadas, no eliminan los riesgos al 100 %." },
+    { t: 3, q: "¿Qué se entiende por proceso asistencial en el ámbito sanitario?", o: ["Una tarea aislada sin relación con otras.", "Un conjunto de actividades interrelacionadas que transforman entradas en resultados para el paciente.", "Una reunión del equipo directivo.", "La elaboración de presupuestos anuales.", "Una estrategia de marketing hospitalario."], ok: 1, e: "Un proceso asistencial integra actividades y recursos para generar resultados orientados a la atención del paciente." },
+    { t: 3, q: "¿Qué tipo de proceso se considera clave para la Seguridad del Paciente?", o: ["Los procesos estratégicos de planificación financiera.", "Los procesos de soporte exclusivamente.", "Los procesos asistenciales que impactan directamente en la atención al paciente.", "La gestión de contratos con proveedores externos.", "Los procesos de comunicación interna no clínicos."], ok: 2, e: "Los procesos asistenciales son los más críticos porque afectan de forma directa a la seguridad y calidad de la atención." },
+    { t: 3, q: "¿Qué herramienta es útil para representar gráficamente las etapas de un proceso?", o: ["Diagrama de flujo o flujograma.", "Diagrama de Gantt de obras.", "Inventario de almacén.", "Lista de verificación de emergencias.", "Informe financiero anual."], ok: 0, e: "El flujograma permite visualizar cada fase del proceso y detectar posibles puntos de riesgo." },
+    { t: 3, q: "¿Por qué es importante mapear procesos en una Unidad de Gestión Clínica?", o: ["Para aumentar la carga documental.", "Para evidenciar problemas de personal.", "Para identificar actividades críticas y priorizar acciones de mejora.", "Para justificar inversiones ante proveedores.", "Para asignar vacaciones equitativas."], ok: 2, e: "Mapear procesos permite localizar puntos débiles o críticos y planificar medidas de mejora." },
+    { t: 3, q: "¿Qué relación tienen los procesos con el Mapa de Riesgos?", o: ["Ninguna relación.", "Los procesos son independientes del riesgo.", "El Mapa de Riesgos se construye priorizando procesos críticos donde pueden producirse fallos.", "El Mapa de Riesgos sustituye la necesidad de conocer los procesos.", "Los procesos solo afectan a la parte administrativa."], ok: 2, e: "El Mapa de Riesgos parte del análisis de procesos para identificar dónde pueden producirse fallos y su impacto." },
+    { t: 4, q: "¿Qué significa AMFE en el ámbito de la gestión de riesgos sanitarios?", o: ["Análisis Múltiple de Fallos y Errores.", "Análisis Modal de Fallos y Efectos.", "Auditoría Médica de Fallos y Eventos.", "Asociación de Modos de Funcionamiento Eficiente.", "Análisis Metódico de Factores y Eventos."], ok: 1, e: "AMFE es la sigla de Análisis Modal de Fallos y Efectos, una herramienta estructurada para prevenir riesgos." },
+    { t: 4, q: "¿Cuál es el principal objetivo de aplicar un AMFE en un proceso sanitario?", o: ["Registrar incidencias informáticas.", "Incrementar la facturación anual.", "Identificar y priorizar posibles fallos antes de que ocurran.", "Sustituir las auditorías externas.", "Elaborar el presupuesto económico del servicio."], ok: 2, e: "El AMFE permite analizar anticipadamente los posibles fallos y priorizar medidas preventivas." },
+    { t: 4, q: "¿Qué elemento NO forma parte de la metodología básica de un AMFE?", o: ["Identificar los modos de fallo.", "Evaluar los efectos de cada fallo.", "Calcular la criticidad de cada riesgo.", "Asignar vacaciones a los equipos.", "Proponer acciones de mejora."], ok: 3, e: "Asignar vacaciones no forma parte de la metodología AMFE, que se centra en analizar riesgos y proponer mejoras." },
+    { t: 4, q: "¿Qué aspecto se evalúa habitualmente para calcular el índice de criticidad en un AMFE?", o: ["Tiempo de respuesta a reclamaciones.", "Grado de satisfacción de los visitantes.", "Severidad, ocurrencia y detección de cada fallo.", "Ingresos por acto quirúrgico.", "Desempeño financiero del hospital."], ok: 2, e: "Los tres factores clave son severidad, frecuencia (ocurrencia) y capacidad de detección del fallo." },
+    { t: 4, q: "¿Qué ventaja principal ofrece el uso del AMFE en procesos sanitarios?", o: ["Elimina por completo todos los riesgos.", "Identifica oportunidades de mejora preventiva y prioriza recursos.", "Garantiza la acreditación externa sin más requisitos.", "Sustituye la responsabilidad de los profesionales.", "Reduce la formación necesaria para el personal."], ok: 1, e: "El AMFE no elimina totalmente los riesgos, pero ayuda a identificarlos y priorizar acciones preventivas." },
+    { t: 5, q: "¿Qué significa el «Índice de Criticidad» en un AMFE?", o: ["El número de profesionales que realizan la auditoría.", "El coste económico de implantar una medida preventiva.", "El producto de severidad, ocurrencia y detección de un fallo.", "El tiempo dedicado a reuniones del equipo.", "El grado de satisfacción del paciente."], ok: 2, e: "El índice de criticidad se calcula multiplicando severidad × ocurrencia × detección para priorizar riesgos." },
+    { t: 5, q: "¿Qué valor indica mayor prioridad de actuación en un AMFE?", o: ["Un índice de criticidad bajo.", "Un índice de criticidad cercano a cero.", "Un índice de criticidad elevado.", "Cualquier índice da igual.", "El valor que indique la dirección."], ok: 2, e: "A mayor índice de criticidad, mayor prioridad para actuar sobre ese riesgo." },
+    { t: 5, q: "¿Qué papel tienen los equipos multidisciplinares en la aplicación del AMFE?", o: ["Ninguno, solo el jefe de servicio debe aplicarlo.", "Solo revisan los resultados finales.", "Son clave para aportar perspectivas distintas sobre el proceso y sus riesgos.", "Se encargan de elaborar los presupuestos.", "Notifican los fallos a Recursos Humanos."], ok: 2, e: "El AMFE se enriquece con la visión de distintos profesionales que conocen bien cada fase del proceso." },
+    { t: 5, q: "¿Qué acción debe seguirse tras calcular los índices de criticidad?", o: ["Clasificar los fallos por orden de prioridad y proponer acciones de mejora.", "Finalizar el proceso sin más pasos.", "Repetir la auditoría completa.", "Derivar todo el proceso a un auditor externo.", "Cancelar la implantación del AMFE."], ok: 0, e: "Tras priorizar los fallos, se proponen medidas preventivas o correctoras para reducir los riesgos más críticos." },
+    { t: 5, q: "¿Qué beneficio aporta realizar un AMFE de forma periódica?", o: ["Permite detectar nuevos riesgos y comprobar la eficacia de las acciones implantadas.", "Reduce la necesidad de formación del equipo.", "Disminuye la calidad asistencial.", "Elimina la obligación de notificar eventos adversos.", "Sustituye el Plan de Calidad de la unidad."], ok: 0, e: "Un AMFE periódico ayuda a actualizar riesgos y valorar si las mejoras aplicadas funcionan de forma real." },
+    { t: 6, q: "¿Qué es un Mapa de Riesgos en el ámbito sanitario?", o: ["Un listado de material fungible.", "Un diagrama de turnos del personal.", "Una herramienta que identifica y prioriza riesgos de procesos asistenciales.", "Un protocolo de comunicación con la dirección.", "Un inventario de equipos médicos."], ok: 2, e: "El Mapa de Riesgos permite visualizar, analizar y priorizar los riesgos en los procesos críticos para la Seguridad del Paciente." },
+    { t: 6, q: "¿Qué beneficio aporta elaborar un Mapa de Riesgos en una Unidad de Gestión Clínica?", o: ["Garantiza que no ocurran nunca incidentes.", "Identifica puntos críticos y facilita la planificación de medidas preventivas.", "Incrementa la burocracia sin utilidad.", "Sustituye a las auditorías clínicas.", "Evita la formación de los profesionales."], ok: 1, e: "Su principal ventaja es permitir anticipar problemas y priorizar acciones de mejora y prevención." },
+    { t: 6, q: "¿Qué pasos incluye habitualmente la elaboración de un Mapa de Riesgos?", o: ["Redacción de contratos con proveedores.", "Contratación de personal externo.", "Identificación de procesos críticos, análisis de riesgos y priorización.", "Publicación de estadísticas en redes sociales.", "Elaboración de informes financieros."], ok: 2, e: "El proceso básico consiste en identificar procesos clave, analizar los riesgos asociados y clasificarlos por criticidad." },
+    { t: 6, q: "¿Qué herramienta se suele utilizar junto con el Mapa de Riesgos para profundizar en riesgos prioritarios?", o: ["El calendario de vacaciones.", "El AMFE (Análisis Modal de Fallos y Efectos).", "El protocolo de comunicación interna.", "El control de inventarios.", "El registro de incidencias administrativas."], ok: 1, e: "El AMFE se aplica a los procesos críticos identificados para analizar fallos y proponer mejoras." },
+    { t: 6, q: "¿Qué relación tiene el Mapa de Riesgos con la mejora continua?", o: ["Ninguna, son independientes.", "Solo es útil para auditorías externas.", "Es un elemento clave para planificar y priorizar acciones dentro del ciclo PDCA.", "Sustituye el trabajo de los profesionales.", "Se usa solo para justificar inspecciones."], ok: 2, e: "El Mapa de Riesgos es parte esencial del ciclo de mejora continua (PDCA) porque guía dónde actuar primero." }
+  ];
+
+  // Caso clínico de la sesión 2 del curso (mejora L), sin el nombre de la paciente. Frases para marcar: c = es un punto crítico;
+  // p = nº del punto crítico del ejemplo de Urgencias con el que se corresponde; e = explicación
+  const CASO = {
+    relato: [
+      "Mujer de 79 años que vive sola. Antecedentes de hipertensión arterial, diabetes tipo 2, deterioro cognitivo leve y dolores articulares generalizados. Medicación habitual: metformina, enalapril, lorazepam nocturno y parche de fentanilo (se lo coloca su hija cada 72 horas).",
+      "Llega a Urgencias a las 18:15 h un martes, acompañada por su vecina, en vehículo particular. Presenta fiebre, tos y cierto embotamiento. En el mostrador de admisión la vecina entrega su tarjeta sanitaria. Hay un error tipográfico en el segundo apellido, pero no se corrige.",
+      "En el triaje, una enfermera le asigna un nivel 3 (amarillo). No se le pregunta por su medicación habitual. Constantes: temperatura 38,5 ºC, frecuencia cardiaca 105 lpm, frecuencia respiratoria 22 rpm, tensión arterial 94/56 mmHg y saturación de oxígeno 92 %. Se recogen en el sistema, pero no se valoran como sospecha de sepsis. Pasa a la sala de espera general.",
+      "Permanece allí 75 minutos. Pide dos veces ir al baño, sin ayuda disponible. Se queja de frío y de que no oye bien.",
+      "A las 19:30 h la explora un médico joven, que hace una anamnesis rápida. Sin la hija, no se obtiene información completa sobre su tratamiento ni sus alergias. Pide analítica y radiografía. No queda registrado si lleva medicación activa.",
+      "Un celador la lleva a Rayos. Al volver hay una confusión de camillas y se le pierde la pulsera de identificación. Pasa un tiempo sin vigilancia en el box hasta que llegan las pruebas. A las 21:00 h se decide su ingreso en planta por sospecha de neumonía y posible sepsis de origen respiratorio."
+    ],
+    versiones: [
+      ["Médico de Urgencias", "El triaje fue correcto. No parecía grave, aunque estaba un poco desorientada. No sabía su tratamiento exacto. Al no tener familiares, me centré en lo agudo. Ingreso por precaución."],
+      ["Enfermera de triaje", "Estaba estable pero algo confusa. Se quejaba de frío. No se le colocó la pulsera porque estaba imprimiéndose otra. Teníamos varias urgencias a la vez. Las constantes estaban algo alteradas, pero el protocolo marcaba nivel 3."],
+      ["TCAE", "No sabíamos si podía andar sola. La llevamos en silla, pero no se registró el riesgo de caída. En el baño le ayudó otra paciente. Nadie avisó."],
+      ["Celador", "Hubo confusión de camillas al volver de Rayos. Se le quitó la pulsera por error. Nadie me dijo que tuviera deterioro cognitivo."],
+      ["Administrativa", "La vecina dio los datos. Vi el fallo en el apellido, pero tenía cola y lo dejé pasar. No constaban ni alergias ni medicación domiciliaria."],
+      ["Paciente", "Había mucho ruido. No entendía todo. Perdí mis gafas. Una enfermera me hablaba muy rápido. Me dolía la espalda. Nadie me explicó si me iba o me quedaba."]
+    ],
+    frases: [
+      { f: "Llega a las 18:15 h un martes, acompañada por su vecina.", c: false, e: "Es un dato del relato, no algo que haya salido mal. Pero fíjate: la vecina no conoce su medicación." },
+      { f: "Hay un error en el segundo apellido y no se corrige porque hay cola.", c: true, p: 1, e: "Error de identificación en la admisión." },
+      { f: "En la admisión no constan alergias ni medicación domiciliaria.", c: true, p: 3, e: "Faltan datos clínicos relevantes desde el inicio." },
+      { f: "Se le toman las constantes y se recogen en el sistema.", c: false, e: "Esto se hizo bien. El fallo es otro: cómo se interpretaron." },
+      { f: "Con FC 105, TA 94/56 y SatO₂ 92 % se le asigna un nivel 3 y no se piensa en una sepsis.", c: true, p: 8, e: "Clasificación del nivel de prioridad que no tiene en cuenta las constantes alteradas." },
+      { f: "En el triaje no se le pregunta por su medicación habitual.", c: true, p: 12, e: "No se revisa la medicación habitual (llevaba un parche de fentanilo)." },
+      { f: "No se le coloca la pulsera porque se está imprimiendo otra.", c: true, p: 11, e: "Sin pulsera identificativa desde el triaje." },
+      { f: "Nadie registra su deterioro cognitivo ni su riesgo de caída.", c: true, p: 9, e: "No se detecta a la paciente frágil." },
+      { f: "Espera 75 minutos sin que nadie la vuelva a valorar.", c: true, p: 15, e: "Espera prolongada sin reevaluación clínica." },
+      { f: "Pide dos veces ir al baño y le acaba ayudando otra paciente.", c: true, p: 21, e: "Peticiones básicas no atendidas en la sala de espera." },
+      { f: "Se queja de frío en la sala de espera.", c: true, p: 17, e: "Falta de control térmico o ambiental de la sala." },
+      { f: "Pierde sus gafas.", c: true, p: 19, e: "Pérdida de pertenencias o ayudas técnicas." },
+      { f: "El médico pide analítica y radiografía.", c: false, e: "Es una decisión clínica adecuada, no un fallo." },
+      { f: "Sin la hija, la anamnesis queda incompleta: no se saben su tratamiento ni sus alergias.", c: true, p: 22, e: "Anamnesis incompleta por falta de información." },
+      { f: "No queda registrado si lleva medicación activa.", c: true, p: 23, e: "No se concilia la medicación habitual." },
+      { f: "Al volver de Rayos hay una confusión de camillas.", c: true, p: 30, e: "Confusión de camillas al volver de pruebas." },
+      { f: "Nadie le dice al celador que tiene deterioro cognitivo.", c: true, p: 34, e: "Paciente vulnerable trasladada sin acompañamiento ni información." },
+      { f: "Una enfermera le habla muy rápido y no entiende todo.", c: true, p: 39, e: "Comunicación no adaptada a la paciente." },
+      { f: "Nadie le explica si se va o se queda.", c: true, p: 38, e: "No se comunica la decisión a la paciente." },
+      { f: "Ingresa en planta por sospecha de neumonía.", c: false, e: "Es el desenlace del caso, no un fallo del proceso." }
+    ]
+  };
+
+  // Ejercicios con el ejemplo de Urgencias: «¿dónde va este fallo?» (nº de fallo y pasos entre los que elegir) y «¿de qué color es?»
+  const EJERCICIOS = {
+    donde: [{ num: 10, opciones: [5, 6, 10, 12] }, { num: 15, opciones: [7, 10, 12, 20] }, { num: 23, opciones: [6, 12, 21, 25] }, { num: 29, opciones: [6, 12, 17, 22] }, { num: 43, opciones: [21, 23, 24, 26] }],
+    color: [10, 30, 15, 42, 19, 6]
+  };
+
+  // ---------- Minicasos (inventados, cada uno con un error a propósito para practicar un paso) ----------
+  // Fallos: [nº, punto crítico (su nº), efecto, causa, G, O, D, acción ([qué, quién] o null), residual ([G, O, D] o null)]
+  function conFallos(base, F, extra) {
+    const id = base.id;
+    const fallos = F.map(([num, pt, efecto, causa, g, o, d, ac, r]) => {
+      const x = base.puntos[pt - 1];
+      return { id: `${id}-f${num}`, num, subprocesoId: x.subprocesoId, puntoId: x.id, pasos: [], fallo: x.titulo, efecto, causa, controles: "",
+        g: String(g), o: String(o), d: String(d), critico: false, motivoCritico: "", manual: "", motivo: "",
+        acciones: ac ? [{ id: `${id}-a${num}`, que: ac[0], porque: "", donde: "", plazo: "3 meses", fin: "", quien: ac[1], como: "", tipo: "preventiva", clase: "", actuaSobre: ["o", "d"], indicador: { nombre: "", formula: "", estandar: "", fuente: "" }, estado: "curso" }] : [],
+        residual: r ? { g: String(r[0]), o: String(r[1]), d: String(r[2]), fecha: "", nota: "Esperado cuando la acción esté implantada" } : { g: "", o: "", d: "", fecha: "", nota: "" }, votos: [], ishikawa: [] };
+    });
+    return Object.assign(base, { fallos, equipo: [], sesiones: [], prioridad: { modo: "top", n: "5", umbral: "200" }, vistaMapa: { mostrar: "prioritarios", calor: false, titulo: "", leyenda: "num" } }, extra || {});
+  }
+  const VISTA_MINI = { orientacion: "vertical", calles: "actor", subprocesos: true, letra: "normal", numeros: true, marco: false };
+  const nota = "Minicaso inventado para practicar: es corto y tiene un error a propósito. Búscalo antes de leer la solución en «Ejemplos».";
+
+  const TRANSFUSION = conFallos(miniMapa({ clave: "transfusion",
+    meta: { titulo: "Minicaso · Circuito de transfusión", proceso: "Transfusión de concentrados de hematíes en planta", unidad: "Medicina Interna", inicio: "El médico decide transfundir", fin: "Termina la vigilancia tras la transfusión", vista: VISTA_MINI, notas: nota },
+    actores: ["Médico", "Enfermería"],
+    subprocesos: [
+      { nombre: "Prescripción y solicitud", descripcion: "Indicación, consentimiento y petición al banco de sangre.", inicio: "Decisión médica de transfundir", fin: "Petición enviada", roles: "Médico" },
+      { nombre: "Extracción de la muestra para pruebas cruzadas", descripcion: "Identificación, extracción y etiquetado.", inicio: "Llegada de la petición a la planta", fin: "Muestra en el banco de sangre", roles: "Enfermería, celador" },
+      { nombre: "Administración y vigilancia", descripcion: "Comprobación final, transfusión y vigilancia.", inicio: "Llegada de la bolsa a la planta", fin: "Fin de la vigilancia", roles: "Enfermería, médico" }
+    ],
+    pasos: [
+      [1, "T", "Decisión de transfundir", -1, "2", 0], [2, "A", "Prescribe y recoge el consentimiento", 0, "3", 0], [3, "A", "Envía la petición al banco de sangre", 0, "4", 0],
+      [4, "A", "Identifica al paciente y extrae la muestra", 1, "5", 1], [5, "A", "Etiqueta los tubos", 1, "6", 1], [6, "X", "Pruebas cruzadas en el banco de sangre", -1, "7", 1],
+      [7, "A", "Comprueba la bolsa con la pulsera a pie de cama", 1, "8", 2], [8, "A", "Transfunde y vigila", 1, "9", 2], [9, "T", "Fin de la vigilancia", -1, "", 2]
+    ],
+    puntos: [
+      [0, 2, "Consentimiento informado no firmado", "Se transfunde sin el documento firmado, o firmado sin explicar los riesgos."],
+      [1, 4, "Muestra extraída a un paciente distinto", "No se identifica al paciente a pie de cama al extraer la muestra."],
+      [1, 0, "Tubos etiquetados lejos del paciente", "Se etiquetan en el control de enfermería, después de extraer varias muestras."],
+      [2, 0, "No se comprueba la bolsa con la pulsera antes de transfundir", "La doble comprobación no se hace en los turnos con poco personal."],
+      [2, 8, "Vigilancia insuficiente en los primeros 15 minutos", "Nadie comprueba las constantes al empezar, que es cuando aparecen las reacciones graves."]
+    ] }), [
+    [1, 1, "Transfusión sin consentimiento válido", "Prisa o desconocimiento del procedimiento", 6, 4, 3],
+    [2, 2, "Reacción hemolítica grave por incompatibilidad ABO", "No se identifica al paciente a pie de cama", 10, 3, 7],
+    [3, 3, "Muestra con la identidad de otro paciente", "Etiquetado diferido en el control de enfermería", 9, 4, 6],
+    [4, 4, "Transfusión de un componente incompatible", "La doble comprobación no se exige con poco personal", 10, 3, 6],
+    [5, 5, "Reacción transfusional detectada tarde", "Sin protocolo de vigilancia de las constantes", 8, 4, 5]
+  ], { prioridad: { modo: "top", n: "4", umbral: "200" } });
+
+  const MEDICACION = conFallos(miniMapa({ clave: "medicacion",
+    meta: { titulo: "Minicaso · Medicación en planta", proceso: "Administración de medicación en planta de hospitalización", unidad: "Planta de hospitalización", inicio: "El paciente ingresa en la planta", fin: "Se registra la última administración del turno", vista: VISTA_MINI, notas: nota },
+    actores: ["Médico", "Farmacia", "Enfermería"],
+    subprocesos: [
+      { nombre: "Prescripción", descripcion: "Indicación del tratamiento en la prescripción electrónica.", inicio: "Ingreso en la planta", fin: "Prescripción firmada", roles: "Médico" },
+      { nombre: "Validación y dispensación", descripcion: "Revisión farmacéutica y envío en dosis unitarias.", inicio: "Prescripción firmada", fin: "Cajetín en la planta", roles: "Farmacia" },
+      { nombre: "Administración y registro", descripcion: "Preparación, administración y registro.", inicio: "Cajetín en la planta", fin: "Administración registrada", roles: "Enfermería" }
+    ],
+    pasos: [
+      [1, "T", "Paciente ingresado en la planta", -1, "2", 0], [2, "A", "Prescripción electrónica", 0, "3", 0], [3, "A", "Validación farmacéutica", 1, "4", 1],
+      [4, "A", "Dispensación en dosis unitarias", 1, "5", 1], [5, "A", "Preparación y administración de la medicación", 2, "6", 2], [6, "A", "Registro de la administración", 2, "7", 2],
+      [7, "T", "Fin del turno", -1, "", 2]
+    ],
+    puntos: [
+      [0, 2, "Prescripción incompleta (sin dosis o sin vía)", "Se firma la orden sin todos los datos y enfermería tiene que interpretarla."],
+      [1, 3, "Validación sin conocer las alergias del paciente", "Las alergias no constan en la prescripción electrónica."],
+      [1, 4, "Cajetín con la medicación de otro paciente", "Se cambian los cajetines al reponer el carro."],
+      [2, 5, "Administración a un paciente equivocado", "No se comprueba la pulsera antes de administrar."],
+      [2, 5, "Dosis equivocada al preparar", "Cálculo a mano de la dosis o de la dilución."],
+      [2, 5, "Vía de administración equivocada", "Una medicación oral se administra por otra vía."],
+      [2, 5, "Confusión entre medicamentos de nombre o envase parecido", "Dos envases casi iguales en el mismo cajetín."],
+      [2, 5, "Hora de administración equivocada", "Se adelanta o se retrasa la dosis para agrupar tareas."],
+      [2, 5, "Velocidad de perfusión incorrecta", "La bomba se programa sin una segunda comprobación."],
+      [2, 5, "Alergia no comprobada antes de administrar", "No se pregunta al paciente ni se mira la pulsera de alergias."],
+      [2, 5, "Interrupciones durante la preparación", "Llamadas y timbres mientras se prepara la medicación."],
+      [2, 5, "Medicamento de alto riesgo sin doble comprobación", "Insulina, heparina o potasio sin que lo revise otra persona."],
+      [2, 6, "Registro de la administración olvidado o diferido", "Se registra al final del turno, de memoria."]
+    ] }), [
+    [1, 1, "Dosis o vía interpretadas de forma errónea", "Campos de la prescripción no obligatorios", 7, 4, 5],
+    [2, 2, "Reacción alérgica grave", "Las alergias no se registran en la historia", 9, 3, 6],
+    [3, 3, "Medicación de otro paciente", "Reposición del carro con prisas", 7, 3, 6],
+    [4, 4, "Medicación administrada a otro paciente", "Identificación solo por el número de cama", 8, 4, 6],
+    [5, 5, "Sobredosis o infradosificación", "Cálculo sin herramienta de ayuda", 8, 4, 6],
+    [6, 6, "Daño por vía inadecuada", "Envases y jeringas que no distinguen la vía", 9, 2, 6],
+    [7, 7, "Se administra otro medicamento", "Envases parecidos colocados juntos", 7, 4, 6],
+    [8, 8, "Pérdida de eficacia o toxicidad", "Carga de trabajo concentrada en algunas horas", 5, 6, 5],
+    [9, 9, "Sobredosis por perfusión rápida", "Bombas sin biblioteca de fármacos", 8, 3, 6],
+    [10, 10, "Reacción alérgica grave", "No se comprueba la alergia al administrar", 9, 3, 6],
+    [11, 11, "Errores de preparación por distracción", "No hay zona protegida para preparar", 7, 6, 6],
+    [12, 12, "Daño grave por un medicamento de alto riesgo", "No existe la doble comprobación por escrito", 9, 3, 7],
+    [13, 13, "Dosis repetida u omitida en el turno siguiente", "Registro al final del turno", 6, 5, 5]
+  ], { prioridad: { modo: "top", n: "13", umbral: "200" } });
+
+  const ANALITICA = conFallos(miniMapa({ clave: "analitica",
+    meta: { titulo: "Minicaso · Analítica en Atención Primaria", proceso: "Consulta de Atención Primaria con extracción de analítica", unidad: "Centro de salud", inicio: "El paciente tiene cita para analítica", fin: "El médico informa al paciente de los resultados", vista: VISTA_MINI, notas: nota },
+    actores: ["Administrativo", "Enfermería", "Médico de familia"],
+    subprocesos: [
+      { nombre: "Citación y recepción", descripcion: "Cita para la analítica y recepción del paciente.", inicio: "Petición de la analítica", fin: "Paciente en la sala de extracciones", roles: "Administrativo" },
+      { nombre: "Extracción y envío de las muestras", descripcion: "Extracción, etiquetado y transporte al laboratorio.", inicio: "Paciente en la sala de extracciones", fin: "Muestras en el laboratorio", roles: "Enfermería, transporte" },
+      { nombre: "Resultados y consulta", descripcion: "Revisión de los resultados y consulta con el paciente.", inicio: "Resultados disponibles", fin: "Paciente informado", roles: "Médico de familia" }
+    ],
+    pasos: [
+      [1, "T", "El paciente tiene cita para analítica", -1, "2", 0], [2, "A", "Recepción y comprobación de la cita", 0, "3", 0], [3, "A", "Identifica al paciente y extrae", 1, "4", 1],
+      [4, "A", "Etiqueta y prepara las muestras", 1, "5", 1], [5, "X", "Laboratorio del hospital", -1, "6", 1], [6, "A", "Revisa los resultados", 2, "7", 2],
+      [7, "A", "Consulta e informa al paciente", 2, "8", 2], [8, "T", "Fin del proceso", -1, "", 2]
+    ],
+    puntos: [
+      [0, 2, "Cita duplicada o en el día equivocado", "El paciente acude en ayunas y no tiene la cita."],
+      [0, 2, "No se comprueba la identidad al llegar", "Se llama a los pacientes solo por el nombre."],
+      [1, 3, "Extracción a un paciente con el mismo nombre", "Solo se pregunta el nombre, no la fecha de nacimiento."],
+      [1, 4, "Tubos etiquetados después de extraer a varios pacientes", "Las etiquetas se imprimen por lotes al empezar la mañana."],
+      [1, 5, "Muestras sin refrigerar durante el transporte", "La nevera portátil no tiene control de temperatura."],
+      [2, 6, "Resultado crítico no comunicado a tiempo", "El laboratorio solo lo publica en la historia digital."]
+    ] }), [
+    [1, 1, "El paciente pierde la mañana y repite el ayuno", "Agenda por teléfono sin confirmación", 4, 5, 3, ["Recordatorio por SMS con la fecha y la hora de la cita", "Unidad de Atención a la Ciudadanía"]],
+    [2, 2, "Muestras con los datos de otro paciente", "Identificación solo verbal", 7, 4, 5, ["Pedir nombre y fecha de nacimiento en la recepción", "Unidad de Atención a la Ciudadanía"]],
+    [3, 3, "Resultados y tratamiento de otro paciente", "Un solo identificador", 9, 4, 7],
+    [4, 4, "Muestras cambiadas entre pacientes", "Etiquetado diferido", 8, 5, 6],
+    [5, 5, "Resultados falsos y repetición de la extracción", "Transporte sin control de temperatura", 6, 5, 7],
+    [6, 6, "Retraso en tratar un valor grave (p. ej. potasio muy alto)", "Sin circuito de aviso de valores críticos", 9, 3, 8, ["Aviso telefónico del laboratorio al centro ante un valor crítico", "Dirección del centro de salud"]]
+  ], { prioridad: { modo: "top", n: "4", umbral: "200" } });
+
+  const CMA = miniMapa({ clave: "cma",
+    meta: { titulo: "Minicaso · Cirugía mayor ambulatoria", proceso: "Atención al paciente en cirugía mayor ambulatoria", unidad: "Unidad de Cirugía Mayor Ambulatoria", inicio: "El paciente llega a la unidad", fin: "Alta a domicilio o ingreso", vista: VISTA_MINI, notas: nota,
+      equipo: [], sesiones: [], fallos: [] },
+    actores: ["Enfermería", "Cirujano", "Anestesista"],
+    subprocesos: [
+      { nombre: "Preparación preoperatoria", descripcion: "Acogida, ayuno, medicación previa y preparación.", inicio: "Llegada a la unidad", fin: "Paciente preparado", roles: "Enfermería" },
+      { nombre: "Intervención", descripcion: "Lista de verificación quirúrgica e intervención.", inicio: "Entrada en el quirófano", fin: "Fin de la intervención", roles: "Cirujano, anestesista, enfermería" },
+      { nombre: "Recuperación y alta", descripcion: "Recuperación postanestésica y decisión de alta.", inicio: "Salida del quirófano", fin: "Alta o ingreso", roles: "Enfermería, anestesista" }
+    ],
+    pasos: [
+      [1, "T", "Llega a la unidad de CMA", -1, "2", 0], [2, "A", "Acogida y comprobación del ayuno", 0, "3", 0], [3, "A", "Lista de verificación quirúrgica", 0, "4", 1],
+      [4, "A", "Intervención", 1, "5", 1], [5, "A", "Recuperación postanestésica", 0, "6", 2], [6, "D", "¿Cumple los criterios de alta?", 2, "si:7,no:8", 2],
+      [7, "T", "Alta a domicilio", -1, "", 2], [8, "T", "Ingreso en el hospital", -1, "", 2]
+    ],
+    puntos: [
+      [0, 2, "Implantar un checklist de ayuno y medicación previa", "Para que no se escape ningún paciente sin comprobar."],
+      [0, 2, "No se comprueba si el paciente ha suspendido su anticoagulante", "Nadie pregunta por la medicación que tenía que dejar antes de la intervención."],
+      [1, 3, "Formar al personal en la lista de verificación quirúrgica", "Porque no siempre se hace completa."],
+      [1, 3, "No se marca el sitio quirúrgico antes de entrar en el quirófano", "La marca se deja para dentro del quirófano, con el paciente ya sedado."],
+      [2, 6, "Crear un protocolo de alta con criterios claros", "Para que todos usen los mismos criterios."],
+      [2, 6, "Alta sin un adulto que acompañe al paciente las primeras 24 horas", "No se comprueba quién se queda con el paciente en casa."]
+    ] });
+
+  const HOSPITAL_DIA = conFallos(miniMapa({ clave: "hdia",
+    meta: { titulo: "Minicaso · Hospital de día oncohematológico", proceso: "Administración de tratamiento en el hospital de día oncohematológico", unidad: "Hospital de día oncohematológico", inicio: "El paciente llega a su cita de tratamiento", fin: "Alta con las instrucciones del ciclo o aplazamiento", vista: VISTA_MINI, notas: nota },
+    actores: ["Enfermería", "Hematología", "Farmacia"],
+    subprocesos: [
+      { nombre: "Acogida y analítica", descripcion: "Identificación y analítica del día.", inicio: "Llegada a la cita", fin: "Analítica disponible", roles: "Enfermería" },
+      { nombre: "Validación y preparación del tratamiento", descripcion: "Decisión de tratar, validación y preparación de la mezcla.", inicio: "Analítica disponible", fin: "Mezcla en la sala de tratamiento", roles: "Hematología, farmacia" },
+      { nombre: "Administración y seguimiento", descripcion: "Administración, vigilancia e instrucciones de alta.", inicio: "Mezcla en la sala", fin: "Alta del paciente", roles: "Enfermería" }
+    ],
+    pasos: [
+      [1, "T", "Llega a su cita de tratamiento", -1, "2", 0], [2, "A", "Acogida e identificación", 0, "3", 0], [3, "A", "Extracción y analítica del día", 0, "4", 0],
+      [4, "D", "¿Analítica apta para el ciclo?", 1, "si:5,no:9", 1], [5, "A", "Validación de la prescripción del ciclo", 2, "6", 1], [6, "A", "Preparación de la mezcla", 2, "7", 1],
+      [7, "A", "Comprobación y administración", 0, "8", 2], [8, "T", "Alta con las instrucciones del ciclo", -1, "", 2], [9, "T", "Se aplaza el ciclo", -1, "", 1]
+    ],
+    puntos: [
+      [0, 2, "Paciente no identificado con pulsera al llegar", "Son pacientes habituales: «ya se les conoce»."],
+      [1, 4, "Se valida el ciclo sin la analítica del día", "El resultado llega tarde y hay presión por no retrasar la agenda."],
+      [1, 6, "Error de dosis al calcular por superficie corporal", "Peso no actualizado y cálculo a mano."],
+      [2, 7, "Extravasación no detectada a tiempo", "La vigilancia del acceso venoso es irregular."],
+      [2, 8, "Instrucciones de alta no comprendidas", "Información solo oral, al final de una jornada larga."]
+    ] }), [
+    [1, 1, "Administrar el ciclo de otro paciente", "No se usa la pulsera con los pacientes habituales", 9, 4, 6, ["Pulsera y doble identificador en cada contacto", "Supervisión de Enfermería"], [9, 2, 4]],
+    [2, 2, "Toxicidad grave por neutropenia o trombopenia", "Resultados tardíos y presión de agenda", 9, 4, 5, ["Bloqueo informático: el ciclo no se valida sin la analítica del día", "Jefatura de Hematología"], [9, 2, 2]],
+    [3, 3, "Infradosificación o toxicidad", "Peso no actualizado; cálculo a mano", 9, 3, 6, ["Cálculo automático con el peso del día y doble validación farmacéutica", "Servicio de Farmacia"], [7, 2, 3]],
+    [4, 4, "Lesión grave de la piel y los tejidos", "Vigilancia del acceso venoso irregular", 8, 4, 5, ["Vigilancia del acceso cada 15 minutos y kit de extravasación en la sala", "Supervisión de Enfermería"], [8, 3, 3]],
+    [5, 5, "No reconoce los signos de alarma (fiebre neutropénica)", "Información solo oral", 7, 5, 6, ["Hoja de signos de alarma y teléfono 24 horas, comprobando que se ha entendido", "Supervisión de Enfermería"], [7, 3, 3]]
+  ]);
+
+  // Lo que se enseña en «Ejemplos»: el paso que hay que mirar, el error y la solución
+  const MINICASOS = [
+    { id: TRANSFUSION.id, paso: 9, t: "Circuito de transfusión", s: "3 subprocesos, 9 pasos y 5 fallos. Practica el paso 9: el mapa.", error: "Mira el mapa: ¿están todos los fallos prioritarios?", solucion: "Los fallos nº 3 y 4 (tubos etiquetados lejos del paciente y bolsa sin comprobar con la pulsera) son prioritarios pero <b>no están en el mapa</b>: sus puntos críticos no tienen paso. La app lo avisa en el paso 9 («Fallos sin colocar»): ponlos en «Etiqueta los tubos» y en «Comprueba la bolsa con la pulsera a pie de cama»." },
+    { id: MEDICACION.id, paso: 9, t: "Medicación en planta", s: "3 subprocesos, 7 pasos y 13 fallos. Practica el paso 3 y el 9.", error: "Mira el mapa: ¿dice bien dónde está cada riesgo?", solucion: "Un solo aviso agrupa <b>9 fallos</b> en «Preparación y administración de la medicación». El paso es demasiado grande: el mapa no dice dónde está cada riesgo. Divídelo en el flujograma (paso 3), por ejemplo en «Comprueba la identidad y las alergias», «Prepara la dosis» y «Administra y programa la bomba»." },
+    { id: ANALITICA.id, paso: 8, t: "Analítica en Atención Primaria", s: "3 subprocesos, 8 pasos y 6 fallos. Practica el paso 8: las acciones.", error: "Mira las acciones de mejora: ¿están donde más hacen falta?", solucion: "Las acciones están en la citación y la recepción, que es lo más fácil de arreglar. Pero el subproceso de <b>mayor riesgo</b>, «Extracción y envío de las muestras» (IPR hasta 252), <b>no tiene ninguna acción</b>. Hay que empezar por los fallos nº 3, 4 y 5." },
+    { id: CMA.id, paso: 4, t: "Cirugía mayor ambulatoria", s: "3 subprocesos, 8 pasos y 6 puntos críticos. Practica el paso 4.", error: "Lee los puntos críticos: ¿todos dicen lo que puede fallar?", solucion: "Tres puntos críticos están escritos como <b>soluciones</b> («Implantar un checklist…», «Formar al personal…», «Crear un protocolo…»). Un punto crítico dice lo que puede salir mal; la solución irá en las acciones (paso 8). Por ejemplo: «No se comprueba el ayuno», «Lista de verificación incompleta», «Alta sin criterios comunes»." },
+    { id: HOSPITAL_DIA.id, paso: 10, t: "Hospital de día oncohematológico", s: "3 subprocesos, 9 pasos y 5 fallos con sus acciones. Practica el paso 10: antes y después.", error: "Compara el mapa antes y después de las acciones: ¿es creíble?", solucion: "En el paso 10, pulsa «Mapa después»: todos los fallos bajan a verde. Pero en el fallo nº 3 la acción <b>baja la gravedad</b> de 9 a 7. Es raro: una acción suele bajar la ocurrencia o mejorar la detección; el daño de una dosis equivocada sigue siendo el mismo. La app lo avisa en el paso 10." }
+  ];
+
   const EJEMPLOS = {
-    mapas: [URGENCIAS],
+    mapas: [URGENCIAS, TRANSFUSION, MEDICACION, ANALITICA, CMA, HOSPITAL_DIA], minicasos: MINICASOS,
     urgencias: { t: "Atención integral en el Servicio de Urgencias", s: "El ejemplo completo del curso: 7 subprocesos, el flujograma general con sus 33 pasos y el marco de procesos, los 49 puntos críticos, el AMFE con su equipo, sus sesiones y los 49 fallos priorizados, las 15 acciones de mejora y el mapa de riesgos de la página 15. Con cada versión de la app se irá completando hasta el documento final.", href: "#/mapa/ej-mapa-urgencias/1" }
   };
 
-  const API = { TEMAS, TEMAS_PROX, GLOSARIO, EJEMPLOS };
+  const API = { TEMAS, TEMAS_PROX, GLOSARIO, EJEMPLOS, TEMAS_TEST, TEST, CASO, EJERCICIOS };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   else raiz.Contenido = API;
 })(typeof window !== "undefined" ? window : this);

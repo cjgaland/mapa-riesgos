@@ -1550,3 +1550,32 @@ body.modo-reunion .lienzo { max-height: 80vh; }
 .nc-ok { color: var(--green); } .nc-no { color: var(--text-2); }
 .nc-no a { margin-left: 6px; font-size: 13px; }
 .punt-ipr--res { flex-wrap: wrap; }
+
+/* ---------- Entrega 5: Ponte a prueba, minicasos y modo presentación ---------- */
+.quiz-o--sel { border-color: var(--cyan); background: var(--cyan-dim); }
+.prueba-pills + .seg { margin-bottom: 12px; }
+.seg a { flex: 1; padding: 10px 8px; text-align: center; text-decoration: none; background: var(--bg); color: var(--text-2); font-weight: 600; font-size: 14px; }
+.seg a + a { border-left: 1px solid var(--border-lite); }
+.seg a.active { background: var(--cyan); color: #fff; }
+:root[data-tema="oscuro"] .seg a.active { color: #2b0a0f; }
+.test-nota { font-size: 22px; margin: 4px 0 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mejora-sube { color: var(--green); } .mejora-baja { color: var(--red); }
+.color-opc button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.mini-lista { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.mini-caso .sub-h { margin-top: 0; }
+.mini-caso .facil { margin-top: 8px; }
+/* Modo presentación: solo el mapa, a toda pantalla */
+body.presentando .app-header, body.presentando .calc-nav, body.presentando .app-footer, body.presentando #banner-ejemplo { display: none !important; }
+body.presentando .view { max-width: none; padding: 0; margin: 0; }
+.pres { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+.pres-barra { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top)); background: var(--bg-2); border-bottom: 1px solid var(--border); }
+.pres-t { flex: 1; min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pres-ops { display: flex; gap: 6px; flex-wrap: wrap; }
+.pres-mapa { flex: 1; padding: 8px; display: flex; justify-content: center; align-items: flex-start; background: #fff; overflow: auto; }
+.pres-mapa svg { width: 100%; height: auto; max-height: calc(100vh - 110px); }
+.pres-mapa .fl-nodo { cursor: pointer; }
+.pres-pista { margin: 0; padding: 6px 12px; font-size: 12px; color: var(--text-3); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.pres-panel { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 20; width: min(720px, 100%); max-height: 55vh; overflow: auto; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.25); }
+.pres-fallo { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px dashed var(--border); }
+.pres-fallo p { margin: 4px 0 0; }
+.pres-acc { font-size: 14px; }

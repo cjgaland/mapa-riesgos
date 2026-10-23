@@ -32,8 +32,16 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.04";
+  const APP_VERSION = "2026.05";
   const NOVEDADES = [
+    { version: "2026.05", fecha: "Octubre 2026", titulo: "Ponte a prueba, minicasos y modo presentación", cambios: [
+      "«Ponte a prueba»: las 30 preguntas del test del curso, en sus seis temas, con la explicación de cada respuesta.",
+      "Test inicial y final: las mismas 30 preguntas al empezar y al acabar, con la mejora por tema. Se guarda solo en este dispositivo y sin nombre.",
+      "Ejercicios con el mapa de Urgencias («¿Dónde va este fallo?» y «¿De qué color es?») y el caso clínico del curso: decide qué frases del relato son puntos críticos.",
+      "Cinco minicasos en «Ejemplos», cada uno con un error a propósito para practicar un paso: transfusión, medicación en planta, analítica en Atención Primaria, cirugía mayor ambulatoria y hospital de día oncohematológico.",
+      "Modo presentación: el mapa a toda pantalla para comités y sesiones de acogida; al tocar un paso se ven sus riesgos, qué pasaría y qué se hace. Con el mapa antes y después de las acciones.",
+      "«Traer de DAFO» en el paso 1: empieza un mapa desde un proceso marcado para analizar en tu DAFO.",
+      "Hoja de trabajo para las sesiones en papel (subprocesos, puntos críticos, fallos y acciones) y nuevo aviso cuando el subproceso de más riesgo no tiene ninguna acción."] },
     { version: "2026.04", fecha: "Octubre 2026", titulo: "El documento final y «Llevar a Auditorías»", cambios: [
       "Paso 10, Documento final: el IPR esperado tras las acciones y el «mapa después», la introducción y las conclusiones propuestas con las cifras del mapa, el control documental (con cargo y ubicación), la fecha de la próxima revisión y una nota de calidad con lo que falta antes de entregar.",
       "Documento Final en Word y PDF, con el mismo orden y los mismos apartados que el documento de Urgencias del curso: control documental, introducción, proceso y subprocesos, puntos críticos, AMFE, acciones de mejora, el mapa como imagen con su leyenda, conclusiones, escalas, tablas de fallos y matriz.",
@@ -66,7 +74,7 @@
       "«Traer de Flujograma»: si ya dibujaste el proceso en la app Flujograma, se trae con un botón.",
       "Ejemplo completo de Urgencias (7 subprocesos, 33 pasos y 49 puntos críticos), Aprende (4 temas), glosario, vista para imprimir y copia de seguridad."] }
   ];
-  const ENTREGA = 4;   // entrega construida: pasos con entrega ≤ ENTREGA (ver L.PASOS)
+  const ENTREGA = 5;   // entrega construida: pasos con entrega ≤ ENTREGA (ver L.PASOS)
 
   // ---------- Utilidades ----------
   const hoy = () => new Date().toISOString();
@@ -214,8 +222,9 @@
         <div class="toolbar"><button class="btn" data-act="copia">⬇ Copia de seguridad</button><button class="btn" data-act="importar">⬆ Importar copia</button></div>
       </div>
       <div class="guide">
-        <a class="guide-card" href="#/ejemplos"><span class="guide-num">Ej</span><div><div class="guide-q">Ejemplo</div><div class="guide-a">El mapa de riesgos de la <b>atención en Urgencias</b> del curso: subprocesos, flujograma y puntos críticos.</div></div><span class="guide-go">›</span></a>
-        <a class="guide-card" href="#/aprende"><span class="guide-num">?</span><div><div class="guide-q">Aprende</div><div class="guide-a">${C.TEMAS.length} temas <b>explicados fácil</b>: de la seguridad del paciente a los puntos críticos.</div></div><span class="guide-go">›</span></a>
+        <a class="guide-card" href="#/ejemplos"><span class="guide-num">Ej</span><div><div class="guide-q">Ejemplos</div><div class="guide-a">El mapa de riesgos completo de la <b>atención en Urgencias</b> del curso y ${C.EJEMPLOS.minicasos.length} <b>minicasos</b> con un error para encontrar.</div></div><span class="guide-go">›</span></a>
+        <a class="guide-card" href="#/aprende"><span class="guide-num">?</span><div><div class="guide-q">Aprende</div><div class="guide-a">${C.TEMAS.length} temas <b>explicados fácil</b>: de la seguridad del paciente al mapa de riesgos.</div></div><span class="guide-go">›</span></a>
+        <a class="guide-card" href="#/prueba"><span class="guide-num">✓</span><div><div class="guide-q">Ponte a prueba</div><div class="guide-a">Las ${C.TEST.length} preguntas del test del curso, el <b>test inicial y final</b>, ejercicios y el caso clínico.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card" href="#/glosario"><span class="guide-num">A–Z</span><div><div class="guide-q">Glosario</div><div class="guide-a">${C.GLOSARIO.length} términos <b>en lenguaje llano</b>, con buscador.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_FLUJO}" target="_blank" rel="noopener"><span class="guide-num">↓</span><div><div class="guide-q">Flujograma ↗</div><div class="guide-a">App hermana: <b>dibuja el proceso</b> por tu cuenta y tráelo aquí con un botón.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_AMFE}" target="_blank" rel="noopener"><span class="guide-num">!</span><div><div class="guide-q">AMFE ↗</div><div class="guide-a">App hermana: el <b>AMFE completo</b>, con lluvia de ideas, grupo nominal, votación e Ishikawa.</div></div><span class="guide-go">›</span></a>
@@ -324,7 +333,9 @@
   function desdeHtml(m) {
     if (modoEjemplo) return "";
     if (amfesLeidos) return amfeHtml(m);
+    if (dafosLeidos) return dafoHtml(m);
     const oa = m.origen.amfe, yaA = oa.id ? `<p class="field-sub">Traído de AMFE el ${esc(fmtFecha(oa.traido))}: «${esc(oa.titulo || "sin nombre")}».</p>` : "";
+    const od = m.origen.dafo, yaD = od.id ? `<p class="field-sub">Empezado desde DAFO el ${esc(fmtFecha(od.traido))}: «${esc(od.titulo || "sin nombre")}».</p>` : "";
     const og = m.origen.flujo, ya = og.id ? `<p class="field-sub">Traído de Flujograma el ${esc(fmtFecha(og.traido))}: «${esc(og.titulo || "sin nombre")}». Si el flujograma cambia, vuelve a traerlo en un mapa nuevo.</p>` : "";
     if (flujosLeidos) {
       const F = flujosLeidos, f = F.find(x => x.id === flujoElegido) || F[0];
@@ -335,11 +346,11 @@
         <p class="field-sub">Se copia: si después cambias el flujograma en su app, vuelve a traerlo. Nada de lo que ya tienes se borra.</p></div>`;
     }
     return `<div class="card desde-card no-print"><h2 class="sub-h">¿Ya tienes hecho algo de este proceso?</h2>
-      <p class="field-sub">Puedes hacerlo todo aquí. Pero si ya lo empezaste en otra app del conjunto, tráelo y sigue desde ahí.</p>${ya}${yaA}
+      <p class="field-sub">Puedes hacerlo todo aquí. Pero si ya lo empezaste en otra app del conjunto, tráelo y sigue desde ahí.</p>${ya}${yaA}${yaD}
       <div class="origenes">
         <button type="button" class="origen-btn" data-act="flujo-buscar"><b>⇩ Traer de Flujograma</b><span>El proceso dibujado: subprocesos, pasos y puntos críticos.</span></button>
         <button type="button" class="origen-btn" data-act="amfe-buscar"><b>⇩ Traer de AMFE</b><span>Los fallos con su efecto, su causa, su puntuación, su prioridad y sus acciones.</span></button>
-        <div class="origen-btn origen-btn--prox"><b>⇩ Traer de DAFO</b><span>Un proceso marcado para analizar en tu DAFO. Próximamente.</span></div>
+        <button type="button" class="origen-btn" data-act="dafo-buscar"><b>⇩ Traer de DAFO</b><span>Un proceso que marcaste en tu DAFO para hacerle un mapa de riesgos.</span></button>
       </div></div>`;
   }
 
@@ -905,6 +916,16 @@
       <p class="field-sub">Se copia: si después cambias el AMFE en su app, vuelve a traerlo. Nada de lo que ya tienes se borra.</p></div>`;
   }
 
+  // «Traer de DAFO» (paso 1): un factor marcado en DAFO como candidato a un mapa de riesgos
+  let dafosLeidos = null, dafoElegido = "";
+  function dafoHtml(m) {
+    const c = dafosLeidos.find(x => x.id === dafoElegido) || dafosLeidos[0];
+    return `<div class="card desde-card no-print"><h2 class="sub-h">Traer de DAFO</h2>
+      ${selector("Proceso marcado en DAFO", 'data-dafosel="1"', c.id, dafosLeidos.map(x => [x.id, L.resumenDafo(x)]))}
+      <ul class="field-sub"><li>${lleno(m.proceso) ? "<b>El nombre del proceso no</b>: ya tiene uno." : `El nombre del proceso: «${esc(c.proceso || c.texto)}».`}</li><li>${lleno(m.descripcion) ? "<b>La descripción no</b>: ya está escrita." : `La descripción, con el porqué: ${esc(L.TIPO_DAFO[c.tipo] ? L.TIPO_DAFO[c.tipo].toLowerCase() : "factor")} ${esc(c.codigo)}, «${esc(L.corto(c.texto, 90))}»${c.motivo ? " y el motivo" : ""}.`}</li><li>Lo demás (subprocesos, flujograma…) se hace aquí, paso a paso.</li></ul>
+      <div class="toolbar"><button class="btn btn--primary" data-act="dafo-traer">Traer</button><button class="btn" data-act="dafo-cancelar">Cancelar</button></div></div>`;
+  }
+
   // ======================= Fase C · Paso 8 · Acciones de mejora (motor de AMFE) =======================
   let indImportados = null, indPara = null;   // indicadores traídos de la app Indicadores y la acción que los espera
   const bac = (x, f) => `data-ac="${x.id}" data-f="${f}"`;
@@ -1036,6 +1057,7 @@
       <div data-zona="leyenda">${leyendaHtml(m)}</div>
       <h2 class="sec-t">Descargar el mapa</h2>
       <div class="export-grid">
+        <div class="card export-card"><h3 class="sub-h">📽 Presentar</h3><p class="field-sub">El mapa a toda pantalla, para un comité o una sesión de acogida: al tocar un paso se ven sus riesgos y qué se hace.</p><div class="toolbar"><a class="btn btn--primary" href="#/mapa/${m.id}/presentar">Presentar el mapa</a></div></div>
         <div class="card export-card"><h3 class="sub-h">🗺 Lámina</h3><p class="field-sub">Una página apaisada con el mapa y la leyenda, para colgar en la unidad o proyectar. Primero se ve y después se guarda en PDF o se imprime.</p><div class="toolbar"><button class="btn btn--primary" data-act="lamina">Ver la lámina</button></div></div>
         <div class="card export-card"><h3 class="sub-h">🖼 Imagen</h3><p class="field-sub">El mapa con su título, para pegarlo en un documento o una presentación.</p><div class="toolbar"><button class="btn btn--primary" data-act="mx-png">⬇ PNG</button><button class="btn" data-act="mx-svg">⬇ SVG</button></div></div>
         <div class="card export-card"><h3 class="sub-h">✎ draw.io</h3><p class="field-sub">El mapa editable en <b>app.diagrams.net</b>, con los avisos coloreados, para retoques finos.</p><div class="toolbar"><button class="btn btn--primary" data-act="mx-drawio">⬇ Archivo .drawio</button></div></div>
@@ -1171,7 +1193,8 @@
         <div class="card export-card"><h3 class="sub-h">📕 Documento Final</h3><p class="field-sub">El documento completo del mapa de riesgos, con el mapa como imagen, en el orden del documento del curso.</p><div class="toolbar"><button class="btn btn--primary" data-act="doc-word" data-doc="final">⬇ Word</button><button class="btn" data-act="doc-ver" data-doc="final">Ver / PDF</button></div></div>
         <div class="card export-card"><h3 class="sub-h">📄 Resumen para la Dirección</h3><p class="field-sub">Una página: cifras, los 5 riesgos más altos con su acción y el mapa pequeño.</p><div class="toolbar"><button class="btn btn--primary" data-act="doc-word" data-doc="resumen">⬇ Word</button><button class="btn" data-act="doc-ver" data-doc="resumen">Ver / PDF</button></div></div>
         <div class="card export-card"><h3 class="sub-h">🤝 Ficha de acogida</h3><p class="field-sub">Para quien se incorpora: una página por subproceso con sus riesgos principales y qué se hace.</p><div class="toolbar"><button class="btn btn--primary" data-act="doc-word" data-doc="acogida">⬇ Word</button><button class="btn" data-act="doc-ver" data-doc="acogida">Ver / PDF</button></div></div>
-        <div class="card export-card"><h3 class="sub-h">🗺 Lámina del mapa</h3><p class="field-sub">El mapa y su leyenda en una página apaisada.</p><div class="toolbar"><button class="btn btn--primary" data-act="lamina">Ver la lámina</button></div></div>
+        <div class="card export-card"><h3 class="sub-h">🗺 Lámina del mapa</h3><p class="field-sub">El mapa y su leyenda en una página apaisada. O preséntalo a toda pantalla.</p><div class="toolbar"><button class="btn btn--primary" data-act="lamina">Ver la lámina</button><a class="btn" href="#/mapa/${m.id}/presentar">📽 Presentar</a></div></div>
+        <div class="card export-card"><h3 class="sub-h">📝 Hoja de trabajo</h3><p class="field-sub">Plantillas para las sesiones en papel: subprocesos, puntos críticos, fallos y acciones, con lo que ya está escrito.</p><div class="toolbar"><button class="btn btn--primary" data-act="doc-word" data-doc="hoja">⬇ Word</button><button class="btn" data-act="doc-ver" data-doc="hoja">Ver / PDF</button></div></div>
         <div class="card export-card"><h3 class="sub-h">📊 Excel</h3><p class="field-sub">Fallos, acciones, hallazgos para Auditorías, puntos críticos y equipo.</p><div class="toolbar"><button class="btn btn--primary" data-act="ex-excel">⬇ Excel</button></div></div>
       </div>
       <h2 class="sec-t">Llevar a Auditorías</h2>
@@ -1200,11 +1223,11 @@
       return "";
     }).join("");
   }
-  const DOCS = { final: (m, f, img) => L.documentoFinal(m, f, img), resumen: (m, f, img) => L.documentoResumen(m, f, img), acogida: (m, f) => L.documentoAcogida(m, f) };
+  const DOCS = { final: (m, f, img) => L.documentoFinal(m, f, img), resumen: (m, f, img) => L.documentoResumen(m, f, img), acogida: (m, f) => L.documentoAcogida(m, f), hoja: (m, f) => L.documentoHoja(m, f) };
   function renderDoc(m, cual) {
     let est = $("#estilo-pagina"); if (!est) { est = document.createElement("style"); est.id = "estilo-pagina"; document.head.appendChild(est); }
-    est.textContent = "@page { size: A4 portrait; margin: 14mm; }";
     const img = hayMapa(m) ? { svg: svgMapa(m) } : null, doc = DOCS[cual](m, new Date().toLocaleDateString("es-ES"), img);
+    est.textContent = `@page { size: A4 ${doc.horizontal ? "landscape" : "portrait"}; margin: ${doc.horizontal ? 10 : 14}mm; }`;
     view.innerHTML = `<div class="informe-bar informe-only"><button class="btn" data-act="volver">← Volver</button><span class="informe-acc"><button class="btn" data-act="doc-word" data-doc="${cual}">⬇ Word</button><button class="btn btn--primary" data-act="imprimir">Guardar / imprimir</button></span></div>
       <div class="doc-prev doc-prev--informe">${bloquesHtml(doc.bloques)}</div>${informePie()}`;
   }
@@ -1212,7 +1235,7 @@
   async function construirWord(m, cual) {
     const fecha = new Date().toLocaleDateString("es-ES");
     let img = null;
-    if (cual !== "acogida" && hayMapa(m)) { const s = svgMapa(m), r = await pngDe(s, 12e6); img = { png: new Uint8Array(await r.blob.arrayBuffer()), w: r.w, h: r.h }; }
+    if ((cual === "final" || cual === "resumen") && hayMapa(m)) { const s = svgMapa(m), r = await pngDe(s, 12e6); img = { png: new Uint8Array(await r.blob.arrayBuffer()), w: r.w, h: r.h }; }
     const doc = DOCS[cual](m, fecha, img);
     return window.Docx.construirDocx(Object.assign({ pie: doc.titulo + " · Generado con la app Mapa de Riesgos" }, doc));
   }
@@ -1220,7 +1243,7 @@
     toast("Preparando el Word…");
     try {
       const bytes = await construirWord(m, cual);
-      const base = ({ resumen: "Mapa de Riesgos Resumen ", acogida: "Mapa de Riesgos Ficha de acogida " }[cual] || "Mapa de Riesgos Documento Final ") + (nombreMapa(m) || "").slice(0, 60);
+      const base = ({ resumen: "Mapa de Riesgos Resumen ", acogida: "Mapa de Riesgos Ficha de acogida ", hoja: "Mapa de Riesgos Hoja de trabajo " }[cual] || "Mapa de Riesgos Documento Final ") + (nombreMapa(m) || "").slice(0, 60);
       compartirOBajar(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), `${base.replace(/[\\/:*?"<>|%]/g, "").trim()} ${fechaArchivo()}.docx`, "Word descargado. Ábrelo con Word, Pages o LibreOffice y ajústalo a tu gusto.");
     } catch (e) { toast("No se ha podido crear el Word.", 4000); }
   }
@@ -1278,7 +1301,7 @@
     if (!t) {
       view.innerHTML = `
         <h1 class="page-title">Aprende</h1>
-        <p class="page-lead">Temas explicados fácil para tener a mano mientras haces tu mapa de riesgos. Con cada versión de la app llegan los de la fase siguiente.</p>
+        <p class="page-lead">Temas explicados fácil para tener a mano mientras haces tu mapa de riesgos. Al final de cada uno, ponte a prueba con las preguntas del test del curso.</p>
         <div class="temas">${T.map(x => `<a class="tema-card pdca--${x.c}" href="#/aprende/${x.n}"><span class="tema-n">${x.n}</span><span><b>${x.titulo}</b><span>${x.sub}</span></span></a>`).join("")}
           ${C.TEMAS_PROX.map(x => `<div class="tema-card tema-card--prox"><span class="tema-n">${x.n}</span><span><b>${x.titulo}</b><span>${x.sub} · próximamente</span></span></div>`).join("")}</div>`;
       return;
@@ -1290,20 +1313,173 @@
       <div class="card minuto pdca--${t.c}"><h2 class="sub-h">En un minuto</h2><ul>${t.minuto.map(x => `<li>${x}</li>`).join("")}</ul></div>
       ${t.secciones.map((s, i) => `<details class="facil"${i === 0 ? " open" : ""}><summary>${s.t}</summary><div class="facil-body">${s.h}</div></details>`).join("")}
       ${box("ejemplo", "Minicaso", t.minicaso)}
-      <div class="toolbar"><a class="btn btn--primary" href="${t.practica.href}">${t.practica.texto} →</a></div>
+      <div class="toolbar"><a class="btn" href="#/prueba/${PRUEBA_DE_TEMA[t.n]}">✓ Ponte a prueba</a><a class="btn btn--primary" href="${t.practica.href}">${t.practica.texto} →</a></div>
       <div class="wiz-nav no-print">${prev ? `<a class="btn" href="#/aprende/${prev.n}">← ${prev.titulo}</a>` : "<span></span>"}${next ? `<a class="btn" href="#/aprende/${next.n}">${next.titulo} →</a>` : "<span></span>"}</div>`;
+  }
+
+  // ---------- Ponte a prueba ----------
+  // Tema de Aprende → bloque del test del curso
+  const PRUEBA_DE_TEMA = { 1: 1, 2: 2, 3: 3, 4: 3, 5: 4, 6: 5, 7: 5, 8: 6 };
+  const respuestas = {}, respDonde = {}, respColor = {}, respCaso = {};
+  // Orden de las opciones barajado pero estable (para que la correcta no esté siempre en el mismo sitio), como AMFE
+  const barajar = (n, semilla) => { const a = Array.from({ length: n }, (_, i) => i); let s = semilla * 9301 + 49297; for (let i = n - 1; i > 0; i--) { s = (s * 9301 + 49297) % 233280; const j = Math.floor(s / 233280 * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pillsPrueba = actualP => `<div class="tema-pills prueba-pills no-print"><a href="#/prueba" class="pdca--P${!actualP ? " actual" : ""}" title="Todas las preguntas">T</a>${Object.keys(C.TEMAS_TEST).map(k => `<a href="#/prueba/${k}" class="pdca--P${String(actualP) === k ? " actual" : ""}" title="${esc(C.TEMAS_TEST[k].nom)}">${k}</a>`).join("")}<a href="#/prueba/inicial" class="pdca--V${actualP === "inicial" || actualP === "final" ? " actual" : ""}" title="Test inicial y final">⏱</a><a href="#/prueba/practica" class="pdca--H${actualP === "practica" ? " actual" : ""}" title="Ejercicios con el mapa de Urgencias">✎</a><a href="#/prueba/caso" class="pdca--A${actualP === "caso" ? " actual" : ""}" title="El caso clínico">C</a></div>`;
+  function renderPrueba(tema) {
+    if (tema === "practica") { renderPractica(); return; }
+    if (tema === "caso") { renderCaso(); return; }
+    if (tema === "inicial" || tema === "final") { renderTestFormal(tema); return; }
+    const Q = C.TEST.map((q, i) => Object.assign({ i }, q)).filter(q => !tema || q.t === tema);
+    view.innerHTML = `
+      <h1 class="page-title">Ponte a prueba</h1>
+      <p class="page-lead">Las ${C.TEST.length} preguntas del test del curso${tema ? ` (aquí, las del tema «${esc(C.TEMAS_TEST[tema].nom)}»)` : ", en sus seis temas"}. Toca la respuesta que creas correcta y lee la explicación. En ⏱, el test inicial y final; en ✎, ejercicios con el mapa de Urgencias; y en C, el caso clínico.</p>
+      ${pillsPrueba(tema)}
+      <div class="marcador" data-zona="marcador">${marcadorHtml(Q)}</div>
+      <div class="card">${Q.map(q => { const ord = barajar(q.o.length, q.i + 1), r = respuestas[q.i]; return `<div class="quiz-q" data-q="${q.i}">
+        <p><span class="badge">${esc(C.TEMAS_TEST[q.t].nom)}</span> <b>${esc(q.q)}</b></p>
+        ${ord.map(j => `<button class="quiz-o${r != null ? (j === q.ok ? " quiz-o--ok" : j === r ? " quiz-o--mal" : "") : ""}" data-act="quiz" data-q="${q.i}" data-o="${j}">${esc(q.o[j])}</button>`).join("")}
+        <p class="quiz-fb"${r == null ? " hidden" : ""}>${r != null ? `${r === q.ok ? "<b>¡Correcto!</b> " : "<b>No.</b> "}${esc(q.e)} <a href="#/aprende/${C.TEMAS_TEST[q.t].aprende}">Repasar en «Aprende»</a>` : ""}</p>
+      </div>`; }).join("")}</div>
+      <div class="toolbar no-print"><button class="btn" data-act="quiz-reset">Empezar de nuevo</button><a class="btn btn--primary" href="#/prueba/practica">Ejercicios →</a></div>`;
+  }
+  function marcadorHtml(Q) {
+    const hechas = Q.filter(q => q.i in respuestas), bien = hechas.filter(q => respuestas[q.i] === q.ok).length;
+    if (!hechas.length) return `<span class="field-sub">Aciertos: 0 de ${Q.length}</span>`;
+    const p = bien / hechas.length;
+    return `<span><b>${bien}</b> aciertos de ${hechas.length} respondidas (de ${Q.length})</span>${hechas.length === Q.length ? `<span class="sem-b sem-b--${p >= 0.8 ? "verde" : p >= 0.6 ? "ambar" : "rojo"}">${p >= 0.8 ? "¡Muy bien!" : p >= 0.6 ? "Bien: repasa los fallos" : "Repasa «Aprende»"}</span>` : ""}`;
+  }
+
+  // Test inicial y final (mejora M): las mismas 30 preguntas, sin ver la respuesta hasta corregir; se guarda solo en este dispositivo
+  const KEY_TEST = "mapariesgos-test";
+  const leerTests = () => { try { return L.sanearTests(JSON.parse(leer(KEY_TEST) || "null"), C.TEST); } catch (e) { return {}; } };
+  const borradorTest = { inicial: {}, final: {} };
+  const pct = (b, t) => t ? Math.round(b / t * 100) : 0;
+  function renderTestFormal(k) {
+    const T = leerTests(), hecho = T[k], otro = k === "inicial" ? "final" : "inicial";
+    const tabs = `<div class="seg seg--sm no-print" role="group" style="max-width:360px">${[["inicial", "Test inicial"], ["final", "Test final"]].map(([v, tx]) => `<a class="${v === k ? "active" : ""}" href="#/prueba/${v}">${tx}${T[v] ? " ✓" : ""}</a>`).join("")}</div>`;
+    const cab = `<h1 class="page-title">Test ${k}</h1>
+      <p class="page-lead">Las mismas ${C.TEST.length} preguntas al empezar el curso (o tu primer mapa) y al acabar. Al comparar los dos verás cuánto has aprendido en cada tema. Se guarda <b>solo en este dispositivo</b> y sin tu nombre.</p>
+      ${pillsPrueba(k)}${tabs}`;
+    if (hecho) {
+      const r = L.resultadoTest(C.TEST, hecho.resp), o = T[otro] && L.resultadoTest(C.TEST, T[otro].resp), ini = k === "inicial" ? r : o, fin = k === "final" ? r : o;
+      view.innerHTML = `${cab}
+        <div class="card"><h2 class="sub-h">Tu resultado${hecho.fecha ? ` · ${esc(fechaCorta(hecho.fecha))}` : ""}</h2>
+          <p class="test-nota"><b>${r.bien}</b> de ${r.total} <span class="sem-b sem-b--${r.pct >= 80 ? "verde" : r.pct >= 60 ? "ambar" : "rojo"}">${r.pct} %</span></p>
+          ${ini && fin ? `<p class="field-sub">Del test inicial al final: <b>${ini.bien} → ${fin.bien}</b> aciertos (${fin.bien - ini.bien >= 0 ? "+" : ""}${fin.bien - ini.bien}).</p>` : `<p class="field-sub">${k === "inicial" ? "Cuando acabes el curso o tu primer mapa, haz el test final para comparar." : "No hay test inicial en este dispositivo para comparar."}</p>`}
+          <div class="table-wrap"><table class="mini"><thead><tr><th>Tema</th>${ini ? "<th>Inicial</th>" : ""}${fin ? "<th>Final</th>" : ""}${ini && fin ? "<th>Mejora</th>" : ""}</tr></thead><tbody>
+            ${Object.keys(C.TEMAS_TEST).map(t => { const a = ini && ini.porTema[t], b = fin && fin.porTema[t]; return `<tr><td><a href="#/aprende/${C.TEMAS_TEST[t].aprende}">${t}. ${esc(C.TEMAS_TEST[t].nom)}</a></td>${a ? `<td>${a.bien}/${a.total}</td>` : ""}${b ? `<td>${b.bien}/${b.total}</td>` : ""}${a && b ? `<td><b class="${b.bien > a.bien ? "mejora-sube" : b.bien < a.bien ? "mejora-baja" : ""}">${b.bien - a.bien > 0 ? "+" : ""}${b.bien - a.bien}</b></td>` : ""}</tr>`; }).join("")}
+          </tbody></table></div></div>
+        <h2 class="sec-t">Las respuestas</h2>
+        <div class="card">${C.TEST.map((q, i) => { const sel = hecho.resp[i]; return `<div class="quiz-q"><p><span class="badge">${esc(C.TEMAS_TEST[q.t].nom)}</span> <b>${esc(q.q)}</b></p>
+          <p class="quiz-fb">${sel === q.ok ? "<b>✓ Bien.</b>" : `<b>✕ Respondiste:</b> ${sel != null ? esc(q.o[sel]) : "nada"}. <b>Correcta:</b> ${esc(q.o[q.ok])}`} ${esc(q.e)}</p></div>`; }).join("")}</div>
+        <div class="toolbar no-print"><button class="btn link-btn--peligro" data-act="tf-borrar" data-v="${k}">Borrar este test y repetirlo</button>${!T[otro] ? `<a class="btn btn--primary" href="#/prueba/${otro}">Hacer el test ${otro} →</a>` : ""}</div>`;
+      return;
+    }
+    const B = borradorTest[k], n = Object.keys(B).length;
+    view.innerHTML = `${cab}
+      ${k === "final" && !T.inicial ? `<div class="note">ℹ No hay test inicial en este dispositivo. Puedes hacer el final igualmente, pero no habrá con qué comparar.</div>` : ""}
+      <div class="card">${C.TEST.map((q, i) => { const ord = barajar(q.o.length, i + 1); return `<div class="quiz-q"><p><span class="badge">${i + 1}</span> <b>${esc(q.q)}</b></p>
+        ${ord.map(j => `<button class="quiz-o${B[i] === j ? " quiz-o--sel" : ""}" data-act="tf" data-k="${k}" data-q="${i}" data-o="${j}">${esc(q.o[j])}</button>`).join("")}</div>`; }).join("")}</div>
+      <div class="toolbar no-print"><span class="field-sub" data-zona="tf-cuenta">${n} de ${C.TEST.length} respondidas</span><button class="btn btn--primary" data-act="tf-corregir" data-k="${k}">Corregir y guardar</button></div>`;
+  }
+
+  // Ejercicios con el mapa de Urgencias: «¿dónde va este fallo?» y «¿de qué color es?»
+  const NIVELES_ORDEN = ["muyalto", "alto", "medio", "bajo"];
+  function renderPractica() {
+    const u = ejemplos().mapas.find(x => x.id === "ej-mapa-urgencias"), F = n => u.fallos.find(f => f.num === n), P = n => u.pasos.find(p => p.num === n);
+    const E = C.EJERCICIOS, bienD = E.donde.filter(x => respDonde[x.num] && L.ubicacion(u, F(x.num)).includes(P(respDonde[x.num]).id)).length;
+    const bienC = E.color.filter(n => respColor[n] === A.nivelIPR(A.iprDe(F(n))).k).length;
+    view.innerHTML = `
+      <h1 class="page-title">Ponte a prueba · ejercicios</h1>
+      <p class="page-lead">Dos ejercicios con el mapa de Urgencias del curso.</p>
+      ${pillsPrueba("practica")}
+      ${!A ? sinMotorAmfe() : `
+      <h2 class="sec-t">1. ¿Dónde va este fallo?</h2>
+      <p class="field-sub">En el mapa, cada fallo va en el paso del flujograma donde ocurre. ¿En cuál pondrías cada uno? ${Object.keys(respDonde).length ? `<b>${bienD} de ${Object.keys(respDonde).length}</b> bien.` : ""}</p>
+      <div class="card">${E.donde.map(x => { const f = F(x.num), ok = L.ubicacion(u, f), r = respDonde[x.num]; return `<div class="quiz-q">
+        <p><b>Nº ${f.num} · ${esc(f.fallo)}</b></p>
+        ${x.opciones.map(n => { const p = P(n), es = ok.includes(p.id); return `<button class="quiz-o${r ? (es ? " quiz-o--ok" : r === n ? " quiz-o--mal" : "") : ""}" data-act="donde" data-num="${x.num}" data-v="${n}">Paso ${n} · ${esc(p.texto)}</button>`; }).join("")}
+        ${r ? `<p class="quiz-fb">${ok.includes(P(r).id) ? "<b>¡Correcto!</b> " : "<b>No.</b> "}En el mapa del curso está en ${L.listaY(ok.map(id => { const p = u.pasos.find(q => q.id === id); return `«${esc(p.texto)}» (paso ${p.num})`; }))}. <a href="#/mapa/${u.id}/9">Verlo en el mapa</a></p>` : ""}
+      </div>`; }).join("")}</div>
+      <h2 class="sec-t">2. ¿De qué color es?</h2>
+      <p class="field-sub">El color del aviso dice el nivel de riesgo según el IPR: rojo ≥ 300, naranja 200–299, amarillo 100–199 y verde por debajo de 100. ${Object.keys(respColor).length ? `<b>${bienC} de ${Object.keys(respColor).length}</b> bien.` : ""}</p>
+      <div class="card">${E.color.map(n => { const f = F(n), v = A.iprDe(f), k = A.nivelIPR(v).k, r = respColor[n]; return `<div class="quiz-q fec-q">
+        <p><b>Nº ${f.num} · ${esc(f.fallo)}</b> · G ${esc(f.g)} × O ${esc(f.o)} × D ${esc(f.d)}</p>
+        <div class="seg seg--wrap color-opc" role="group">${NIVELES_ORDEN.map(x => `<button type="button" class="${r ? (x === k ? "fec-ok" : x === r ? "fec-mal" : "") : ""}" data-act="color" data-num="${n}" data-v="${x}">${nivelChip(x)} ${NIVEL_NOM[x].split(" (")[0]}</button>`).join("")}</div>
+        ${r ? `<p class="quiz-fb">${r === k ? "<b>¡Correcto!</b> " : "<b>No.</b> "}IPR = ${esc(f.g)} × ${esc(f.o)} × ${esc(f.d)} = <b>${v}</b>: ${NIVEL_NOM[k].toLowerCase()}.${v === 100 || v === 200 || v === 300 ? " Ojo: justo en el límite, cuenta ya como el nivel de arriba." : ""}</p>` : ""}
+      </div>`; }).join("")}</div>`}
+      <div class="toolbar no-print"><button class="btn" data-act="practica-reset">Empezar de nuevo</button><a class="btn btn--primary" href="#/prueba/caso">El caso clínico →</a></div>`;
+  }
+
+  // El caso clínico de la sesión 2 (mejora L): ¿qué frases son puntos críticos?
+  function renderCaso() {
+    const K = C.CASO, u = ejemplos().mapas.find(x => x.id === "ej-mapa-urgencias"), ord = barajar(K.frases.length, 7);
+    const hechas = Object.keys(respCaso).length, bien = Object.keys(respCaso).filter(i => respCaso[i] === K.frases[i].c).length, total = K.frases.filter(x => x.c).length;
+    view.innerHTML = `
+      <h1 class="page-title">El caso clínico</h1>
+      <p class="page-lead">El caso de la sesión 2 del curso: una paciente de 79 años en Urgencias. Lee el relato y lo que cuenta cada profesional, y después decide qué frases son <b>puntos críticos</b> (algo que puede salir mal en el proceso) y cuáles no.</p>
+      ${pillsPrueba("caso")}
+      <details class="facil" open><summary>El relato</summary><div class="facil-body">${K.relato.map(p => `<p>${esc(p)}</p>`).join("")}</div></details>
+      <details class="facil"><summary>Lo que cuenta cada uno</summary><div class="facil-body">${K.versiones.map(([q, t]) => `<p><b>${esc(q)}:</b> «${esc(t)}»</p>`).join("")}</div></details>
+      ${trampa("Mismo caso, seis versiones: cada profesional ve solo su parte, y cada uno cree que lo suyo fue correcto. Por eso el mapa de riesgos se hace con un equipo de todos los estamentos.")}
+      <h2 class="sec-t">¿Es un punto crítico?</h2>
+      <p class="field-sub">${hechas ? `<b>${bien} de ${hechas}</b> bien.` : `Hay ${total} puntos críticos entre ${K.frases.length} frases.`}</p>
+      <div class="card">${ord.map(i => { const x = K.frases[i], r = respCaso[i], pt = x.p && u.puntos[x.p - 1], s = pt && L.subDePunto(u, pt); return `<div class="quiz-q fec-q">
+        <p><b>«${esc(x.f)}»</b></p>
+        <div class="seg seg--wrap" role="group">${[[true, "Punto crítico"], [false, "No es un fallo"]].map(([v, tx]) => `<button type="button" class="${r != null ? (v === x.c ? "fec-ok" : v === r ? "fec-mal" : "") : ""}" data-act="caso" data-i="${i}" data-v="${v ? 1 : 0}">${tx}</button>`).join("")}</div>
+        ${r != null ? `<p class="quiz-fb">${r === x.c ? "<b>¡Correcto!</b> " : "<b>No.</b> "}${esc(x.e)}${pt ? ` En el ejemplo de Urgencias es el punto crítico nº ${pt.num}, «${esc(pt.titulo)}»${s ? `, del subproceso «${esc(s.nombre)}»` : ""}.` : ""}</p>` : ""}
+      </div>`; }).join("")}</div>
+      ${hechas === K.frases.length ? practica(`El ejercicio 8 del curso saca de este caso los puntos críticos de los siete subprocesos de Urgencias. <a href="#/mapa/${u.id}/4">Míralos todos en el ejemplo</a>.`) : ""}
+      <div class="toolbar no-print"><button class="btn" data-act="caso-reset">Empezar de nuevo</button><a class="btn" href="#/prueba">← Preguntas del test</a></div>`;
+  }
+
+  // ---------- Modo presentación (mejora I): el mapa a pantalla completa; al tocar un paso, sus fallos ----------
+  let presDespues = false, presPaso = "";
+  const mapaPres = m => presDespues ? Object.assign({}, m, { vistaMapa: Object.assign({}, m.vistaMapa, { despues: true }) }) : m;
+  const hayResidual = m => A && A.prioritarios(m).some(f => A.iprResidual(f));
+  function renderPresentar(m) {
+    actual = m; pasoActual = 0;
+    const mp = mapaPres(m), vertical = window.innerHeight > window.innerWidth * 1.1;
+    view.innerHTML = `<div class="pres">
+      <div class="pres-barra"><button class="btn btn--sm" data-act="pres-salir">✕ Salir</button><b class="pres-t">${esc(L.tituloMapa(mp))}</b>
+        <span class="pres-ops">${hayResidual(m) ? `<button class="chip${presDespues ? " active" : ""}" data-act="pres-despues">Después de las acciones</button>` : ""}${document.fullscreenEnabled ? `<button class="chip" data-act="pres-full">⛶ Pantalla completa</button>` : ""}</span></div>
+      ${hayMapa(m) ? `<div class="pres-mapa" data-zona="pres-mapa">${svgMapa(mp, { sel: presPaso, accesible: true }, { orientacion: vertical ? "vertical" : "horizontal" })}</div>
+        <p class="pres-pista">${Object.keys(NIVEL_NOM).map(k => `${nivelChip(k)}${NIVEL_NOM[k]}`).join(" ")} · Toca un paso para ver sus riesgos.</p>
+        <div data-zona="pres-panel">${presPanel(m)}</div>` : `<div class="placeholder-box"><p>Aún no hay mapa: faltan los fallos prioritarios o los subprocesos.</p></div>`}
+    </div>`;
+  }
+  function presPanel(m) {
+    if (!presPaso) return "";
+    const mp = mapaPres(m), b = L.flujoBase(m), p = b.pasos.find(q => q.id === presPaso), F = L.fallosDelPaso(mp, presPaso);
+    return `<div class="pres-panel" role="dialog" aria-label="Riesgos del paso"><div class="panel-cab"><b>${p ? (b.sinFlujo ? esc(p.texto) : `Paso ${p.num} · ${esc(p.texto)}`) : ""}</b><button type="button" class="link-btn" data-act="pres-cerrar">Cerrar ✕</button></div>
+      ${F.length ? F.map(f => `<div class="pres-fallo"><span class="ley-num ley-num--${f.nivel}${f.critico ? " ley-num--crit" : ""}">${f.num}</span><div>
+        <b>${esc(f.fallo)}</b> ${iprBadge(f.iprMapa)}${presDespues && f.iprMapa !== f.ipr ? ` <span class="field-sub">(antes ${f.ipr})</span>` : ""}
+        <p class="field-sub">${f.subproceso ? esc(f.subproceso) + " · " : ""}<b>Qué pasaría:</b> ${esc(f.efecto || "—")}</p>
+        ${f.acciones.length ? `<p class="pres-acc"><b>Qué se hace:</b> ${f.acciones.map(a => `${esc(a.que)}${a.quien ? ` <span class="field-sub">(${esc(a.quien)})</span>` : ""}`).join(" · ")}</p>` : `<p class="field-sub">Sin acción de mejora todavía.</p>`}
+      </div></div>`).join("") : `<p class="field-sub">En este paso no hay fallos del mapa.</p>`}</div>`;
+  }
+  function presSeleccionar(id) {
+    presPaso = id; const m = actual; if (!m) return;
+    const z = $("[data-zona='pres-mapa']"), vertical = window.innerHeight > window.innerWidth * 1.1; if (z) z.innerHTML = svgMapa(mapaPres(m), { sel: presPaso, accesible: true }, { orientacion: vertical ? "vertical" : "horizontal" });
+    const pz = $("[data-zona='pres-panel']"); if (pz) pz.innerHTML = presPanel(m);
   }
 
   // ---------- Ejemplos ----------
   function renderEjemplos() {
     const u = C.EJEMPLOS.urgencias;
     view.innerHTML = `
-      <h1 class="page-title">Ejemplo</h1>
+      <h1 class="page-title">Ejemplos</h1>
       <p class="page-lead">Para ver cómo queda antes de hacerlo tú. Está aparte: puedes tocarlo, pero <b>no se guarda ni se mezcla con tus datos</b>. Si te sirve de punto de partida, pulsa «Copiar a mis datos».</p>
       <h2 class="sec-t">Ejemplo completo: atención en Urgencias</h2>
       <div class="ej-grid"><a class="ej-card ej-card--grande" href="${u.href}"><b>${esc(u.t)}</b><span>${esc(u.s)}</span></a></div>
       <div class="toolbar"><a class="btn" href="#/mapa/ej-mapa-urgencias/2">Subprocesos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/3">Flujograma</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4">Puntos críticos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/6">Fallos</a><a class="btn" href="#/mapa/ej-mapa-urgencias/7">Priorización</a><a class="btn" href="#/mapa/ej-mapa-urgencias/8">Acciones</a><a class="btn btn--primary" href="#/mapa/ej-mapa-urgencias/9">El mapa</a><a class="btn" href="#/mapa/ej-mapa-urgencias/4?informe=1">Ver para imprimir</a></div>
-      ${practica("El ejemplo reproduce el caso de Urgencias del curso, sin nombres de centro ni de personas. Lo que se ha adaptado se explica en las notas del paso 1. Los minicasos para practicar llegarán en una próxima versión.")}`;
+      ${practica("El ejemplo reproduce el caso de Urgencias del curso, sin nombres de centro ni de personas. Lo que se ha adaptado se explica en las notas del paso 1.")}
+      <h2 class="sec-t">Minicasos: encuentra el error</h2>
+      <p class="page-lead">Procesos cortos e inventados. Cada uno tiene <b>un error a propósito</b> en un paso: ábrelo, búscalo (los avisos de la app te ayudan) y después mira la solución.</p>
+      <div class="mini-lista">${C.EJEMPLOS.minicasos.map((x, i) => `<div class="card mini-caso">
+        <h3 class="sub-h">${i + 1}. ${esc(x.t)}</h3><p class="field-sub">${esc(x.s)}</p>
+        <p><b>Pista:</b> ${esc(x.error)}</p>
+        <div class="toolbar"><a class="btn btn--primary btn--sm" href="#/mapa/${x.id}/${x.paso}">Abrir en el paso ${x.paso} →</a></div>
+        <details class="facil"><summary>Ver la solución</summary><div class="facil-body"><p>${x.solucion}</p></div></details></div>`).join("")}</div>`;
   }
 
   // ---------- Glosario ----------
@@ -1595,7 +1771,7 @@
   }
 
   // ---------- Enrutado ----------
-  const NAV = [["", "Inicio"], ["mapa", "Mis mapas"], ["ejemplos", "Ejemplo"], ["aprende", "Aprende"], ["glosario", "Glosario"]];
+  const NAV = [["", "Inicio"], ["mapa", "Mis mapas"], ["ejemplos", "Ejemplos"], ["aprende", "Aprende"], ["prueba", "Ponte a prueba"], ["glosario", "Glosario"]];
   function buildNav() { $("#calc-nav").innerHTML = NAV.map(([r, t]) => `<a href="#/${r}" data-r="${r}">${t}</a>`).join(""); }
   function noEncontrado(que, href, txt) { view.innerHTML = `<div class="error-box">No se encuentra ${que} en este dispositivo.</div><p><a href="${href}">${txt}</a></p>`; }
   let previo = null, docActual = "";
@@ -1604,13 +1780,14 @@
     const partes = ruta.split("/"), q = new URLSearchParams(qs || ""), informe = q.get("informe") === "1";
     docActual = informe ? (q.get("doc") || "") : "";
     document.body.classList.toggle("ver-informe", informe);
+    document.body.classList.toggle("presentando", partes[0] === "mapa" && partes[2] === "presentar");
     actual = null;
     const idR = partes[1] || "", ej = ejemplos();
     modoEjemplo = partes[0] === "ejemplos" || (esIdEjemplo(idR) && ej.mapas.some(x => x.id === idR));
     datos = modoEjemplo ? ej : datosUsuario;
     $("#banner-ejemplo").hidden = !modoEjemplo || informe || partes[0] === "ejemplos";
     let navR = partes[0];
-    const reiniciar = id => { indImportados = null; indPara = null; abiertos.clear(); abiertosF.clear(); pegarAbierto = false; pegarFallos = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; amfesLeidos = null; };
+    const reiniciar = id => { indImportados = null; indPara = null; abiertos.clear(); abiertosF.clear(); pegarAbierto = false; pegarFallos = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; amfesLeidos = null; dafosLeidos = null; presPaso = ""; presDespues = false; };
     if (partes[0] === "mapa" && partes[1] === "nuevo") {
       const m = L.nuevoMapa(genId(), hoy()); borradores.set(m.id, m); reiniciar(m.id);
       history.replaceState(null, "", `#/mapa/${m.id}/1`); renderMapa(m, 1);
@@ -1619,6 +1796,7 @@
       if (!m) noEncontrado("ese mapa", "#/mapa", "Ir a mis mapas");
       else {
         if (previo !== m.id) reiniciar(m.id);
+        if (partes[2] === "presentar") { renderPresentar(m); $$("#calc-nav a").forEach(a => a.classList.toggle("active", a.dataset.r === (modoEjemplo ? "ejemplos" : "mapa"))); window.scrollTo(0, 0); return; }
         let n = parseInt(partes[2], 10);
         if (n !== pasoActual) { selPaso = ""; zoom = null; }
         if (!(n >= 1 && n <= 10)) { const p = L.pasoPendiente(m, ENTREGA); n = p ? p.n : 4; history.replaceState(null, "", `#/mapa/${m.id}/${n}${informe ? "?informe=1" : ""}`); }
@@ -1630,6 +1808,7 @@
     else if (partes[0] === "ejemplos") renderEjemplos();
     else if (partes[0] === "aprende") renderAprende(parseInt(partes[1], 10) || 0);
     else if (partes[0] === "glosario") renderGlosario();
+    else if (partes[0] === "prueba") renderPrueba(["practica", "caso", "inicial", "final"].includes(partes[1]) ? partes[1] : (C.TEMAS_TEST[partes[1]] ? Number(partes[1]) : 0));
     else { renderHome(); navR = ""; }
     if (modoEjemplo) navR = "ejemplos";
     $$("#calc-nav a").forEach(a => a.classList.toggle("active", a.dataset.r === navR));
@@ -1663,6 +1842,7 @@
     if (t.id === "pegar-txt") { vistaPegado(t.value); return; }
     if (t.dataset.flujosel) { flujoElegido = t.value; return; }
     if (t.dataset.amfesel) { amfeElegido = t.value; repintar(); return; }
+    if (t.dataset.dafosel) { dafoElegido = t.value; repintar(); return; }
     if (t.id === "pegar-fallos") {
       const p = A.parsearTabla(t.value), z = $("[data-zona='pegarf']"), b = $("[data-act='pegarf-ok']");
       z.innerHTML = t.value.trim() ? (p.filas.length ? `<div class="note">ℹ Se ${p.filas.length === 1 ? "ha reconocido 1 fallo" : "han reconocido " + p.filas.length + " fallos"}${p.cabecera ? " (con fila de títulos)" : ""}. Primero: «${esc(L.corto(p.filas[0].fallo, 70))}».</div>` : "") + p.errores.map(x => `<div class="warn">⚠ ${esc(x)}</div>`).join("") : "";
@@ -1755,6 +1935,7 @@
     const t = e.target; let b;
     if ((b = t.closest(".info-btn"))) { const h = $("#help-" + b.dataset.info); if (!h) return; const open = h.hidden; h.hidden = !open; b.setAttribute("aria-expanded", String(open)); return; }
     const m = actual;
+    if ((b = t.closest(".fl-nodo")) && m && document.body.classList.contains("presentando")) { presSeleccionar(b.dataset.paso === presPaso ? "" : b.dataset.paso); return; }
     if ((b = t.closest(".fl-nodo")) && m) { seleccionar(b.dataset.paso === selPaso ? "" : b.dataset.paso); return; }
     if ((b = t.closest("[data-acpick]")) && m) {
       const r = buscaAccion(m, b.dataset.acpick); if (!r) return;
@@ -1932,6 +2113,17 @@
       else confirmar("<p>No hay ningún AMFE de la app <b>AMFE</b> en este navegador.</p><p>Si lo tienes en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-amfe").click(), { titulo: "Traer de AMFE", peligro: false });
     }
     else if (act === "amfe-cancelar") { amfesLeidos = null; repintar(); }
+    else if (act === "dafo-buscar" && m) {
+      let l = null; try { l = L.leerDafo(JSON.parse(leer("dafo-intercambio") || "null")); } catch (er) { /* */ }
+      if (l && l.length) { dafosLeidos = l; dafoElegido = l[0].id; repintar(); }
+      else confirmar(`<p>${l ? "Tu DAFO no tiene ningún factor marcado para un <b>mapa de riesgos</b>. En la app DAFO, en el factor que quieras analizar, elige «Merece un análisis propio: Mapa de Riesgos»." : "No hay ningún DAFO de la app <b>DAFO · CAME</b> en este navegador."}</p><p>Si lo tienes en otro dispositivo, carga su copia de seguridad (.json).</p>`, "Cargar una copia", () => $("#input-dafo").click(), { titulo: "Traer de DAFO", peligro: false });
+    }
+    else if (act === "dafo-cancelar") { dafosLeidos = null; repintar(); }
+    else if (act === "dafo-traer" && m && dafosLeidos) {
+      const c = dafosLeidos.find(x => x.id === dafoElegido) || dafosLeidos[0];
+      const r = L.traerDeDafo(m, c, hoyIso()); dafosLeidos = null; tocado(m); repintar();
+      toast(r.proceso || r.descripcion ? `Traído de DAFO: ${L.listaY([r.proceso && "el nombre del proceso", r.descripcion && "la descripción con el porqué"].filter(Boolean))}. Sigue con los subprocesos.` : "No había nada nuevo que traer: el proceso ya tenía nombre y descripción.", 5000);
+    }
     else if (act === "amfe-traer" && m && amfesLeidos) {
       const a = amfesLeidos.find(x => x.id === amfeElegido) || amfesLeidos[0];
       const r = L.traerDeAmfe(m, a, genId, a.appVersion || "", hoyIso()); amfesLeidos = null; tocado(m); repintar();
@@ -2097,6 +2289,36 @@
     // --- Vista para imprimir ---
     else if (act === "informe") irInforme();
     else if (act === "volver") location.hash = rutaActual();
+    // --- Ponte a prueba ---
+    else if (act === "quiz") {
+      const qi = Number(b.dataset.q); if (!C.TEST[qi] || qi in respuestas) return;
+      respuestas[qi] = Number(b.dataset.o); const y = window.scrollY; route(); window.scrollTo(0, y);
+    }
+    else if (act === "quiz-reset") { Object.keys(respuestas).forEach(k => delete respuestas[k]); route(); }
+    else if (act === "tf") {
+      const B = borradorTest[b.dataset.k]; if (!B) return; B[Number(b.dataset.q)] = Number(b.dataset.o);
+      $$(`.quiz-o[data-q="${b.dataset.q}"]`).forEach(x => x.classList.toggle("quiz-o--sel", x === b));
+      const z = $("[data-zona='tf-cuenta']"); if (z) z.textContent = `${Object.keys(B).length} de ${C.TEST.length} respondidas`;
+    }
+    else if (act === "tf-corregir") {
+      const k = b.dataset.k, B = borradorTest[k], falta = C.TEST.length - Object.keys(B).length;
+      const hacer = () => { const T = leerTests(); T[k] = { fecha: hoy(), resp: Object.assign({}, B) }; if (!escribir(KEY_TEST, JSON.stringify(T))) toast("No se ha podido guardar en este navegador.", 4000); borradorTest[k] = {}; route(); };
+      if (falta) confirmar(`<p>Te ${falta === 1 ? "falta 1 pregunta" : `faltan ${falta} preguntas`} por responder; contarán como fallos.</p>`, "Corregir así", hacer, { peligro: false }); else hacer();
+    }
+    else if (act === "tf-borrar") {
+      const k = b.dataset.v;
+      confirmar(`<p>Se borrará el resultado del test ${k} de este dispositivo para que puedas repetirlo.</p>`, "Borrar", () => { const T = leerTests(); delete T[k]; escribir(KEY_TEST, JSON.stringify(T)); route(); });
+    }
+    else if (act === "donde") { const n = Number(b.dataset.num); if (!respDonde[n]) { respDonde[n] = Number(b.dataset.v); const y = window.scrollY; renderPractica(); window.scrollTo(0, y); } }
+    else if (act === "color") { const n = Number(b.dataset.num); if (!respColor[n]) { respColor[n] = b.dataset.v; const y = window.scrollY; renderPractica(); window.scrollTo(0, y); } }
+    else if (act === "practica-reset") { [respDonde, respColor].forEach(o => Object.keys(o).forEach(k => delete o[k])); renderPractica(); }
+    else if (act === "caso") { const i = Number(b.dataset.i); if (!(i in respCaso)) { respCaso[i] = b.dataset.v === "1"; const y = window.scrollY; renderCaso(); window.scrollTo(0, y); } }
+    else if (act === "caso-reset") { Object.keys(respCaso).forEach(k => delete respCaso[k]); renderCaso(); }
+    // --- Modo presentación ---
+    else if (act === "pres-salir") { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); location.hash = m ? `#/mapa/${m.id}/9` : "#/mapa"; }
+    else if (act === "pres-despues" && m) { presDespues = !presDespues; renderPresentar(m); }
+    else if (act === "pres-cerrar") presSeleccionar("");
+    else if (act === "pres-full") { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (r && r.catch) r.catch(() => {}); }
     else if (act === "imprimir") imprimir();
     // --- Generales ---
     else if (act === "copia") copiaSeguridad();
@@ -2122,6 +2344,18 @@
       let l = null; try { l = L.leerAmfe(JSON.parse(fr.result)); } catch (er) { /* */ }
       if (!l || !l.length) { toast("Ese archivo no es una copia de la app AMFE (o es de una versión que no se reconoce).", 4500); return; }
       amfesLeidos = l; amfeElegido = l[0].id; if (actual) repintar();
+    };
+    fr.readAsText(fl);
+  });
+  // Copia de seguridad de la app DAFO · CAME (para «Traer de DAFO» desde otro dispositivo)
+  $("#input-dafo").addEventListener("change", e => {
+    const fl = e.target.files && e.target.files[0]; e.target.value = ""; if (!fl) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      let l = null; try { l = L.leerDafo(JSON.parse(fr.result)); } catch (er) { /* */ }
+      if (!l) { toast("Ese archivo no es una copia de la app DAFO · CAME (o es de una versión que no se reconoce).", 4500); return; }
+      if (!l.length) { toast("Ese DAFO no tiene ningún factor marcado para un mapa de riesgos.", 4500); return; }
+      dafosLeidos = l; dafoElegido = l[0].id; if (actual) repintar();
     };
     fr.readAsText(fl);
   });

@@ -377,7 +377,16 @@
     // ---------- Paso 8 · Acciones de mejora (motor de AMFE) ----------
     const CRITERIOS_ACCIONES = { viabilidad: "La viabilidad de su implantación", impacto: "El grado de impacto esperado", cultura: "Su alineación con la cultura de seguridad del centro", medible: "La posibilidad de medirlas con indicadores" };
     const hoyIso = () => new Date().toISOString().slice(0, 10);
-    const avisosAcciones = (m, hoy = hoyIso()) => LA ? sinPaso(LA.avisosMejorar(m, hoy)) : [];
+    // Además de los del motor de AMFE: un subproceso con riesgo alto y ninguna acción, cuando las acciones están en otros (minicaso de Atención Primaria)
+    function avisosAcciones(m, hoy = hoyIso()) {
+      if (!LA) return [];
+      const r = sinPaso(LA.avisosMejorar(m, hoy)), P = LA.prioritarios(m);
+      if (P.some(f => LA.accionesDe(f).length)) m.subprocesos.forEach(s => {
+        const F = P.filter(f => f.subprocesoId === s.id), max = Math.max(0, ...F.map(f => LA.iprDe(f) || 0));
+        if (F.length && max >= 200 && !F.some(f => LA.accionesDe(f).length)) r.push({ nivel: "warn", sub: s.id, texto: `El subproceso «${corto(s.nombre, 50)}» tiene ${plural(F.length, "fallo prioritario", "fallos prioritarios")} (IPR hasta ${max}) y ninguna acción de mejora. Empieza por los riesgos más altos, aunque sean los más difíciles de arreglar.` });
+      });
+      return r;
+    }
 
     // ---------- Paso 9 · El mapa: los fallos encima del flujograma, coloreados por su IPR ----------
     // Dónde va cada fallo: los pasos que eligió el equipo o, si no eligió, el paso del punto crítico del que sale
@@ -890,6 +899,94 @@
       c.anteriorId = "";
       return c;
     }
+    // ---------- «Traer de DAFO» (paquete «dafo-came» v1 de la app DAFO · CAME) ----------
+    // Lista los factores que el DAFO marcó como candidatos a un mapa de riesgos (destino «mapa»). Acepta el paquete de
+    // localStorage["dafo-intercambio"] o la copia .json de la app DAFO (clave «intercambio»). No usa código de DAFO.
+    const TIPO_DAFO = { D: "Debilidad", A: "Amenaza", F: "Fortaleza", O: "Oportunidad" };
+    function leerDafo(o) {
+      if (!o || typeof o !== "object") return null;
+      const p = o.formato ? o : o.intercambio;
+      if (!p || typeof p !== "object" || p.formato !== "dafo-came" || p.version !== 1 || !Array.isArray(p.dafos)) return null;
+      const t = (v, n) => typeof v === "string" ? v.slice(0, n) : "", r = [];
+      p.dafos.forEach(d => {
+        if (!d || typeof d !== "object" || !Array.isArray(d.candidatos)) return;
+        d.candidatos.filter(c => c && c.destino === "mapa" && (lleno(c.texto) || lleno(c.proceso))).forEach(c => r.push({
+          id: t(d.id, 60) + "|" + t(c.factorId, 60), dafoId: t(d.id, 60), dafo: t(d.titulo, 300) || t(d.objeto, 300), objeto: t(d.objeto, 300),
+          codigo: t(c.codigo, 10), tipo: TIPO_DAFO[c.tipo] ? c.tipo : "", texto: t(c.texto, 1000), evidencia: t(c.evidencia, 1000), proceso: t(c.proceso, 300), motivo: t(c.motivo, 1000),
+          appVersion: t(p.appVersion, 20) }));
+      });
+      return r;
+    }
+    const resumenDafo = c => `${c.codigo ? c.codigo + " · " : ""}${corto(c.proceso || c.texto, 70)}${c.dafo ? ` (DAFO «${corto(c.dafo, 40)}»)` : ""}`;
+    // Rellena el nombre del proceso y su descripción (el porqué) si están vacíos. No toca nada de lo que ya hay.
+    function traerDeDafo(m, c, hoy) {
+      const hecho = { proceso: false, descripcion: false };
+      if (!lleno(m.proceso) && lleno(c.proceso || c.texto)) { m.proceso = corto(c.proceso || c.texto, 300); hecho.proceso = true; }
+      if (!lleno(m.descripcion)) {
+        const factor = `${(TIPO_DAFO[c.tipo] || "Factor").toLowerCase()}${c.codigo ? " " + c.codigo : ""}`;
+        m.descripcion = [`Se analiza a partir del DAFO${c.dafo ? ` «${c.dafo}»` : ""}, ${factor}: «${c.texto}».`, c.motivo, lleno(c.evidencia) ? `Datos que lo apoyan: ${c.evidencia}` : ""].filter(lleno).join(" ").slice(0, 3000);
+        hecho.descripcion = true;
+      }
+      m.origen.dafo = { id: c.dafoId, titulo: corto([c.dafo, c.codigo].filter(lleno).join(" · "), 300), appVersion: c.appVersion, traido: String(hoy || "").slice(0, 10) };
+      return hecho;
+    }
+
+    // ---------- Ponte a prueba: test inicial y final (mejora M, solo en el dispositivo y sin nombres) ----------
+    // resp = { índice de la pregunta: índice de la opción elegida }
+    function resultadoTest(T, resp) {
+      const porTema = {}; let bien = 0, hechas = 0;
+      T.forEach((q, i) => {
+        const x = porTema[q.t] || (porTema[q.t] = { bien: 0, total: 0, hechas: 0 }); x.total++;
+        if (resp && Number.isInteger(resp[i])) { hechas++; x.hechas++; if (resp[i] === q.ok) { bien++; x.bien++; } }
+      });
+      return { bien, total: T.length, hechas, completo: hechas === T.length, pct: T.length ? Math.round(bien / T.length * 100) : 0, porTema };
+    }
+    // Lo guardado: { inicial: { fecha, resp }, final: { fecha, resp } }; respuestas fuera de rango, fuera
+    function sanearTests(o, T) {
+      const r = {};
+      if (!o || typeof o !== "object") return r;
+      ["inicial", "final"].forEach(k => {
+        const x = o[k]; if (!x || typeof x !== "object" || !x.resp || typeof x.resp !== "object") return;
+        const resp = {};
+        Object.keys(x.resp).forEach(i => { const n = Number(i), v = x.resp[i]; if (T[n] && Number.isInteger(v) && v >= 0 && v < T[n].o.length) resp[n] = v; });
+        r[k] = { fecha: typeof x.fecha === "string" ? x.fecha.slice(0, 30) : "", resp };
+      });
+      return r;
+    }
+
+    // ---------- Modo presentación (mejora I): lo que se ve al tocar un paso del mapa ----------
+    function fallosDelPaso(m, pasoId) {
+      if (!LA) return [];
+      const b = flujoBase(m);
+      return LA.ordenarFallos(enMapa(m).filter(f => ubicacionMapa(m, b, f).includes(pasoId))).map(f => ({
+        id: f.id, num: f.num, fallo: f.fallo, efecto: f.efecto, causa: f.causa, subproceso: (subDe(m, f.subprocesoId) || {}).nombre || "",
+        ipr: LA.iprDe(f), iprMapa: iprMapa(m, f), nivel: nivelMapa(m, f), critico: marcaCritico(f), acciones: LA.accionesDe(f).map(a => ({ que: a.que, quien: a.quien, estado: a.estado }))
+      }));
+    }
+
+    // ---------- Hoja de trabajo para las sesiones en papel (plantillas de los ejercicios 6, 8, 10 y 13) ----------
+    // Con lo que ya tiene el mapa escrito y filas en blanco para completar; después se pasa a la app con «Pegar desde Excel».
+    function documentoHoja(m, fecha) {
+      const nom = m.proceso || m.titulo || "", B = [], S = m.subprocesos.filter(s => lleno(s.nombre)), vacias = (n, k) => Array.from({ length: n }, () => Array(k).fill(" "));
+      B.push({ t: "h1", texto: "Hoja de trabajo del mapa de riesgos" });
+      B.push({ t: "p", texto: [nom || "Proceso: ______________________________", m.unidad, fecha].filter(lleno).join(" · "), estilo: "nota" });
+      B.push({ t: "p", texto: "Para las sesiones del equipo en papel. Después, pasad lo escrito a la app (cada tabla se puede pegar desde Excel en su paso)." });
+      B.push({ t: "h2", texto: "1. Subprocesos (ejercicio 6 · paso 2)" });
+      B.push({ t: "tabla", cab: ["Subproceso", "Descripción", "Inicio", "Fin", "Roles"], filas: S.map(s => [s.nombre, s.descripcion, s.inicio, s.fin, s.roles]).concat(vacias(Math.max(3, 7 - S.length), 5)), anchos: [22, 26, 17, 17, 18], fuente: 9 });
+      B.push({ t: "salto" });
+      B.push({ t: "h2", texto: "2. Puntos críticos (ejercicio 8 · paso 4)" });
+      B.push({ t: "p", texto: "Escribe lo que puede salir mal, no su consecuencia ni su solución.", estilo: "nota" });
+      B.push({ t: "tabla", cab: ["Subproceso", "Error o punto crítico", "Descripción del error o riesgo"], filas: (S.length ? S : [{ nombre: " " }, { nombre: " " }, { nombre: " " }]).flatMap(s => [[s.nombre, " ", " "], [" ", " ", " "], [" ", " ", " "]]), anchos: [24, 34, 42], fuente: 9 });
+      B.push({ t: "salto" });
+      B.push({ t: "h2", texto: "3. Fallos, efectos y causas (ejercicio 10 · pasos 6 y 7)" });
+      B.push({ t: "p", texto: "G = gravedad, O = ocurrencia, D = detección, de 1 a 10. IPR = G × O × D.", estilo: "nota" });
+      B.push({ t: "tabla", cab: ["Nº", "Subproceso", "Modo de fallo", "Efecto", "Causa", "G", "O", "D", "IPR"], filas: vacias(14, 9), anchos: [5, 15, 21, 19, 19, 5, 5, 5, 6], fuente: 9 });
+      B.push({ t: "salto" });
+      B.push({ t: "h2", texto: "4. Acciones de mejora 5W1H (ejercicio 13 · paso 8)" });
+      B.push({ t: "tabla", cab: ["Nº fallo", "Qué", "Por qué", "Dónde", "Cuándo", "Quién", "Cómo", "Indicador"], filas: vacias(10, 8), anchos: [7, 17, 13, 10, 9, 12, 17, 15], fuente: 9 });
+      return { titulo: "Hoja de trabajo · " + (nom || "Mapa de Riesgos"), bloques: B, horizontal: true };
+    }
+
     const sugerirObjetivo = m => LF.sugerirObjetivo(m).replace("sin pérdidas de información entre profesionales", "minimizando los riesgos para el paciente");
 
     return {
@@ -905,7 +1002,7 @@
       introduccionSugerida, conclusionesSugeridas, notaCalidad, diasRevision, nuevaEdicion, compararEdiciones, avisosCierre, nuevoControl,
       documentoFinal, documentoResumen, documentoAcogida, ESTILOS_XLSX, hojasExcel, paqueteAuditorias, iprMapa,
       CRITERIOS_ACCIONES, avisosAcciones, ubicacion, enMapa, flujoBase, puntosMapa, COLOR_NIVEL, calorSub, dibujoMapa, tituloMapa, leyendaMapa, sinUbicar, avisosMapa, sugerirTextoMapa,
-      leerAmfe, resumenAmfe, traerDeAmfe, FORMATO_INTERCAMBIO, VERSION_INTERCAMBIO, frecuenciaSugerida, hallazgos, paqueteIntercambio, leerIntercambio,
+      leerAmfe, resumenAmfe, traerDeAmfe, TIPO_DAFO, leerDafo, resumenDafo, traerDeDafo, resultadoTest, sanearTests, fallosDelPaso, documentoHoja, FORMATO_INTERCAMBIO, VERSION_INTERCAMBIO, frecuenciaSugerida, hallazgos, paqueteIntercambio, leerIntercambio,
       sanearMapa, sanearDatos, fusionar, renovarIds, sugerirObjetivo, parecido,
       LF, LA
     };

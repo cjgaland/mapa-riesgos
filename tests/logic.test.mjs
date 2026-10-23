@@ -276,5 +276,40 @@ t("Auditorías reconoce el archivo con su «Traer de AMFE»", leidoAud && !leido
 const mAud = leidoAud && leidoAud.amfes ? AU.mapaDesdeAmfe(leidoAud.amfes[0], genId, "2026-10-23") : null;
 t("y crea un mapa con los 49 riesgos y los 15 hallazgos clave", mAud && mAud.mapa.riesgos.length === 49 && mAud.mapa.riesgos.filter(r => r.clave).length === 15);
 
+// ---------- Entrega 5: Ponte a prueba, minicasos, presentación, «Traer de DAFO» y hoja de trabajo ----------
+t("test del curso: 30 preguntas, 5 por tema, con la respuesta dentro de sus opciones", C.TEST.length === 30 && [1, 2, 3, 4, 5, 6].every(k => C.TEST.filter(q => q.t === k).length === 5) && C.TEST.every(q => q.o.length === 5 && q.ok >= 0 && q.ok < 5 && q.e) && Object.keys(C.TEMAS_TEST).every(k => C.TEMAS.some(x => x.n === C.TEMAS_TEST[k].aprende)));
+t("las preguntas de los temas 2, 4 y 5 son las mismas que en AMFE", (() => { const CA = require(path.join(ESCRITORIO, "AMFE/Aplicación/contenido.js")); return CA.TEST.every(q => C.TEST.some(x => x.q.replace(/[“”«»]/g, "") === q.q.replace(/[“”«»]/g, "") && x.o[x.ok] === q.o[q.ok])); })());
+const RT = L.resultadoTest(C.TEST, Object.fromEntries(C.TEST.map((q, i) => [i, i < 10 ? q.ok : (q.ok + 1) % 5])));
+t("resultado del test: total y por tema", RT.bien === 10 && RT.completo && RT.porTema[1].bien === 5 && RT.porTema[2].bien === 5 && RT.porTema[3].bien === 0 && RT.pct === 33);
+t("test guardado: se limpia lo que no vale", (() => { const s = L.sanearTests({ inicial: { fecha: "2026-10-23", resp: { 0: 1, 1: 9, 99: 0, x: 2 } }, otro: {} }, C.TEST); return s.inicial && Object.keys(s.inicial.resp).join() === "0" && !s.otro && !s.final; })() && Object.keys(L.sanearTests(null, C.TEST)).length === 0);
+const EJ = C.EJEMPLOS.mapas.map(m => L.sanearMapa(clon(m), genId, "2026-10-23"));
+const UE = EJ[0], fN = n => UE.fallos.find(f => f.num === n), pN = n => UE.pasos.find(p => p.num === n);
+t("¿dónde va este fallo?: cada pregunta tiene una sola respuesta buena", C.EJERCICIOS.donde.every(x => x.opciones.filter(n => L.ubicacion(UE, fN(x.num)).includes(pN(n).id)).length === 1));
+t("¿de qué color es?: hay de los cuatro niveles", new Set(C.EJERCICIOS.color.map(n => LA.nivelIPR(LA.iprDe(fN(n))).k)).size === 4);
+t("caso clínico: cada punto crítico existe en el ejemplo y hay frases que no lo son", C.CASO.frases.filter(x => x.c).every(x => UE.puntos[x.p - 1]) && C.CASO.frases.some(x => !x.c) && !/Jiménez|María/.test(JSON.stringify(C.CASO)));
+t("minicasos: los 5 se sanean y se abren", EJ.length === 6 && C.EJEMPLOS.minicasos.length === 5 && C.EJEMPLOS.minicasos.every(x => EJ.some(m => m && m.id === x.id)));
+const MC = id => EJ.find(m => m.id === id);
+t("minicaso de transfusión: la app avisa de 2 fallos fuera del mapa", L.sinUbicar(MC("ej-mapa-transfusion")).map(f => f.num).sort().join() === "3,4");
+t("minicaso de medicación: un aviso agrupa 9 fallos", L.dibujoMapa(MC("ej-mapa-medicacion")).iconos.some(i => i.nums.length === 9) && L.avisosMapa(MC("ej-mapa-medicacion")).some(a => /agrupa 9 fallos/.test(a.texto)));
+t("minicaso de analítica: el subproceso de más riesgo sin acciones", L.avisosAcciones(MC("ej-mapa-analitica")).some(a => /Extracción y envío/.test(a.texto)) && !L.avisosAcciones(UE).some(a => a.sub));
+t("minicaso de CMA: 3 puntos críticos escritos como soluciones", L.avisosPuntos(MC("ej-mapa-cma")).filter(a => /parece una solución/.test(a.texto)).length === 3);
+t("minicaso de hospital de día: baja a verde y avisa de la gravedad", L.leyendaMapa(Object.assign(clon(MC("ej-mapa-hdia")), { vistaMapa: { mostrar: "prioritarios", calor: false, titulo: "", leyenda: "num", despues: true } })).every(x => x.nivel === "bajo") && L.avisosCierre(MC("ej-mapa-hdia")).some(a => /baja la gravedad/.test(a.texto)));
+t("presentación: los fallos de un paso con su acción", (() => { const F = L.fallosDelPaso(UE, pN(17).id); return F.map(f => f.num).join() === "29,30" && F[0].acciones.length === 1 && F[0].efecto && F[0].nivel; })() && L.fallosDelPaso(UE, pN(1).id).length === 0);
+// «Traer de DAFO» con el paquete real que genera la app DAFO
+{
+  const LD = require(path.join(ESCRITORIO, "DAFO/Aplicación/logic.js")), CD = require(path.join(ESCRITORIO, "DAFO/Aplicación/contenido.js"));
+  const dafos = clon((CD.EJEMPLOS.dafos || CD.EJEMPLOS.lista || [])).map(d => LD.sanearDafo ? LD.sanearDafo(d, genId, "2026-10-23") || d : d);
+  const fc = dafos[0] && dafos[0].factores.find(f => f.candidato && f.candidato.destino);
+  if (fc) fc.candidato.destino = "mapa";
+  const paq = LD.paqueteIntercambio(dafos, "2026.07", "2026-10-23");
+  const CL = L.leerDafo(clon(paq));
+  t("Traer de DAFO: lee el paquete real de DAFO (y su copia .json)", fc && CL && CL.length === 1 && CL[0].proceso === fc.candidato.proceso && L.leerDafo({ intercambio: clon(paq) }).length === 1 && L.leerDafo({ formato: "otro" }) === null);
+  const MD = L.nuevoMapa("md", "");
+  const hD = CL && L.traerDeDafo(MD, CL[0], "2026-10-23");
+  t("Traer de DAFO: rellena el proceso y el porqué sin pisar nada", hD && hD.proceso && hD.descripcion && MD.proceso === fc.candidato.proceso && /DAFO/.test(MD.descripcion) && MD.origen.dafo.id === dafos[0].id && L.sanearMapa(clon(MD), genId, "").origen.dafo.id === dafos[0].id && !L.traerDeDafo(MD, CL[0], "x").proceso);
+}
+const HJ = L.documentoHoja(UE, "x");
+t("hoja de trabajo: 4 tablas apaisadas con los subprocesos ya escritos", HJ.horizontal && HJ.bloques.filter(b => b.t === "tabla").length === 4 && HJ.bloques.find(b => b.t === "tabla").filas[0][0] === UE.subprocesos[0].nombre && Dx.construirDocx(HJ).length > 5000 && L.documentoHoja(L.nuevoMapa("h", ""), "x").bloques.length > 5);
+
 console.log(`${ok} bien, ${mal} mal`);
 if (mal) process.exit(1);
