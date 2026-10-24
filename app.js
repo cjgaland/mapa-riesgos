@@ -32,8 +32,12 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.06";
+  const APP_VERSION = "2026.07";
   const NOVEDADES = [
+    { version: "2026.07", fecha: "Octubre 2026", titulo: "Traer de Rondas de Seguridad", cambios: [
+      "Nueva app hermana Rondas de Seguridad (las rondas de seguridad de una unidad, a pie de cama), enlazada en la portada y en «Acerca de».",
+      "Nuevo botón «Traer de Rondas de Seguridad» en el paso 6: los puntos calientes de tus rondas (lo que no se cumple en 2 de las 3 últimas rondas o en todas las de un turno) entran como modos de fallo del mapa, en el subproceso que elijas y con el dato de las rondas en los controles actuales. Funciona en este navegador o con la copia .json de Rondas.",
+      "Los datos se copian: si las rondas cambian, se vuelven a traer; un fallo que ya está no se repite."] },
     { version: "2026.06", fecha: "Octubre 2026", titulo: "Ampliar el mapa al presentarlo", cambios: [
       "Modo presentación: botones + y − para ampliar el mapa y recorrerlo con el dedo. En el móvil, así se pueden tocar los pasos para ver sus riesgos."] },
     { version: "2026.05", fecha: "Octubre 2026", titulo: "Ponte a prueba, minicasos y modo presentación", cambios: [
@@ -233,6 +237,7 @@
         <a class="guide-card guide-card--hermana" href="${L.URL_AUD}" target="_blank" rel="noopener"><span class="guide-num">✓</span><div><div class="guide-q">Auditorías ↗</div><div class="guide-a">App hermana: los riesgos clave del mapa, <b>al Plan Anual de Auditorías</b>.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_IND}" target="_blank" rel="noopener"><span class="guide-num">%</span><div><div class="guide-q">Indicadores ↗</div><div class="guide-a">App hermana: <b>diseña los indicadores</b> de las acciones de mejora.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_DAFO}" target="_blank" rel="noopener"><span class="guide-num">D</span><div><div class="guide-q">DAFO · CAME ↗</div><div class="guide-a">App hermana: <b>analiza tu unidad</b> para decidir qué proceso conviene analizar.</div></div><span class="guide-go">›</span></a>
+        <a class="guide-card guide-card--hermana" href="${L.URL_RONDAS}" target="_blank" rel="noopener"><span class="guide-num">✓</span><div><div class="guide-q">Rondas de Seguridad ↗</div><div class="guide-a">App hermana: <b>rondas de seguridad</b> en una unidad; tráete aquí lo que falla una y otra vez como fallos del mapa.</div></div><span class="guide-go">›</span></a>
       </div>
       ${practica("<b>Protección de datos:</b> un mapa de riesgos describe un proceso, no a pacientes concretos. No escribas nombres de pacientes ni números de historia clínica; para el equipo bastan los perfiles y los cargos.")}`;
   }
@@ -764,6 +769,31 @@
       <div class="toolbar"><button class="btn btn--primary" data-act="pegarf-ok" disabled>Añadir los fallos</button><button class="btn" data-act="pegarf-cerrar">Cancelar</button></div>
     </div>`;
   }
+
+  // «Traer de Rondas» (paso 6): los puntos calientes de las rondas de seguridad de una unidad como modos de fallo.
+  // rondasLeidas = lo que devuelve L.leerRondas (+ origen navegador|copia); rondasFuera = puntos desmarcados.
+  let rondasLeidas = null, rondaElegida = "", rondasSub = "";
+  const rondasFuera = new Set();
+  function rondasHtml(m) {
+    const d = rondasLeidas, U = (d.unidades || []).filter(u => u.calientes.length), sinPC = (d.unidades || []).filter(u => !u.calientes.length);
+    const u = U.find(x => x.id === rondaElegida) || U[0], hay = u && u.calientes.some(p => !rondasFuera.has(p.itemId));
+    const pie = `<div class="toolbar">${u ? `<button class="btn btn--primary" data-act="rondas-traer"${hay ? "" : " disabled"}>Añadir como fallos</button>` : ""}<button class="btn" data-act="rondas-archivo">Cargar la copia .json de Rondas</button>${d.origen === "copia" ? `<button class="btn" data-act="rondas-olvidar">Usar los de este navegador</button>` : ""}<button class="btn" data-act="rondas-cancelar">Cancelar</button></div>`;
+    let cuerpo;
+    if (d.error) cuerpo = avisoHtml({ nivel: "error", texto: d.error });
+    else if (!(d.unidades || []).length) cuerpo = `<div class="note">ℹ ${d.origen === "copia" ? "La copia cargada" : "La app Rondas de Seguridad de este navegador"} no tiene ninguna unidad propia todavía (los ejemplos no se comparten).</div>`;
+    else if (!U.length) cuerpo = `<div class="note">ℹ Ninguna unidad tiene puntos calientes: ningún ítem falla en dos de las tres últimas rondas ni en todas las de un mismo turno (${esc(d.unidades.map(u => u.unidad || "Unidad sin nombre").join(", "))}).</div>`;
+    else {
+      cuerpo = `${selector("Unidad", 'data-rondasel="1"', u.id, U.map(x => [x.id, L.resumenRondas(x)]))}
+        <p class="field-sub">${d.origen === "copia" ? "De la copia cargada" : "De la app Rondas de Seguridad de este navegador"} · ${plural(u.rondas, "ronda hecha", "rondas hechas")}${u.ultima ? `, la última el ${esc(fmtFecha(u.ultima))}` : ""}. Desmarca lo que no quieras traer:</p>
+        <div class="aud-rgs">${u.calientes.map(p => { const on = !rondasFuera.has(p.itemId); return `<button type="button" class="aud-rg${on ? " on" : ""}" data-act="rondas-pt" data-k="${esc(p.itemId)}" aria-pressed="${on}"><span class="aud-check">${on ? "✓" : ""}</span><span class="aud-rg-t"><b>${esc(p.texto)}</b><span>${esc([p.bloque, L.datoCaliente(p)].filter(lleno).join(" · "))}</span></span></button>`; }).join("")}</div>
+        ${m.subprocesos.length ? selector("¿En qué subproceso?", 'data-rondassub="1"', rondasSub, [["", "Sin subproceso (lo decidís después)"], ...m.subprocesos.map((s, i) => [s.id, `${i + 1}. ${s.nombre || "Subproceso sin nombre"}`])]) : ""}
+        ${sinPC.length ? `<p class="field-sub">Sin puntos calientes: ${esc(sinPC.map(x => x.unidad || "Unidad sin nombre").join(", "))}.</p>` : ""}`;
+    }
+    return `<div class="card pegar no-print" data-zona="rondas">
+      <h3 class="sub-h">Traer de Rondas de Seguridad</h3>
+      <p class="field-sub">Los <b>puntos calientes</b> son lo que falla una y otra vez en las rondas de una unidad: lo que no se cumple en 2 de las 3 últimas rondas o en todas las de un mismo turno. Cada uno se añade como un <b>modo de fallo</b>, con el dato de las rondas en los controles actuales. Después escribís el efecto y la causa, y lo puntuáis en el paso 7. Se copia: si las rondas cambian, vuelve a traerlo.</p>
+      ${cuerpo}${pie}</div>`;
+  }
   function paso6(m) {
     if (!A) return sinMotorAmfe();
     const sinPasar = m.puntos.filter(x => lleno(x.titulo) && !m.fallos.some(f => f.puntoId === x.id)).length;
@@ -776,8 +806,9 @@
           <tr><td><b>Controles</b></td><td>¿Qué hay hoy?</td><td>Protocolo de identificación; impresora de pulseras en triaje</td></tr></table></div>
         ${trampa("El error más frecuente es escribir una <b>causa</b> como fallo («sobrecarga asistencial», «falta de formación») o un <b>efecto</b> como fallo («daño al paciente»). La app te avisa cuando lo detecta.")}`)}
       ${sinPasar ? `<div class="card destacado no-print"><p><b>${plural(sinPasar, "punto crítico aún no ha pasado", "puntos críticos aún no han pasado")} al AMFE.</b> Con un toque, cada uno se convierte en un modo de fallo de su subproceso (con su mismo número); después escribís el efecto, la causa y los controles.</p><div class="toolbar"><button class="btn btn--primary" data-act="pasar-amfe">⇩ Pasar los puntos críticos al AMFE</button></div></div>` : ""}
-      <div class="toolbar no-print"><button class="btn" data-act="pegarf-abrir">Pegar desde Excel</button>${m.fallos.length ? `<button class="btn" data-act="fa-abrir-todos">${abiertosF.size ? "Cerrar todos" : "Abrir todos"}</button>` : ""}</div>
+      <div class="toolbar no-print"><button class="btn" data-act="pegarf-abrir">Pegar desde Excel</button>${modoEjemplo ? "" : `<button class="btn" data-act="rondas-buscar">Traer de Rondas de Seguridad</button>`}${m.fallos.length ? `<button class="btn" data-act="fa-abrir-todos">${abiertosF.size ? "Cerrar todos" : "Abrir todos"}</button>` : ""}</div>
       ${pegarFallos ? pegarFallosHtml() : ""}
+      ${rondasLeidas && !modoEjemplo ? rondasHtml(m) : ""}
       <div data-zona="avisos">${avisosGenerales(m, 6)}</div>
       ${m.subprocesos.length ? m.subprocesos.map((s, i) => grupoFallos(m, s, i)).join("") + grupoFallos(m, null, 0)
         : `<div class="placeholder-box"><p>Aún no hay subprocesos. <a href="#/mapa/${m.id}/2">Defínelos en el paso 2</a> o pega tu tabla: los subprocesos se crean solos.</p></div>${grupoFallos(m, null, 0)}`}`;
@@ -1796,7 +1827,7 @@
     datos = modoEjemplo ? ej : datosUsuario;
     $("#banner-ejemplo").hidden = !modoEjemplo || informe || partes[0] === "ejemplos";
     let navR = partes[0];
-    const reiniciar = id => { indImportados = null; indPara = null; abiertos.clear(); abiertosF.clear(); pegarAbierto = false; pegarFallos = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; amfesLeidos = null; dafosLeidos = null; presPaso = ""; presDespues = false; presZoom = 1; };
+    const reiniciar = id => { indImportados = null; indPara = null; abiertos.clear(); abiertosF.clear(); pegarAbierto = false; pegarFallos = false; selPaso = ""; previo = id; zoom = null; flujosLeidos = null; amfesLeidos = null; dafosLeidos = null; rondasLeidas = null; rondasFuera.clear(); presPaso = ""; presDespues = false; presZoom = 1; };
     if (partes[0] === "mapa" && partes[1] === "nuevo") {
       const m = L.nuevoMapa(genId(), hoy()); borradores.set(m.id, m); reiniciar(m.id);
       history.replaceState(null, "", `#/mapa/${m.id}/1`); renderMapa(m, 1);
@@ -1852,6 +1883,8 @@
     if (t.dataset.flujosel) { flujoElegido = t.value; return; }
     if (t.dataset.amfesel) { amfeElegido = t.value; repintar(); return; }
     if (t.dataset.dafosel) { dafoElegido = t.value; repintar(); return; }
+    if (t.dataset.rondasel) { rondaElegida = t.value; rondasFuera.clear(); repintar(); return; }
+    if (t.dataset.rondassub) { rondasSub = t.value; return; }
     if (t.id === "pegar-fallos") {
       const p = A.parsearTabla(t.value), z = $("[data-zona='pegarf']"), b = $("[data-act='pegarf-ok']");
       z.innerHTML = t.value.trim() ? (p.filas.length ? `<div class="note">ℹ Se ${p.filas.length === 1 ? "ha reconocido 1 fallo" : "han reconocido " + p.filas.length + " fallos"}${p.cabecera ? " (con fila de títulos)" : ""}. Primero: «${esc(L.corto(p.filas[0].fallo, 70))}».</div>` : "") + p.errores.map(x => `<div class="warn">⚠ ${esc(x)}</div>`).join("") : "";
@@ -2128,6 +2161,23 @@
       else confirmar(`<p>${l ? "Tu DAFO no tiene ningún factor marcado para un <b>mapa de riesgos</b>. En la app DAFO, en el factor que quieras analizar, elige «Merece un análisis propio: Mapa de Riesgos»." : "No hay ningún DAFO de la app <b>DAFO · CAME</b> en este navegador."}</p><p>Si lo tienes en otro dispositivo, carga su copia de seguridad (.json).</p>`, "Cargar una copia", () => $("#input-dafo").click(), { titulo: "Traer de DAFO", peligro: false });
     }
     else if (act === "dafo-cancelar") { dafosLeidos = null; repintar(); }
+    // --- Paso 6 · Traer de Rondas de Seguridad ---
+    else if ((act === "rondas-buscar" || act === "rondas-olvidar") && m) {
+      const bruto = leer("rondas-intercambio");
+      if (!bruto) { confirmar("<p>No hay datos de la app <b>Rondas de Seguridad</b> en este navegador.</p><p>Si haces las rondas en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-rondas").click(), { titulo: "Traer de Rondas de Seguridad", peligro: false }); return; }
+      let o = null; try { o = JSON.parse(bruto); } catch (er) { /* */ }
+      rondasLeidas = Object.assign({ origen: "navegador" }, L.leerRondas(o)); rondaElegida = ""; rondasFuera.clear(); pegarFallos = false; repintar();
+      const z = $("[data-zona='rondas']"); if (z) z.scrollIntoView({ block: "nearest" });
+    }
+    else if (act === "rondas-cancelar") { rondasLeidas = null; rondasFuera.clear(); repintar(); }
+    else if (act === "rondas-archivo") $("#input-rondas").click();
+    else if (act === "rondas-pt") { const k = b.dataset.k; if (rondasFuera.has(k)) rondasFuera.delete(k); else rondasFuera.add(k); repintar(); }
+    else if (act === "rondas-traer" && m && rondasLeidas && rondasLeidas.unidades) {
+      const U = rondasLeidas.unidades.filter(u => u.calientes.length), u = U.find(x => x.id === rondaElegida) || U[0]; if (!u) return;
+      const r = L.traerDeRondas(m, u, u.calientes.filter(p => !rondasFuera.has(p.itemId)).map(p => p.itemId), rondasSub, genId, hoyIso());
+      rondasLeidas = null; rondasFuera.clear(); if (r.fallos) tocado(m); repintar();
+      toast(r.fallos ? `Añadidos ${plural(r.fallos, "fallo", "fallos")} de las rondas de seguridad${r.enlazados ? ` (${plural(r.enlazados, "enlazado", "enlazados")} con su punto crítico)` : ""}${r.repetidos ? `; ${plural(r.repetidos, "ya estaba", "ya estaban")}` : ""}. Escribid su efecto y su causa, y puntuadlos en el paso 7.` : "No había nada nuevo que traer: esos fallos ya están en el mapa.", 6000);
+    }
     else if (act === "dafo-traer" && m && dafosLeidos) {
       const c = dafosLeidos.find(x => x.id === dafoElegido) || dafosLeidos[0];
       const r = L.traerDeDafo(m, c, hoyIso()); dafosLeidos = null; tocado(m); repintar();
@@ -2358,6 +2408,17 @@
     fr.readAsText(fl);
   });
   // Copia de seguridad de la app DAFO · CAME (para «Traer de DAFO» desde otro dispositivo)
+  $("#input-rondas").addEventListener("change", e => {
+    const fl = e.target.files && e.target.files[0]; e.target.value = ""; if (!fl) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      let o = null; try { o = JSON.parse(fr.result); } catch (er) { /* */ }
+      rondasLeidas = Object.assign({ origen: "copia" }, L.leerRondas(o)); rondaElegida = ""; rondasFuera.clear();
+      if (actual) repintar();
+      if (rondasLeidas.error) toast("No se ha traído nada: revisa el aviso.", 4000);
+    };
+    fr.readAsText(fl);
+  });
   $("#input-dafo").addEventListener("change", e => {
     const fl = e.target.files && e.target.files[0]; e.target.value = ""; if (!fl) return;
     const fr = new FileReader();

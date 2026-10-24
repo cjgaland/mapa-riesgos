@@ -311,5 +311,37 @@ t("presentación: los fallos de un paso con su acción", (() => { const F = L.fa
 const HJ = L.documentoHoja(UE, "x");
 t("hoja de trabajo: 4 tablas apaisadas con los subprocesos ya escritos", HJ.horizontal && HJ.bloques.filter(b => b.t === "tabla").length === 4 && HJ.bloques.find(b => b.t === "tabla").filas[0][0] === UE.subprocesos[0].nombre && Dx.construirDocx(HJ).length > 5000 && L.documentoHoja(L.nuevoMapa("h", ""), "x").bloques.length > 5);
 
+// ---------- Traer de Rondas de Seguridad (paquete «rondas-seguridad» v1) ----------
+// Se genera con la lógica real de la app Rondas de Seguridad (carpeta hermana) a partir de sus ejemplos, más una unidad a mano.
+{
+  const RA = path.join(ESCRITORIO, "Auditorías/Rondas de Seguridad/Aplicación");
+  const RL = require(path.join(RA, "logic.js")), RC = require(path.join(RA, "contenido.js"));
+  const us = RC.EJEMPLOS.unidades.map(u => RL.sanearUnidad(clon(u), genId, "2026-10-24"));
+  const pq = RL.paqueteIntercambio(us, "2026.01", "2026-10-24T10:00:00.000Z");
+  pq.unidades.push({ id: "u-mano", unidad: "Planta de Medicina Interna", items: [{ id: "id-01", bloqueNombre: "Identificación del paciente" }],
+    rondas: [{ estado: "hecha", fecha: "2026-09-12" }, { estado: "hecha", fecha: "2026-10-11" }, { estado: "curso", fecha: "2026-11-10" }],
+    puntosCalientes: [{ itemId: "id-01", texto: "Todos los pacientes llevan pulsera legible.", por: "repetido", fallos: 2, evaluadas: 3 }, { itemId: "y", texto: "  " }, 7, { itemId: "z", texto: "Raro.", por: "turno", turno: "luna", fallos: 2, evaluadas: 2 }] });
+  const lr = L.leerRondas(pq);
+  t("Rondas: paquete real válido", !lr.error && lr.unidades.length === 6);
+  t("Rondas: el ejemplo de Urgencias trae su punto caliente de noche", JSON.stringify(lr.unidades[0].calientes.map(p => [p.itemId, p.por, p.turno, p.bloque])) === JSON.stringify([["cui-08", "turno", "noche", "Cuidados seguros"]]));
+  t("Rondas: solo rondas hechas, la última fecha y puntos saneados (turno desconocido → repetido)", lr.unidades[5].rondas === 2 && lr.unidades[5].ultima === "2026-10-11" && lr.unidades[5].calientes.length === 2 && lr.unidades[5].calientes[1].por === "repetido");
+  t("Rondas: desde su copia .json", L.leerRondas({ app: "rondas", unidades: [], intercambio: pq }).unidades.length === 6);
+  t("Rondas: formato o versión equivocados no traen nada", /formato/.test(L.leerRondas(Object.assign({}, pq, { formato: "x" })).error) && /versión 2/.test(L.leerRondas(Object.assign({}, pq, { version: 2 })).error));
+  t("Rondas: copia antigua y basura", /copia nueva/.test(L.leerRondas({ app: "rondas", unidades: [] }).error) && !!L.leerRondas(null).error && !!L.leerRondas([1]).error && !!L.leerRondas(Object.assign({}, pq, { unidades: 3 })).error);
+  t("Rondas: el dato de cada punto", L.datoCaliente(lr.unidades[0].calientes[0]) === "no se ha cumplido en ninguna de las 3 rondas de noche" && L.datoCaliente(lr.unidades[5].calientes[0]) === "no se ha cumplido en 2 de las últimas 3 rondas");
+  const mr = L.nuevoMapa("mr", "2026-10-24"); mr.subprocesos.push(Object.assign(L.nuevoSubproceso("s1", 1), { nombre: "Acogida" }));
+  mr.fallos.push(Object.assign(LA.nuevoFallo("f0", 4), { fallo: "Ya estaba" }));
+  const r1 = L.traerDeRondas(mr, lr.unidades[5], ["id-01"], "s1", genId, "2026-10-24");
+  const f1 = mr.fallos[1];
+  t("Rondas → fallos: solo los elegidos, numerados después del último", r1.fallos === 1 && mr.fallos.length === 2 && f1.num === 5);
+  t("Rondas → fallos: modo de fallo, subproceso y dato en los controles", f1.fallo === "No se cumple: «Todos los pacientes llevan pulsera legible»" && f1.subprocesoId === "s1" && /Rondas de seguridad \(Planta de Medicina Interna\): no se ha cumplido en 2 de las últimas 3 rondas; última ronda el 11\/10\/2026\. Traído de la app Rondas de Seguridad el 24\/10\/2026\./.test(f1.controles));
+  t("Rondas → fallos: sin puntuar (G·O·D las pone el equipo)", !f1.g && !f1.o && !f1.d);
+  const r2 = L.traerDeRondas(mr, lr.unidades[5], null, "no-existe", genId, "2026-10-24");
+  t("Rondas → fallos: traer dos veces no repite; subproceso que no existe → sin subproceso", r2.repetidos === 1 && r2.fallos === 1 && mr.fallos[2].subprocesoId === "");
+  const sm = L.sanearMapa ? L.sanearMapa(clon(mr), genId) : (L.sanearDatos({ mapas: [clon(mr)] }, genId, "x") || { mapas: [] }).mapas[0];
+  t("Rondas → fallos: sobreviven al saneado", sm && sm.fallos.length === 3 && sm.fallos[1].controles === f1.controles);
+  { const L0 = crear(LF, null), m0 = L0.nuevoMapa("m0", "x"); t("Rondas → fallos: sin motor de AMFE no se hace nada", L0.traerDeRondas(m0, lr.unidades[5], null, "", genId, "x").fallos === 0 && !m0.fallos.length); }
+}
+
 console.log(`${ok} bien, ${mal} mal`);
 if (mal) process.exit(1);

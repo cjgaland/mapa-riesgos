@@ -56,6 +56,7 @@
     const URL_IND = "https://cjgaland.github.io/indicadores-calidad/";
     const URL_TM = "https://cjgaland.github.io/tamano-muestral/";
     const URL_DAFO = "https://cjgaland.github.io/dafo/";
+    const URL_RONDAS = "https://cjgaland.github.io/rondas-seguridad/";
     const VERSION_DATOS = 1;
 
     // ---------- Fases y pasos del asistente ----------
@@ -931,6 +932,59 @@
       return hecho;
     }
 
+    // ---------- «Traer de Rondas» (paquete «rondas-seguridad» v1 de la app Rondas de Seguridad) ----------
+    // Lee localStorage["rondas-intercambio"] o la copia .json de Rondas (clave «intercambio»). De cada unidad interesan sus
+    // puntos calientes: lo que no se cumple en 2 de las 3 últimas rondas («repetido») o en todas las de un turno («turno»).
+    // Devuelve { unidades } o { error } (y entonces no se trae nada). No usa código de Rondas.
+    const FORMATO_RONDAS = "rondas-seguridad", VERSION_RONDAS = 1;
+    const TURNOS_RONDAS = { manana: "mañana", tarde: "tarde", noche: "noche", finde: "fin de semana" };
+    const esObj = x => !!x && typeof x === "object" && !Array.isArray(x);
+    function leerRondas(o) {
+      const t = (v, n) => typeof v === "string" || typeof v === "number" ? String(v).slice(0, n) : "";
+      const ent = v => Number.isInteger(v) && v >= 0 && v < 10000 ? v : 0;
+      if (esObj(o) && o.intercambio !== undefined) o = o.intercambio;
+      else if (esObj(o) && o.app === "rondas" && o.formato === undefined && Array.isArray(o.unidades)) return { error: "Esta copia de Rondas de Seguridad no trae los datos preparados para otras apps. Ábrela en la versión actual de Rondas de Seguridad, haz una copia nueva y vuelve a intentarlo." };
+      if (!esObj(o)) return { error: "No se reconocen datos de Rondas de Seguridad. Usa la copia de seguridad (.json) que descarga la app Rondas de Seguridad." };
+      if (o.formato !== FORMATO_RONDAS) return { error: `No son datos de Rondas de Seguridad (formato «${t(o.formato, 40) || "desconocido"}»; se espera «${FORMATO_RONDAS}»). No se ha traído nada.` };
+      if (o.version !== VERSION_RONDAS) return { error: `Los datos de Rondas de Seguridad vienen en la versión ${t(o.version, 10) || "?"} del formato y esta versión de Mapa de Riesgos lee la ${VERSION_RONDAS}. Actualiza las dos apps (recarga la página) y vuelve a intentarlo. No se ha traído nada.` };
+      if (!Array.isArray(o.unidades)) return { error: "El paquete de Rondas de Seguridad no trae ninguna lista de unidades. No se ha traído nada." };
+      const unidades = o.unidades.filter(esObj).slice(0, 200).map((u, i) => {
+        const items = (Array.isArray(u.items) ? u.items : []).filter(esObj);
+        const hechas = (Array.isArray(u.rondas) ? u.rondas : []).filter(r => esObj(r) && r.estado === "hecha");
+        const fechas = hechas.map(r => t(r.fecha, 10)).filter(f => /^\d{4}-\d{2}-\d{2}$/.test(f)).sort();
+        const calientes = (Array.isArray(u.puntosCalientes) ? u.puntosCalientes : []).filter(x => esObj(x) && lleno(t(x.texto, 400))).slice(0, 80).map(x => {
+          const it = items.find(y => y.id === x.itemId) || {}, por = x.por === "turno" && TURNOS_RONDAS[x.turno] ? "turno" : "repetido";
+          return { itemId: t(x.itemId, 40), texto: t(x.texto, 400).trim(), bloque: t(it.bloqueNombre, 100), por, turno: por === "turno" ? x.turno : "", fallos: ent(x.fallos), evaluadas: ent(x.evaluadas) };
+        });
+        return { id: t(u.id, 60) || "u" + (i + 1), unidad: t(u.unidad, 200).trim(), rondas: hechas.length, ultima: fechas[fechas.length - 1] || "", calientes, appVersion: t(o.appVersion, 20) };
+      });
+      return { unidades, generado: t(o.generado, 40) };
+    }
+    // «no se ha cumplido en 2 de las últimas 3 rondas» · «no se ha cumplido en ninguna de las 3 rondas de noche»
+    const datoCaliente = p => p.por === "turno" ? `no se ha cumplido en ninguna de las ${p.evaluadas} rondas de ${TURNOS_RONDAS[p.turno]}` : `no se ha cumplido en ${p.fallos} de las últimas ${p.evaluadas} rondas`;
+    const falloCaliente = p => `No se cumple: «${p.texto.replace(/\.$/, "")}»`;
+    const resumenRondas = u => `${u.unidad || "Unidad sin nombre"} · ${plural(u.calientes.length, "punto caliente", "puntos calientes")}`;
+    // Cada punto caliente elegido (ids) → un modo de fallo del AMFE del mapa, en el subproceso elegido (o sin subproceso), con
+    // el dato de las rondas en «controles» (la ronda es el control que lo está detectando). Sin puntuar: G·O·D las pone el
+    // equipo. Si ya hay un fallo igual, no se repite. Si coincide con un punto crítico de ese subproceso, quedan enlazados.
+    function traerDeRondas(m, u, ids, subprocesoId, genId, hoy) {
+      const hecho = { fallos: 0, repetidos: 0, enlazados: 0 };
+      if (!LA) return hecho;
+      const sub = m.subprocesos.some(s => s.id === subprocesoId) ? subprocesoId : "";
+      const fecha = /^\d{4}-\d{2}-\d{2}/.test(hoy || "") ? String(hoy).slice(0, 10).split("-").reverse().join("/") : "";
+      u.calientes.filter(p => !Array.isArray(ids) || ids.includes(p.itemId)).forEach(p => {
+        const texto = falloCaliente(p);
+        if (m.fallos.some(f => normal(f.fallo) === normal(texto))) { hecho.repetidos++; return; }
+        const f = LA.nuevoFallo(genId(), m.fallos.reduce((x, y) => Math.max(x, Number(y.num) || 0), 0) + 1);
+        Object.assign(f, { subprocesoId: sub, fallo: texto.slice(0, 1000),
+          controles: `Rondas de seguridad${u.unidad ? ` (${u.unidad})` : ""}: ${datoCaliente(p)}${u.ultima ? `; última ronda el ${u.ultima.split("-").reverse().join("/")}` : ""}. Traído de la app Rondas de Seguridad${fecha ? " el " + fecha : ""}.`.slice(0, 1000) });
+        const pt = m.puntos.find(y => y.subprocesoId === sub && sub && !m.fallos.some(z => z.puntoId === y.id) && parecido(y.titulo, p.texto));
+        if (pt) { f.puntoId = pt.id; hecho.enlazados++; }
+        m.fallos.push(f); hecho.fallos++;
+      });
+      return hecho;
+    }
+
     // ---------- Ponte a prueba: test inicial y final (mejora M, solo en el dispositivo y sin nombres) ----------
     // resp = { índice de la pregunta: índice de la opción elegida }
     function resultadoTest(T, resp) {
@@ -990,7 +1044,7 @@
     const sugerirObjetivo = m => LF.sugerirObjetivo(m).replace("sin pérdidas de información entre profesionales", "minimizando los riesgos para el paciente");
 
     return {
-      VERSION_DATOS, MOTORES, comprobarMotor, URL_AMFE, URL_FLUJO, URL_AUD, URL_IND, URL_TM, URL_DAFO,
+      VERSION_DATOS, MOTORES, comprobarMotor, URL_AMFE, URL_FLUJO, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_RONDAS,
       lleno, corto, normal, plural, listaY, sinTildes,
       FASES, PASOS, nuevoMapa, nuevoSubproceso, nuevoPunto,
       subDe, subDePunto, idPunto, ordenPuntos, puntosDeSub, puntosPorSub,
@@ -1002,7 +1056,7 @@
       introduccionSugerida, conclusionesSugeridas, notaCalidad, diasRevision, nuevaEdicion, compararEdiciones, avisosCierre, nuevoControl,
       documentoFinal, documentoResumen, documentoAcogida, ESTILOS_XLSX, hojasExcel, paqueteAuditorias, iprMapa,
       CRITERIOS_ACCIONES, avisosAcciones, ubicacion, enMapa, flujoBase, puntosMapa, COLOR_NIVEL, calorSub, dibujoMapa, tituloMapa, leyendaMapa, sinUbicar, avisosMapa, sugerirTextoMapa,
-      leerAmfe, resumenAmfe, traerDeAmfe, TIPO_DAFO, leerDafo, resumenDafo, traerDeDafo, resultadoTest, sanearTests, fallosDelPaso, documentoHoja, FORMATO_INTERCAMBIO, VERSION_INTERCAMBIO, frecuenciaSugerida, hallazgos, paqueteIntercambio, leerIntercambio,
+      leerAmfe, resumenAmfe, traerDeAmfe, TIPO_DAFO, leerDafo, resumenDafo, traerDeDafo, FORMATO_RONDAS, VERSION_RONDAS, leerRondas, datoCaliente, falloCaliente, resumenRondas, traerDeRondas, resultadoTest, sanearTests, fallosDelPaso, documentoHoja, FORMATO_INTERCAMBIO, VERSION_INTERCAMBIO, frecuenciaSugerida, hallazgos, paqueteIntercambio, leerIntercambio,
       sanearMapa, sanearDatos, fusionar, renovarIds, sugerirObjetivo, parecido,
       LF, LA
     };
