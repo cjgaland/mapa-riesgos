@@ -57,6 +57,7 @@
     const URL_TM = "https://cjgaland.github.io/tamano-muestral/";
     const URL_DAFO = "https://cjgaland.github.io/dafo/";
     const URL_RONDAS = "https://cjgaland.github.io/rondas-seguridad/";
+    const URL_LC = "https://cjgaland.github.io/lectura-critica/";
     const VERSION_DATOS = 1;
 
     // ---------- Fases y pasos del asistente ----------
@@ -1044,7 +1045,7 @@
     const sugerirObjetivo = m => LF.sugerirObjetivo(m).replace("sin pérdidas de información entre profesionales", "minimizando los riesgos para el paciente");
 
     return {
-      VERSION_DATOS, MOTORES, comprobarMotor, URL_AMFE, URL_FLUJO, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_RONDAS,
+      VERSION_DATOS, MOTORES, comprobarMotor, URL_AMFE, URL_FLUJO, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_RONDAS, URL_LC,
       lleno, corto, normal, plural, listaY, sinTildes,
       FASES, PASOS, nuevoMapa, nuevoSubproceso, nuevoPunto,
       subDe, subDePunto, idPunto, ordenPuntos, puntosDeSub, puntosPorSub,
