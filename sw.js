@@ -7,7 +7,7 @@
 //  dominio, así que funcionan sin conexión igual que los archivos propios.
 // ============================================================
 
-const CACHE_NAME = "mapariesgos-v7";
+const CACHE_NAME = "mapariesgos-v8";
 
 const ASSETS = [
   "./",
