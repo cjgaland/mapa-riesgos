@@ -7,7 +7,7 @@
 //  dominio, así que funcionan sin conexión igual que los archivos propios.
 // ============================================================
 
-const CACHE_NAME = "mapariesgos-v8";
+const CACHE_NAME = "mapariesgos-v9";
 
 const ASSETS = [
   "./",
@@ -42,7 +42,9 @@ self.addEventListener("message", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      // Solo las cachés de esta app: las demás apps del ecosistema comparten el
+      // mismo origen (cjgaland.github.io) y sus copias sin conexión no se tocan.
+      .then(keys => Promise.all(keys.filter(k => k.startsWith("mapariesgos-") && k !== CACHE_NAME).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
