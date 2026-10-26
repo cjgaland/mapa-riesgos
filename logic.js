@@ -21,14 +21,14 @@
 
   // Versión del contrato de cada motor con la que se ha construido esta app (ver Diseño, sección 6.2)
   const MOTORES = {
-    flujo: { nombre: "Flujograma", global: "LogicaFlujo", motor: 1, ruta: "../flujograma/logic.js",
+    flujo: { nombre: "Flujograma", global: "LogicaFlujo", motor: 1, ruta: /*[eco]*/"../flujograma/logic.js"/*[/eco]*//*[ind]"motores/flujograma/logic.js"[/ind]*/,
       usa: ["lleno", "corto", "normal", "plural", "listaY", "sinTildes", "TIPOS", "ORDEN_TIPOS", "ACTORES_SUG", "MARCO_SUG",
         "nuevoFlujo", "nuevoActor", "nuevoSubproceso", "nuevoPaso", "nuevaFlecha", "nuevoPunto", "siguienteNum", "colorLibre",
         "pasoDe", "actorDe", "buscaActor", "sugerirObjetivo", "nuevoControl", "avisosProceso", "avisosActores", "avisosPasos", "errores", "rolesSinCalle",
         "progreso", "resumen", "propuestasPuntos", "aceptarPropuesta", "leerPegado", "incorporarPasos", "insertarDespues", "quitarPaso",
         "cambiarTipo", "ponerSalida", "anadirActores", "disponer", "dibujar", "sanearFlujo", "leerIntercambio", "paqueteIntercambio",
         "NIVELES_IPR", "nivelDeIPR"] },
-    amfe: { nombre: "AMFE", global: "LogicaAmfe", motor: 1, ruta: "../amfe/logic.js",
+    amfe: { nombre: "AMFE", global: "LogicaAmfe", motor: 1, ruta: /*[eco]*/"../amfe/logic.js"/*[/eco]*//*[ind]"motores/amfe/logic.js"[/ind]*/,
       usa: ["ESCALAS_CURSO", "ESCALA_NOM", "TRAMOS", "tramo", "entero1a10", "ipr", "iprDe", "NIVELES_IPR", "nivelIPR", "ZONAS", "zonaMatriz",
         "ordenarFallos", "puestos", "prioridad", "prioritarios", "nPrioridad", "sugerirMotivo", "matriz", "porSubproceso", "resumen", "progreso",
         "ROLES", "PERFILES_SUG", "SESIONES_TIPO", "estamentoDe", "nuevoAmfe", "nuevoMiembro", "nuevaSesion", "nuevoFallo", "siguienteNum",
@@ -50,6 +50,7 @@
     if (!LF) throw new Error("Falta el motor de Flujograma");
     const { lleno, corto, normal, plural, listaY, sinTildes } = LF;
 
+    // [eco]
     const URL_AMFE = "https://cjgaland.github.io/amfe/";
     const URL_FLUJO = "https://cjgaland.github.io/flujograma/";
     const URL_AUD = "https://cjgaland.github.io/auditorias/";
@@ -58,6 +59,7 @@
     const URL_DAFO = "https://cjgaland.github.io/dafo/";
     const URL_RONDAS = "https://cjgaland.github.io/rondas-seguridad/";
     const URL_LC = "https://cjgaland.github.io/lectura-critica/";
+    // [/eco]
     const VERSION_DATOS = 1;
 
     // ---------- Fases y pasos del asistente ----------
@@ -1045,7 +1047,10 @@
     const sugerirObjetivo = m => LF.sugerirObjetivo(m).replace("sin pérdidas de información entre profesionales", "minimizando los riesgos para el paciente");
 
     return {
-      VERSION_DATOS, MOTORES, comprobarMotor, URL_AMFE, URL_FLUJO, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_RONDAS, URL_LC,
+      VERSION_DATOS, MOTORES, comprobarMotor,
+      // [eco]
+      URL_AMFE, URL_FLUJO, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_RONDAS, URL_LC,
+      // [/eco]
       lleno, corto, normal, plural, listaY, sinTildes,
       FASES, PASOS, nuevoMapa, nuevoSubproceso, nuevoPunto,
       subDe, subDePunto, idPunto, ordenPuntos, puntosDeSub, puntosPorSub,

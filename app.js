@@ -22,7 +22,7 @@
     const P = window.MOTORES_PROBLEMAS || {};
     view.innerHTML = `<h1 class="page-title">No se ha podido abrir Mapa de Riesgos</h1>
       <div class="error-box">${esc(P.flujo || "")} ${D ? "" : "No se ha podido cargar el dibujo de Flujograma."}</div>
-      <p class="page-lead">Mapa de Riesgos usa por dentro las apps hermanas <b>Flujograma</b> y <b>AMFE</b>. La primera vez hace falta conexión a internet para traerlas; después funciona sin conexión.</p>
+      <p class="page-lead"><!--[eco]-->Mapa de Riesgos usa por dentro las apps hermanas <b>Flujograma</b> y <b>AMFE</b>. La primera vez hace falta conexión a internet para traerlas; después funciona sin conexión.<!--[/eco]--><!--[ind]Mapa de Riesgos usa por dentro los motores de <b>Flujograma</b> y <b>AMFE</b> (carpeta «motores»). Prueba a recargar la página.[/ind]--></p>
       <div class="toolbar"><button class="btn btn--primary" onclick="location.reload()">Volver a intentarlo</button></div>
       <p class="field-sub">Tus datos no se han tocado: siguen guardados en este dispositivo.</p>`;
     return;
@@ -34,6 +34,7 @@
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
   const APP_VERSION = "2026.11";
   const NOVEDADES = [
+    // [eco]
     { version: "2026.11", fecha: "Octubre 2026", titulo: "Nueva app hermana: Lectura Crítica", cambios: [
       "Enlace a la nueva app hermana Lectura Crítica en la portada y en «Acerca de»: lee críticamente un artículo paso a paso (plantillas de CASPe con preguntas propias, calculadoras y un veredicto con semáforo) antes de cambiar la práctica."] },
     { version: "2026.10", fecha: "Octubre 2026", titulo: "Nueva herramienta de apoyo: Legibilidad", cambios: [
@@ -47,6 +48,12 @@
       "Nueva app hermana Rondas de Seguridad (las rondas de seguridad de una unidad, a pie de cama), enlazada en la portada y en «Acerca de».",
       "Nuevo botón «Traer de Rondas de Seguridad» en el paso 6: los puntos calientes de tus rondas (lo que no se cumple en 2 de las 3 últimas rondas o en todas las de un turno) entran como modos de fallo del mapa, en el subproceso que elijas y con el dato de las rondas en los controles actuales. Funciona en este navegador o con la copia .json de Rondas.",
       "Los datos se copian: si las rondas cambian, se vuelven a traer; un fallo que ya está no se repite."] },
+    // [/eco]
+    /* [ind]
+    { version: "2026.07", fecha: "Octubre 2026", titulo: "Cargar archivo de Rondas de Seguridad", cambios: [
+      "Nuevo botón «Cargar archivo de Rondas de Seguridad» en el paso 6: con la copia de seguridad (.json) de la app Rondas de Seguridad, los puntos calientes de tus rondas (lo que no se cumple en 2 de las 3 últimas rondas o en todas las de un turno) entran como modos de fallo.",
+      "Los datos se copian: si las rondas cambian, se vuelven a cargar; un fallo que ya está no se repite."] },
+    [/ind] */
     { version: "2026.06", fecha: "Octubre 2026", titulo: "Ampliar el mapa al presentarlo", cambios: [
       "Modo presentación: botones + y − para ampliar el mapa y recorrerlo con el dedo. En el móvil, así se pueden tocar los pasos para ver sus riesgos."] },
     { version: "2026.05", fecha: "Octubre 2026", titulo: "Ponte a prueba, minicasos y modo presentación", cambios: [
@@ -241,6 +248,7 @@
         <a class="guide-card" href="#/aprende"><span class="guide-num">?</span><div><div class="guide-q">Aprende</div><div class="guide-a">${C.TEMAS.length} temas <b>explicados fácil</b>: de la seguridad del paciente al mapa de riesgos.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card" href="#/prueba"><span class="guide-num">✓</span><div><div class="guide-q">Ponte a prueba</div><div class="guide-a">Las ${C.TEST.length} preguntas del test del curso, el <b>test inicial y final</b>, ejercicios y el caso clínico.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card" href="#/glosario"><span class="guide-num">A–Z</span><div><div class="guide-q">Glosario</div><div class="guide-a">${C.GLOSARIO.length} términos <b>en lenguaje llano</b>, con buscador.</div></div><span class="guide-go">›</span></a>
+        <!-- [eco] -->
         <a class="guide-card guide-card--hermana" href="${L.URL_FLUJO}" target="_blank" rel="noopener"><span class="guide-num">↓</span><div><div class="guide-q">Flujograma ↗</div><div class="guide-a">App hermana: <b>dibuja el proceso</b> por tu cuenta y tráelo aquí con un botón.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_AMFE}" target="_blank" rel="noopener"><span class="guide-num">!</span><div><div class="guide-q">AMFE ↗</div><div class="guide-a">App hermana: el <b>AMFE completo</b>, con lluvia de ideas, grupo nominal, votación e Ishikawa.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_AUD}" target="_blank" rel="noopener"><span class="guide-num">✓</span><div><div class="guide-q">Auditorías ↗</div><div class="guide-a">App hermana: los riesgos clave del mapa, <b>al Plan Anual de Auditorías</b>.</div></div><span class="guide-go">›</span></a>
@@ -248,6 +256,7 @@
         <a class="guide-card guide-card--hermana" href="${L.URL_DAFO}" target="_blank" rel="noopener"><span class="guide-num">D</span><div><div class="guide-q">DAFO · CAME ↗</div><div class="guide-a">App hermana: <b>analiza tu unidad</b> para decidir qué proceso conviene analizar.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_RONDAS}" target="_blank" rel="noopener"><span class="guide-num">✓</span><div><div class="guide-q">Rondas de Seguridad ↗</div><div class="guide-a">App hermana: <b>rondas de seguridad</b> en una unidad; tráete aquí lo que falla una y otra vez como fallos del mapa.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_LC}" target="_blank" rel="noopener"><span class="guide-num">LC</span><div><div class="guide-q">Lectura Crítica ↗</div><div class="guide-a">App hermana: <b>lee críticamente un artículo</b> para comprobar la evidencia de una acción de mejora antes de adoptarla.</div></div><span class="guide-go">›</span></a>
+        <!-- [/eco] -->
       </div>
       ${practica("<b>Protección de datos:</b> un mapa de riesgos describe un proceso, no a pacientes concretos. No escribas nombres de pacientes ni números de historia clínica; para el equipo bastan los perfiles y los cargos.")}`;
   }
@@ -307,7 +316,7 @@
     const amfe = p.n >= 5 && p.n <= 8;
     return `<p class="page-lead">${p.que}</p>
       <div class="placeholder-box"><p><b>Este paso llegará en una próxima versión.</b></p>
-      ${amfe ? `<p>Mientras, puedes hacer el análisis en la app <a href="${L.URL_AMFE}" target="_blank" rel="noopener">AMFE</a>: cuando llegue este paso, lo traerás aquí con un botón.</p>` : "<p>Mientras, haz una copia de seguridad desde la portada: guarda todo tu trabajo.</p>"}
+      <!--[eco]-->${amfe ? `<p>Mientras, puedes hacer el análisis en la app <a href="${L.URL_AMFE}" target="_blank" rel="noopener">AMFE</a>: cuando llegue este paso, lo traerás aquí con un botón.</p>` : "<p>Mientras, haz una copia de seguridad desde la portada: guarda todo tu trabajo.</p>"}<!--[/eco]--><!--[ind]<p>Mientras, haz una copia de seguridad desde la portada: guarda todo tu trabajo.</p>[/ind]-->
       <div class="toolbar" style="justify-content:center"><a class="btn btn--primary" href="#/mapa/${m.id}/4">Volver a los puntos críticos →</a></div></div>`;
   }
 
@@ -487,7 +496,7 @@
       ${facil(`<p>Cada paso tiene un <b>tipo</b>, que decide su símbolo:</p><div class="leyenda-wrap">${D.leyenda(LF.ORDEN_TIPOS.map(t => [t, LF.TIPOS[t].corto]))}</div>
         <p>Una <b>decisión</b> es una pregunta con dos salidas: Sí y No. El resto de pasos suelen tener una salida: el paso que viene después. Asigna cada paso a su <b>subproceso</b>: en el dibujo saldrán en bandas de color.</p>
         ${trampa("Lo más frecuente al empezar: decisiones sin la salida del No, pasos que no llevan a ningún sitio y actividades escritas como un papel («Hoja de tratamiento» es un documento; «Escribe la hoja de tratamiento», una actividad).")}
-        ${practica(`¿Ya lo dibujaste en la app <a href="${L.URL_FLUJO}" target="_blank" rel="noopener">Flujograma</a>? Tráelo desde el paso 1 con «Traer de Flujograma».`)}`)}
+        <!--[eco]-->${practica(`¿Ya lo dibujaste en la app <a href="${L.URL_FLUJO}" target="_blank" rel="noopener">Flujograma</a>? Tráelo desde el paso 1 con «Traer de Flujograma».`)}<!--[/eco]--><!--[ind]${practica(`¿Ya lo dibujaste en la app Flujograma? Cárgalo desde el paso 1 con «Cargar archivo de Flujograma» (su copia de seguridad .json).`)}[/ind]-->`)}
       ${actoresHtml(m)}
       ${seg}
       ${vista3 === "dibujo" ? (m.pasos.length ? `${err ? `<div class="aviso-error">✕ El dibujo tiene ${plural(err, "error", "errores")} (en rojo). <a href="#avisos3">Ver cuáles</a></div>` : ""}
@@ -716,7 +725,7 @@
       ${facil(`<p>Mira los <b>roles de cada subproceso</b> (paso 2): todos deberían estar representados. Añade a alguien que domine la <b>metodología</b> y, si se puede, una mirada <b>externa</b> (otra unidad que colabora).</p>
         <p>Cada miembro tiene un <b>papel</b>: la <b>coordinación</b> dirige y modera; la <b>secretaría</b> registra lo que se decide y prepara los documentos; los demás aportan su experiencia.</p>
         <p>Lo habitual son <b>tres sesiones</b> de unas dos horas: analizar el proceso y sus puntos críticos; buscar los fallos; puntuarlos.</p>
-        ${practica(`¿Queréis hacer la lluvia de ideas, el grupo nominal, la votación por miembro o el Ishikawa? Están en la app <a href="${L.URL_AMFE}" target="_blank" rel="noopener">AMFE</a>; después traéis el resultado con «Traer de AMFE» (paso 1).`)}`)}
+        <!--[eco]-->${practica(`¿Queréis hacer la lluvia de ideas, el grupo nominal, la votación por miembro o el Ishikawa? Están en la app <a href="${L.URL_AMFE}" target="_blank" rel="noopener">AMFE</a>; después traéis el resultado con «Traer de AMFE» (paso 1).`)}<!--[/eco]--><!--[ind]${practica(`¿Queréis hacer la lluvia de ideas, el grupo nominal, la votación por miembro o el Ishikawa? Están en la app AMFE; después cargáis su copia de seguridad (.json) con «Cargar archivo de AMFE» (paso 1).`)}[/ind]-->`)}
       <h2 class="sec-t">Equipo <span class="contador" data-zona="neq">${m.equipo.length}</span></h2>
       <div class="card no-print"><p class="field-sub">Añade con un toque los perfiles habituales y después ajústalos:</p>
         <div class="quick">${A.PERFILES_SUG.map((p, i) => `<button type="button" class="chip${yaEsta(p) ? " active" : ""}" data-act="eq-sug" data-i="${i}">+ ${esc(p.perfil)}</button>`).join("")}</div></div>
@@ -1028,7 +1037,7 @@
       ${facil(`<p>Cada acción se describe con el modelo <b>5W1H</b>: <b>qué</b> se hace, <b>por qué</b>, <b>dónde</b>, <b>cuándo</b>, <b>quién</b> es responsable y <b>cómo</b> se hará.</p>
         <ul><li><b>Corrección</b>: arregla el fallo cuando ocurre. <b>Acción correctora</b>: elimina la causa. <b>Acción preventiva</b>: elimina un riesgo antes de que ocurra.</li>
         <li>Una buena acción es <b>específica</b> (ataca la causa), <b>factible</b>, <b>medible</b>, <b>sostenible</b> y <b>aceptable</b> para el equipo.</li>
-        <li>El <b>indicador</b> y su <b>estándar</b> servirán para la auditoría de seguimiento. Si ya lo diseñaste en la app <a href="${L.URL_IND}" target="_blank" rel="noopener">Indicadores</a>, tráelo con un botón.</li></ul>
+        <li>El <b>indicador</b> y su <b>estándar</b> servirán para la auditoría de seguimiento. Si ya lo diseñaste en la app <!--[eco]--><a href="${L.URL_IND}" target="_blank" rel="noopener">Indicadores</a>, tráelo con un botón<!--[/eco]--><!--[ind]Indicadores, cárgalo desde su copia de seguridad (.json)[/ind]-->.</li></ul>
         ${trampa("Formar, recordar o poner carteles son <b>medidas débiles</b>: dependen de la memoria y la buena voluntad. Combínalas con alguna que cambie el sistema (campo obligatorio, alerta automática, eliminar el paso que falla).")}`)}
       <div class="card"><h2 class="sub-h">Criterios para seleccionar las acciones</h2><p class="field-sub">Con qué criterios las ha elegido el equipo (apartado 6.1 del documento final).</p>
         <div class="quick">${Object.keys(L.CRITERIOS_ACCIONES).map(k => `<button type="button" class="chip${C[k] ? " active" : ""}" data-act="crit" data-v="${k}">${C[k] ? "✓ " : ""}${esc(L.CRITERIOS_ACCIONES[k])}</button>`).join("")}</div></div>
@@ -1298,7 +1307,9 @@
   function llevarAuditorias(m) {
     const p = L.paqueteAuditorias(m, APP_VERSION, hoy()); if (!p) return;
     compartirOBajar(new Blob([JSON.stringify({ app: "mapariesgos", intercambio: p }, null, 1)], { type: "application/json" }), `Mapa de Riesgos para Auditorias ${(nombreMapa(m) || "").replace(/[\\/:*?"<>|%]/g, "").slice(0, 50).trim()} ${fechaArchivo()}.json`, "Archivo descargado. En Auditorías, abre «Mapa de Riesgos» y pulsa «Traer de AMFE» para cargarlo.");
+    // [eco]
     setTimeout(() => window.open(L.URL_AUD + "#/riesgos", "_blank", "noopener"), 600);
+    // [/eco]
   }
 
   const RENDER = { 1: paso1, 2: paso2, 3: paso3, 4: paso4, 5: paso5, 6: paso6, 7: paso7, 8: paso8, 9: paso9, 10: paso10 };
@@ -2030,9 +2041,14 @@
       if (lleno(m.objetivo)) confirmar("<p>Se sustituirá el objetivo que has escrito por el propuesto.</p>", "Sustituir", hacer, { peligro: false }); else hacer();
     }
     else if (act === "flujo-buscar" && m) {
+      // [eco]
       let l = null; try { l = L.leerFlujograma(JSON.parse(leer("flujograma-intercambio") || "null")); } catch (er) { /* */ }
       if (l && l.length) { flujosLeidos = l; flujoElegido = l[0].id; repintar(); }
       else confirmar("<p>No hay ningún flujograma de la app <b>Flujograma</b> en este navegador.</p><p>Si lo tienes en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-flujo").click(), { titulo: "Traer de Flujograma", peligro: false });
+      // [/eco]
+      /* [ind]
+      $("#input-flujo").click();
+      [/ind] */
     }
     else if (act === "flujo-cancelar") { flujosLeidos = null; repintar(); }
     else if (act === "flujo-traer" && m && flujosLeidos) {
@@ -2160,24 +2176,39 @@
     else if (act === "prop-recuperar" && m) { m.descartes = []; tocado(m); repintar(); }
     // --- Paso 1 · Traer de AMFE ---
     else if (act === "amfe-buscar" && m) {
+      // [eco]
       let l = null; try { l = L.leerAmfe(JSON.parse(leer("amfe-intercambio") || "null")); } catch (er) { /* */ }
       if (l && l.length) { amfesLeidos = l; amfeElegido = l[0].id; repintar(); }
       else confirmar("<p>No hay ningún AMFE de la app <b>AMFE</b> en este navegador.</p><p>Si lo tienes en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-amfe").click(), { titulo: "Traer de AMFE", peligro: false });
+      // [/eco]
+      /* [ind]
+      $("#input-amfe").click();
+      [/ind] */
     }
     else if (act === "amfe-cancelar") { amfesLeidos = null; repintar(); }
     else if (act === "dafo-buscar" && m) {
+      // [eco]
       let l = null; try { l = L.leerDafo(JSON.parse(leer("dafo-intercambio") || "null")); } catch (er) { /* */ }
       if (l && l.length) { dafosLeidos = l; dafoElegido = l[0].id; repintar(); }
       else confirmar(`<p>${l ? "Tu DAFO no tiene ningún factor marcado para un <b>mapa de riesgos</b>. En la app DAFO, en el factor que quieras analizar, elige «Merece un análisis propio: Mapa de Riesgos»." : "No hay ningún DAFO de la app <b>DAFO · CAME</b> en este navegador."}</p><p>Si lo tienes en otro dispositivo, carga su copia de seguridad (.json).</p>`, "Cargar una copia", () => $("#input-dafo").click(), { titulo: "Traer de DAFO", peligro: false });
+      // [/eco]
+      /* [ind]
+      $("#input-dafo").click();
+      [/ind] */
     }
     else if (act === "dafo-cancelar") { dafosLeidos = null; repintar(); }
     // --- Paso 6 · Traer de Rondas de Seguridad ---
     else if ((act === "rondas-buscar" || act === "rondas-olvidar") && m) {
+      // [eco]
       const bruto = leer("rondas-intercambio");
       if (!bruto) { confirmar("<p>No hay datos de la app <b>Rondas de Seguridad</b> en este navegador.</p><p>Si haces las rondas en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-rondas").click(), { titulo: "Traer de Rondas de Seguridad", peligro: false }); return; }
       let o = null; try { o = JSON.parse(bruto); } catch (er) { /* */ }
       rondasLeidas = Object.assign({ origen: "navegador" }, L.leerRondas(o)); rondaElegida = ""; rondasFuera.clear(); pegarFallos = false; repintar();
       const z = $("[data-zona='rondas']"); if (z) z.scrollIntoView({ block: "nearest" });
+      // [/eco]
+      /* [ind]
+      $("#input-rondas").click();
+      [/ind] */
     }
     else if (act === "rondas-cancelar") { rondasLeidas = null; rondasFuera.clear(); repintar(); }
     else if (act === "rondas-archivo") $("#input-rondas").click();
@@ -2309,10 +2340,15 @@
       if (lleno(r.x.porque)) confirmar("<p>Se sustituirá lo que has escrito por el texto propuesto.</p>", "Sustituir", hacer, { peligro: false }); else hacer();
     }
     else if (act === "ind-traer" && m) {
+      // [eco]
       let l = null; try { l = A.indicadoresDe(JSON.parse(leer("indicadores-datos") || "null")); } catch (er) { /* */ }
       indPara = id;
       if (l && l.length) { indImportados = l; const z = $(`[data-zind="${id}"]`); if (z) z.innerHTML = zonaInd(buscaAccion(m, id).x); }
       else confirmar("<p>No hay indicadores de la app <b>Indicadores</b> en este navegador.</p><p>Si los tienes en otro dispositivo, carga su copia de seguridad (.json).</p>", "Cargar una copia", () => $("#input-ind").click(), { titulo: "Traer de Indicadores", peligro: false });
+      // [/eco]
+      /* [ind]
+      indPara = id; $("#input-ind").click();
+      [/ind] */
     }
     // --- Paso 9 ---
     else if (act === "vm-mostrar" && m) { m.vistaMapa.mostrar = b.dataset.v; tocado(m); repintar(); }

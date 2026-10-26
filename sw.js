@@ -27,7 +27,12 @@ const ASSETS = [
   "./icon-512.svg"
 ];
 // Motores de las apps hermanas: se intentan guardar uno a uno (si alguno falla, no impide instalar la app)
+// [eco]
 const MOTORES = ["../amfe/logic.js", "../flujograma/logic.js", "../flujograma/dibujo.js"];
+// [/eco]
+/* [ind]
+const MOTORES = ["./motores/amfe/logic.js", "./motores/flujograma/logic.js", "./motores/flujograma/dibujo.js"];
+[/ind] */
 
 self.addEventListener("install", event => {
   // Sin skipWaiting aquí: la versión nueva espera hasta que el usuario pulse
