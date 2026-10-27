@@ -32,9 +32,11 @@
   // ---------- Versión y novedades ----------
   // Al publicar cambios: añadir una entrada AL PRINCIPIO de NOVEDADES, poner su versión en los ?v= de index.html, en
   // APP_VERSION y subir CACHE_NAME en sw.js. Formato de versión: AAAA.NN.
-  const APP_VERSION = "2026.11";
+  const APP_VERSION = "2026.12";
   const NOVEDADES = [
     // [eco]
+    { version: "2026.12", fecha: "Octubre 2026", titulo: "Nueva app hermana: ACR · Ishikawa", cambios: [
+      "Enlace a la nueva app hermana ACR · Ishikawa en la portada y en «Acerca de»: busca las causas de fondo de un problema o de un incidente con el diagrama de Ishikawa y el análisis causa raíz, sin buscar culpables. Trae los fallos de un Mapa de Riesgos: lo que falla una y otra vez merece un Ishikawa."] },
     { version: "2026.11", fecha: "Octubre 2026", titulo: "Nueva app hermana: Lectura Crítica", cambios: [
       "Enlace a la nueva app hermana Lectura Crítica en la portada y en «Acerca de»: lee críticamente un artículo paso a paso (plantillas de CASPe con preguntas propias, calculadoras y un veredicto con semáforo) antes de cambiar la práctica."] },
     { version: "2026.10", fecha: "Octubre 2026", titulo: "Nueva herramienta de apoyo: Legibilidad", cambios: [
@@ -256,6 +258,7 @@
         <a class="guide-card guide-card--hermana" href="${L.URL_DAFO}" target="_blank" rel="noopener"><span class="guide-num">D</span><div><div class="guide-q">DAFO · CAME ↗</div><div class="guide-a">App hermana: <b>analiza tu unidad</b> para decidir qué proceso conviene analizar.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_RONDAS}" target="_blank" rel="noopener"><span class="guide-num">✓</span><div><div class="guide-q">Rondas de Seguridad ↗</div><div class="guide-a">App hermana: <b>rondas de seguridad</b> en una unidad; tráete aquí lo que falla una y otra vez como fallos del mapa.</div></div><span class="guide-go">›</span></a>
         <a class="guide-card guide-card--hermana" href="${L.URL_LC}" target="_blank" rel="noopener"><span class="guide-num">LC</span><div><div class="guide-q">Lectura Crítica ↗</div><div class="guide-a">App hermana: <b>lee críticamente un artículo</b> para comprobar la evidencia de una acción de mejora antes de adoptarla.</div></div><span class="guide-go">›</span></a>
+        <a class="guide-card guide-card--hermana" href="${L.URL_ACR}" target="_blank" rel="noopener"><span class="guide-num">ACR</span><div><div class="guide-q">ACR · Ishikawa ↗</div><div class="guide-a">App hermana: <b>busca las causas de fondo</b> de lo que falla una y otra vez con el diagrama de Ishikawa, sin buscar culpables.</div></div><span class="guide-go">›</span></a>
         <!-- [/eco] -->
       </div>
       ${practica("<b>Protección de datos:</b> un mapa de riesgos describe un proceso, no a pacientes concretos. No escribas nombres de pacientes ni números de historia clínica; para el equipo bastan los perfiles y los cargos.")}`;

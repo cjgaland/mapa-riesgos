@@ -59,6 +59,7 @@
     const URL_DAFO = "https://cjgaland.github.io/dafo/";
     const URL_RONDAS = "https://cjgaland.github.io/rondas-seguridad/";
     const URL_LC = "https://cjgaland.github.io/lectura-critica/";
+    const URL_ACR = "https://cjgaland.github.io/acr-ishikawa/";
     // [/eco]
     const VERSION_DATOS = 1;
 
@@ -1049,7 +1050,7 @@
     return {
       VERSION_DATOS, MOTORES, comprobarMotor,
       // [eco]
-      URL_AMFE, URL_FLUJO, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_RONDAS, URL_LC,
+      URL_AMFE, URL_FLUJO, URL_AUD, URL_IND, URL_TM, URL_DAFO, URL_RONDAS, URL_LC, URL_ACR,
       // [/eco]
       lleno, corto, normal, plural, listaY, sinTildes,
       FASES, PASOS, nuevoMapa, nuevoSubproceso, nuevoPunto,
